@@ -105,7 +105,7 @@ export default function HealthDashboard() {
           {data && (
             <div className="flex items-center gap-gm-1_5">
               <span
-                className={`inline-block w-2.5 h-2.5 rounded-full ${overallDotClass(data.overall_status)}`}
+                className={`inline-block w-gm-2_5 h-gm-2_5 rounded-full ${overallDotClass(data.overall_status)}`}
                 aria-hidden="true"
               />
               <span className="text-gm-sm font-medium text-text">

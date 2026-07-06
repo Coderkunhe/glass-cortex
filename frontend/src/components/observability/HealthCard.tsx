@@ -79,7 +79,7 @@ export default function HealthCard({ component, label }: HealthCardProps) {
         {/* Row 2: 延迟指示 */}
         <div className="flex items-center gap-gm-1">
           <span
-            className={`inline-block w-2 h-2 rounded-full ${latencyColor(latencyMs)}`}
+            className={`inline-block w-gm-2 h-gm-2 rounded-full ${latencyColor(latencyMs)}`}
             aria-hidden="true"
           />
           <span className={`text-gm-xs ${latencyColor(latencyMs)}`}>
