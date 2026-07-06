@@ -142,7 +142,7 @@ export default function LogViewer() {
     return (
       <div
         key={`${entry.timestamp}-${idx}`}
-        className="flex gap-gm-3 py-gm-1 border-b border-border/50 font-mono text-gm-xs leading-relaxed cursor-pointer hover:bg-surface-alt/50 transition-colors"
+        className="flex gap-gm-3 px-gm-4 py-gm-1 border-b border-border/50 font-mono text-gm-xs leading-relaxed cursor-pointer hover:bg-surface-alt/50 transition-colors"
         onClick={() => setSelectedLogId(entry.id)}
         title="点击查看详情"
       >
@@ -233,7 +233,7 @@ export default function LogViewer() {
               onClick={() => changeLevel(lv)}
               className={`px-gm-3 py-gm-1 text-gm-xs font-medium transition-colors border-r border-border last:border-r-0 ${
                 level === lv
-                  ? "bg-brand text-white"
+                  ? "bg-brand text-text-on-brand"
                   : "bg-surface-elevated text-text-muted hover:text-text-secondary hover:bg-surface-alt"
               }`}
             >
@@ -293,33 +293,34 @@ export default function LogViewer() {
         </div>
       ) : (
         <div className="rounded-gm-sm border border-border bg-surface-elevated overflow-hidden">
-          {/* 列头 */}
-          <div className="flex gap-gm-3 px-gm-4 py-gm-1_5 border-b border-border bg-surface-lowered">
-            <span
-              className="shrink-0 text-gm-xs font-semibold text-text-muted"
-              style={{ width: 155 }}
-            >
-              时间
-            </span>
-            <span
-              className="shrink-0 text-gm-xs font-semibold text-text-muted"
-              style={{ width: 70 }}
-            >
-              级别
-            </span>
-            <span
-              className="shrink-0 text-gm-xs font-semibold text-text-muted"
-              style={{ width: 120 }}
-            >
-              来源
-            </span>
-            <span className="flex-1 text-gm-xs font-semibold text-text-muted">
-              消息
-            </span>
-          </div>
+          {/* 表头 + 日志行共享同一滚动容器 → 列宽对齐 */}
+          <div className="max-h-[500px] overflow-y-auto">
+            {/* 列头 — sticky 固定在顶部 */}
+            <div className="flex gap-gm-3 px-gm-4 py-gm-1_5 border-b border-border bg-surface-lowered sticky top-0 z-10">
+              <span
+                className="shrink-0 text-gm-xs font-semibold text-text-muted"
+                style={{ width: 155 }}
+              >
+                时间
+              </span>
+              <span
+                className="shrink-0 text-gm-xs font-semibold text-text-muted"
+                style={{ width: 70 }}
+              >
+                级别
+              </span>
+              <span
+                className="shrink-0 text-gm-xs font-semibold text-text-muted"
+                style={{ width: 120 }}
+              >
+                来源
+              </span>
+              <span className="flex-1 text-gm-xs font-semibold text-text-muted">
+                消息
+              </span>
+            </div>
 
-          {/* 日志行 */}
-          <div className="px-gm-4 py-gm-1 max-h-[500px] overflow-y-auto">
+            {/* 日志行 */}
             {entries.map((entry, idx) => renderLogRow(entry, idx))}
           </div>
         </div>

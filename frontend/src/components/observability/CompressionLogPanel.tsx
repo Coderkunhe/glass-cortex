@@ -92,12 +92,12 @@ export default function CompressionLogPanel() {
             {STAT_CARDS.map(({ label, value }) => (
               <div
                 key={label}
-                className="bg-surface-1 border border-border rounded-gm p-gm-3"
+                className="bg-surface border border-border rounded-gm-sm p-gm-3"
               >
                 <div className="text-gm-xs text-text-muted mb-gm-1">
                   {label}
                 </div>
-                <div className="text-gm-lg font-semibold text-text-primary">
+                <div className="text-gm-lg font-semibold text-text">
                   {value(data)}
                 </div>
               </div>
