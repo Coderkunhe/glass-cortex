@@ -180,7 +180,7 @@ export default function OverflowSimPanel() {
           </div>
 
           {/* 指标卡片 */}
-          <div className="grid grid-cols-3 gap-gm-3 mb-gm-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-gm-3 mb-gm-4">
             <div className="rounded-gm-xs border border-border bg-surface-alt px-gm-3 py-gm-2 text-center">
               <p className="text-gm-xs text-text-muted">使用率</p>
               <p className="text-gm-lg font-semibold text-text tabular-nums">
@@ -202,7 +202,7 @@ export default function OverflowSimPanel() {
           </div>
 
           {/* 保留/丢弃 记忆列表 */}
-          <div className="grid grid-cols-2 gap-gm-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-gm-4">
             {/* 保留 */}
             <div>
               <h4 className="text-gm-xs font-semibold text-success mb-gm-2">
