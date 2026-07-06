@@ -99,7 +99,7 @@ export default function LogDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-gm-drawer flex justify-end"
+      className="fixed inset-0 z-[var(--gm-z-overlay)] flex justify-end"
       onClick={handleBackdropClick}
     >
       {/* 半透明遮罩 */}

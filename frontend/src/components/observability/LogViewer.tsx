@@ -293,10 +293,10 @@ export default function LogViewer() {
         </div>
       ) : (
         <div className="rounded-gm-sm border border-border bg-surface-elevated overflow-hidden">
-          {/* 表头 + 日志行共享同一滚动容器 → 列宽对齐 */}
+          {/* 表头 + 日志行共享同一滚动容器 → 列宽天然对齐，无 z-index 冲突 */}
           <div className="max-h-[500px] overflow-y-auto">
-            {/* 列头 — sticky 固定在顶部 */}
-            <div className="flex gap-gm-3 px-gm-4 py-gm-1_5 border-b border-border bg-surface-lowered sticky top-0 z-10">
+            {/* 列头 — 随内容滚动 */}
+            <div className="flex gap-gm-3 px-gm-4 py-gm-1_5 border-b border-border bg-surface-lowered">
               <span
                 className="shrink-0 text-gm-xs font-semibold text-text-muted"
                 style={{ width: 155 }}
