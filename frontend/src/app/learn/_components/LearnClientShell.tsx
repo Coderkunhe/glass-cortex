@@ -30,7 +30,9 @@ import { estimateReadingTime, formatReadingTime } from "@/lib/content/estimateRe
 import AppShell from "@/components/layout/AppShell";
 import QuestionList from "@/components/learn/QuestionList";
 import AnswerCard from "@/components/learn/AnswerCard";
+import NotesPanel from "@/components/learn/NotesPanel";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import type { LearnNote } from "@/lib/constants";
 import {
   LEARN_LAST_READ_KEY,
   LEARN_COLLAPSED_KEY,
@@ -39,6 +41,7 @@ import {
   LEARN_BOOKMARKS_KEY,
   LEARN_SCROLL_POSITIONS_KEY,
   LEARN_FONT_SIZE_KEY,
+  LEARN_NOTES_KEY,
 } from "@/lib/constants";
 
 /** Remixicon 章节图标映射（与 QuestionList ICON_MAP 对齐） */
@@ -140,6 +143,15 @@ export default function LearnClientShell({
   /** 搜索关键词 — 由 QuestionList 同步，传递给 AnswerCard 用于正文高亮 */
   const [searchQuery, setSearchQuery] = useState("");
 
+  /** 笔记数据 — 读取全量笔记映射，用于高亮渲染（与 NotesPanel 共享同一 localStorage key） */
+  const [notesMap] = useLocalStorage<Record<string, LearnNote[]>>(
+    LEARN_NOTES_KEY,
+    {},
+  );
+
+  /** 划词选中待记文本 — 非空时触发 NotesPanel 自动进入创建模式 */
+  const [pendingSelectionText, setPendingSelectionText] = useState<string | null>(null);
+
   /**
    * 当前选中的问题 ID。
    * 优先级：URL ?q= > localStorage storedId > 首个已答 defaultId。
@@ -154,6 +166,15 @@ export default function LearnClientShell({
    * 而 AnswerCard 只响应 URL 参数。
    */
   const selectedAnswer = urlId ? getAnswerById(urlId) : undefined;
+
+  /** 当前问题的笔记高亮文本列表（提取所有已存笔记的 selectedText） */
+  const noteHighlights = useMemo(() => {
+    if (!selectedAnswer) return [];
+    const notes = notesMap[selectedAnswer.id] || [];
+    return notes
+      .map((n) => n.selectedText)
+      .filter((t): t is string => !!t && t.trim().length >= 3);
+  }, [notesMap, selectedAnswer]);
 
   /** 当前选中答案的预估阅读时间（分钟） */
   const readingTime = useMemo(() => {
@@ -591,8 +612,21 @@ export default function LearnClientShell({
                     onToggleBookmark={() => toggleBookmark(selectedAnswer.id)}
                     searchQuery={searchQuery}
                     estimatedReadingTime={readingTime}
+                    noteHighlights={noteHighlights}
+                    onAddNote={(text) => setPendingSelectionText(text)}
                   />
                 </div>
+
+                {/* B66: NotesPanel — 划词笔记面板 */}
+                {!immersive && (
+                  <div className="max-w-3xl mx-auto w-full mt-gm-6">
+                    <NotesPanel
+                      questionId={selectedAnswer.id}
+                      initialSelectedText={pendingSelectionText ?? undefined}
+                      onNoteCreated={() => setPendingSelectionText(null)}
+                    />
+                  </div>
+                )}
 
                 {/* 底部导航（桌面端，沉浸模式隐藏） */}
                 {!immersive && totalQuestions > 0 && (
@@ -682,7 +716,17 @@ export default function LearnClientShell({
                 onToggleBookmark={() => toggleBookmark(selectedAnswer.id)}
                 searchQuery={searchQuery}
                 estimatedReadingTime={readingTime}
+                noteHighlights={noteHighlights}
+                onAddNote={(text) => setPendingSelectionText(text)}
               />
+              {/* B66: NotesPanel — 移动端笔记面板 */}
+              <div className="mt-gm-4">
+                <NotesPanel
+                  questionId={selectedAnswer.id}
+                  initialSelectedText={pendingSelectionText ?? undefined}
+                  onNoteCreated={() => setPendingSelectionText(null)}
+                />
+              </div>
             </div>
           ) : (
             <ContentDashboard

@@ -20,6 +20,10 @@ import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 export interface NotesPanelProps {
   /** 当前问题 ID */
   questionId: string;
+  /** 从正文选中的文本片段，非空时自动进入创建模式并作为 selectedText 保存 */
+  initialSelectedText?: string;
+  /** 笔记创建/取消后的回调，用于父组件清理选中态 */
+  onNoteCreated?: () => void;
 }
 
 /**
@@ -31,7 +35,11 @@ export interface NotesPanelProps {
  * 支持：创建（"+" 按钮 → 内联 textarea）、编辑、删除、确认弹窗。
  * B66 补齐正文选择工具栏 + 高亮渲染。
  */
-export default function NotesPanel({ questionId }: NotesPanelProps) {
+export default function NotesPanel({
+  questionId,
+  initialSelectedText,
+  onNoteCreated,
+}: NotesPanelProps) {
   const [notesMap, setNotesMap] = useLocalStorage<
     Record<string, LearnNote[]>
   >(LEARN_NOTES_KEY, {});
@@ -59,6 +67,16 @@ export default function NotesPanel({ questionId }: NotesPanelProps) {
     setDeletingId(null);
   }, [questionId]);
 
+  // initialSelectedText 非空 → 自动进入创建模式
+  useEffect(() => {
+    if (initialSelectedText && initialSelectedText.trim()) {
+      /* eslint-disable react-hooks/set-state-in-effect -- initialSelectedText 来自父组件划词回调，需同步触发创建模式 */
+      setIsCreating(true);
+      setCreateText("");
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [initialSelectedText]);
+
   // ── CRUD 操作 ──────────────────────────────────────────────
 
   function handleCreate() {
@@ -68,7 +86,7 @@ export default function NotesPanel({ questionId }: NotesPanelProps) {
     const newNote: LearnNote = {
       id: crypto.randomUUID(),
       questionId,
-      selectedText: "", // B66 划词创建时填充
+      selectedText: initialSelectedText || "", // B66 划词创建时填充
       noteText: trimmed,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -80,11 +98,13 @@ export default function NotesPanel({ questionId }: NotesPanelProps) {
     });
     setIsCreating(false);
     setCreateText("");
+    onNoteCreated?.();
   }
 
   function handleCancelCreate() {
     setIsCreating(false);
     setCreateText("");
+    onNoteCreated?.();
   }
 
   function startEdit(note: LearnNote) {
@@ -167,6 +187,17 @@ export default function NotesPanel({ questionId }: NotesPanelProps) {
           {/* 内联创建区 */}
           {isCreating && (
             <div className="flex flex-col gap-gm-2">
+              {/* 划词引用预览 */}
+              {initialSelectedText && (
+                <blockquote
+                  data-testid="note-create-quote"
+                  className="border-l-2 border-brand/30 pl-gm-2
+                             text-gm-sm text-text-muted italic m-0
+                             line-clamp-3"
+                >
+                  {initialSelectedText}
+                </blockquote>
+              )}
               <textarea
                 data-testid="note-create-textarea"
                 value={createText}

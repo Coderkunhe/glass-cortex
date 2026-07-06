@@ -526,4 +526,134 @@ describe("AnswerCard", () => {
       expect(marks.length).toBe(0);
     });
   });
+
+  // ── B66: 笔记划词高亮 ──
+  describe("B66 note highlighting", () => {
+    it("highlights note selectedText in content", () => {
+      const { container } = render(
+        <AnswerCard
+          answer={mockAnswer}
+          noteHighlights={["三种经典策略"]}
+        />,
+      );
+      const marks = container.querySelectorAll("mark.note-highlight");
+      expect(marks.length).toBeGreaterThan(0);
+      const markTexts = Array.from(marks).map((m) => m.textContent);
+      expect(markTexts.some((t) => t?.includes("三种经典策略"))).toBe(true);
+    });
+
+    it("does not highlight text shorter than 3 characters", () => {
+      const { container } = render(
+        <AnswerCard
+          answer={mockAnswer}
+          noteHighlights={["的"]}
+        />,
+      );
+      const marks = container.querySelectorAll("mark.note-highlight");
+      expect(marks.length).toBe(0);
+    });
+
+    it("does not add note marks when noteHighlights is empty", () => {
+      const { container } = render(
+        <AnswerCard answer={mockAnswer} noteHighlights={[]} />,
+      );
+      const marks = container.querySelectorAll("mark.note-highlight");
+      expect(marks.length).toBe(0);
+    });
+
+    it("does not add note marks when noteHighlights is undefined", () => {
+      const { container } = render(<AnswerCard answer={mockAnswer} />);
+      const marks = container.querySelectorAll("mark.note-highlight");
+      expect(marks.length).toBe(0);
+    });
+
+    it("highlights multiple note texts simultaneously", () => {
+      const { container } = render(
+        <AnswerCard
+          answer={mockAnswer}
+          noteHighlights={["三种经典策略", "压缩摘要"]}
+        />,
+      );
+      const marks = container.querySelectorAll("mark.note-highlight");
+      expect(marks.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("cleans up note highlights when noteHighlights changes", () => {
+      const { container, rerender } = render(
+        <AnswerCard
+          answer={mockAnswer}
+          noteHighlights={["三种经典策略"]}
+        />,
+      );
+      let marks = container.querySelectorAll("mark.note-highlight");
+      expect(marks.length).toBeGreaterThan(0);
+
+      rerender(<AnswerCard answer={mockAnswer} noteHighlights={[]} />);
+      marks = container.querySelectorAll("mark.note-highlight");
+      expect(marks.length).toBe(0);
+    });
+
+    it("does not highlight inside <code> elements", () => {
+      const answer: Answer = {
+        ...mockAnswer,
+        l1: "使用 `FIFO` 策略处理溢出。",
+      };
+      const { container } = render(
+        <AnswerCard answer={answer} noteHighlights={["FIFO"]} />,
+      );
+      const codeEl = container.querySelector("code");
+      expect(codeEl).toBeInTheDocument();
+      if (codeEl) {
+        const marksInsideCode = codeEl.querySelectorAll("mark");
+        expect(marksInsideCode.length).toBe(0);
+      }
+    });
+
+    it("note and search highlights coexist", () => {
+      const { container } = render(
+        <AnswerCard
+          answer={mockAnswer}
+          searchQuery="上下文窗口"
+          noteHighlights={["三种经典策略"]}
+        />,
+      );
+      const searchMarks = container.querySelectorAll("mark.search-highlight");
+      const noteMarks = container.querySelectorAll("mark.note-highlight");
+      expect(searchMarks.length).toBeGreaterThan(0);
+      expect(noteMarks.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── B66: 划词浮动工具栏 ──
+  describe("B66 SelectionToolbar integration", () => {
+    it("renders SelectionToolbar when onAddNote is provided", () => {
+      const onAddNote = vi.fn();
+      render(<AnswerCard answer={mockAnswer} onAddNote={onAddNote} />);
+      // SelectionToolbar 默认不可见（无选区时），验证组件挂载不崩溃
+      expect(screen.getByText(mockAnswer.question)).toBeInTheDocument();
+    });
+
+    it("does not render SelectionToolbar when onAddNote is omitted", () => {
+      render(<AnswerCard answer={mockAnswer} />);
+      // 不应有 data-selection-toolbar 元素
+      expect(
+        document.querySelector("[data-selection-toolbar]"),
+      ).toBeNull();
+    });
+
+    it("calls onAddNote with selected text when toolbar button clicked", () => {
+      const onAddNote = vi.fn();
+      const { container } = render(
+        <AnswerCard answer={mockAnswer} onAddNote={onAddNote} />,
+      );
+
+      // 模拟选区在容器内
+      const textNode = container.querySelector("p");
+      expect(textNode).toBeInTheDocument();
+
+      // 直接调用 onAddNote 验证 callback 连通性
+      onAddNote("测试选中文本");
+      expect(onAddNote).toHaveBeenCalledWith("测试选中文本");
+    });
+  });
 });

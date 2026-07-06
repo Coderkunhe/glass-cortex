@@ -11,6 +11,7 @@ import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import { renderMarkdown } from "@/lib/renderMarkdown";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
 import { formatReadingTime } from "@/lib/content/estimateReadingTime";
+import SelectionToolbar from "@/components/learn/SelectionToolbar";
 
 /** 跨章关联类型 → 中文标签映射 */
 const CONNECTION_TYPE_LABELS: Record<string, string> = {
@@ -45,6 +46,10 @@ export interface AnswerCardProps {
   searchQuery?: string;
   /** 预估阅读时间（分钟），由父组件计算传入 */
   estimatedReadingTime?: number;
+  /** 笔记划词高亮文本列表 — 已存笔记的 selectedText */
+  noteHighlights?: string[];
+  /** 划词选中回调 — 用户选中正文文本并点击"记笔记"时触发 */
+  onAddNote?: (selectedText: string) => void;
 }
 
 /** 不高亮文本的 HTML 标签（这些标签内的文本不搜索高亮） */
@@ -59,11 +64,15 @@ interface HighlightState {
 }
 
 /**
- * 在容器 DOM 内对搜索关键词进行高亮。
- * 遍历所有文本节点，将匹配的文本用 `<mark class="search-highlight">` 包裹。
+ * 在容器 DOM 内对关键词进行高亮。
+ * 遍历所有文本节点，将匹配的文本用 `<mark class="${className}">` 包裹。
  * 返回第一个匹配元素（用于滚动定位）和清理函数。
  */
-function highlightInContainer(container: HTMLElement, query: string): HighlightState {
+function highlightInContainer(
+  container: HTMLElement,
+  query: string,
+  className = "search-highlight",
+): HighlightState {
   const lowerQuery = query.toLowerCase();
   const replaced: Array<{ parent: Node; oldNode: Text; fragment: DocumentFragment }> = [];
 
@@ -80,7 +89,7 @@ function highlightInContainer(container: HTMLElement, query: string): HighlightS
   while (walker.nextNode()) {
     const textNode = walker.currentNode as Text;
     const text = textNode.textContent || "";
-    const fragment = buildHighlightFragment(text, query);
+    const fragment = buildHighlightFragment(text, query, className);
     replaced.push({ parent: textNode.parentNode!, oldNode: textNode, fragment });
   }
 
@@ -94,7 +103,8 @@ function highlightInContainer(container: HTMLElement, query: string): HighlightS
   return {
     firstMark,
     cleanup() {
-      const marks = container.querySelectorAll("mark.search-highlight");
+      const selectorClass = className.split(" ")[0];
+      const marks = container.querySelectorAll(`mark.${selectorClass}`);
       marks.forEach((mark) => {
         const p = mark.parentNode;
         if (p) {
@@ -107,10 +117,14 @@ function highlightInContainer(container: HTMLElement, query: string): HighlightS
 }
 
 /**
- * 将文本中的搜索关键词用 `<mark>` 标签包裹，返回 DocumentFragment。
+ * 将文本中的关键词用 `<mark>` 标签包裹，返回 DocumentFragment。
  * 大小写不敏感匹配，保留原文大小写显示。
  */
-function buildHighlightFragment(text: string, query: string): DocumentFragment {
+function buildHighlightFragment(
+  text: string,
+  query: string,
+  className: string,
+): DocumentFragment {
   const fragment = document.createDocumentFragment();
   const lowerText = text.toLowerCase();
   const lowerQuery = query.toLowerCase();
@@ -124,8 +138,9 @@ function buildHighlightFragment(text: string, query: string): DocumentFragment {
     }
     // 高亮匹配段
     const mark = document.createElement("mark");
-    mark.className =
-      "search-highlight bg-search-highlight text-current rounded-gm-xs px-gm-0_5";
+    const baseStyle =
+      "text-current rounded-gm-xs px-gm-0_5";
+    mark.className = `${className} ${baseStyle}`;
     mark.textContent = text.slice(idx, idx + query.length);
     fragment.appendChild(mark);
 
@@ -147,7 +162,17 @@ function buildHighlightFragment(text: string, query: string): DocumentFragment {
  * L1 正文区，L2/L3 深度扩展默认折叠可展开。
  * 不展示内部元数据（优先级、置信度、管线代号）。
  */
-export default function AnswerCard({ answer, onBack, immersive, isBookmarked, onToggleBookmark, searchQuery, estimatedReadingTime }: AnswerCardProps) {
+export default function AnswerCard({
+  answer,
+  onBack,
+  immersive,
+  isBookmarked,
+  onToggleBookmark,
+  searchQuery,
+  estimatedReadingTime,
+  noteHighlights,
+  onAddNote,
+}: AnswerCardProps) {
   const router = useRouter();
   const isStub = answer.l0 === "";
   const articleRef = useRef<HTMLElement>(null);
@@ -223,7 +248,11 @@ export default function AnswerCard({ answer, onBack, immersive, isBookmarked, on
     const trimmed = searchQuery?.trim();
     if (!trimmed || !articleRef.current) return;
 
-    const result = highlightInContainer(articleRef.current, trimmed);
+    const result = highlightInContainer(
+      articleRef.current,
+      trimmed,
+      "search-highlight bg-search-highlight",
+    );
     highlightStateRef.current = result;
 
     // 滚动到第一个匹配位置
@@ -239,6 +268,39 @@ export default function AnswerCard({ answer, onBack, immersive, isBookmarked, on
       highlightStateRef.current = null;
     };
   }, [searchQuery, answer.id]);
+
+  // ── 笔记划词高亮（B66）──
+  const noteHighlightRef = useRef<{ cleanup: () => void } | null>(null);
+
+  useEffect(() => {
+    noteHighlightRef.current?.cleanup();
+    noteHighlightRef.current = null;
+
+    if (!noteHighlights || noteHighlights.length === 0 || !articleRef.current) return;
+
+    const cleanups: Array<() => void> = [];
+    for (const text of noteHighlights) {
+      const trimmed = text.trim();
+      if (trimmed.length < 3) continue; // 过短文本不高亮
+      const result = highlightInContainer(
+        articleRef.current,
+        trimmed,
+        "note-highlight bg-brand/10",
+      );
+      cleanups.push(result.cleanup);
+    }
+
+    noteHighlightRef.current = {
+      cleanup() {
+        cleanups.forEach((fn) => fn());
+      },
+    };
+
+    return () => {
+      noteHighlightRef.current?.cleanup();
+      noteHighlightRef.current = null;
+    };
+  }, [noteHighlights, answer.id]);
 
   if (isStub) {
     return (
@@ -446,6 +508,14 @@ export default function AnswerCard({ answer, onBack, immersive, isBookmarked, on
             ))}
           </div>
         </div>
+      )}
+
+      {/* ── B66: 划词浮动工具栏 ── */}
+      {onAddNote && (
+        <SelectionToolbar
+          containerRef={articleRef as React.RefObject<HTMLElement | null>}
+          onAddNote={onAddNote}
+        />
       )}
     </article>
   );

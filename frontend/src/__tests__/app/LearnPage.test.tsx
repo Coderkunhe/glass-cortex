@@ -857,4 +857,87 @@ describe("LearnPage", () => {
       );
     });
   });
+
+  // ── B66: NotesPanel 接入 ──
+
+  describe("B66 — NotesPanel integration", () => {
+    let mockStore: Record<string, string>;
+
+    beforeEach(() => {
+      mockStore = {};
+      const mockLS = {
+        getItem: vi.fn((key: string) => mockStore[key] ?? null),
+        setItem: vi.fn((key: string, val: string) => {
+          mockStore[key] = val;
+        }),
+        removeItem: vi.fn((key: string) => {
+          delete mockStore[key];
+        }),
+        clear: vi.fn(() => {
+          mockStore = {};
+        }),
+        get length() {
+          return Object.keys(mockStore).length;
+        },
+        key: vi.fn((i: number) => Object.keys(mockStore)[i] ?? null),
+      };
+      vi.stubGlobal("localStorage", mockLS);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("renders NotesPanel when a question is selected", async () => {
+      mockStore["gm-learn-notes"] = JSON.stringify({});
+      await renderPage(Promise.resolve({ q: "q1.1" }));
+
+      // NotesPanel 应可见（桌面 + 移动端各一个）
+      const panels = screen.getAllByTestId("notes-panel");
+      expect(panels.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it("does not render NotesPanel on dashboard (no question selected)", async () => {
+      await renderPage();
+
+      // 仪表盘不应有 NotesPanel
+      expect(screen.queryByTestId("notes-panel")).toBeNull();
+    });
+
+    it("shows existing notes count for current question", async () => {
+      const notes = {
+        "q1.1": [
+          { id: "n1", questionId: "q1.1", selectedText: "溢出策略", noteText: "笔记一", createdAt: 1700000000000, updatedAt: 1700000000000 },
+          { id: "n2", questionId: "q1.1", selectedText: "FIFO", noteText: "笔记二", createdAt: 1700000000000, updatedAt: 1700000000000 },
+        ],
+      };
+      mockStore["gm-learn-notes"] = JSON.stringify(notes);
+
+      await renderPage(Promise.resolve({ q: "q1.1" }));
+
+      // 等待 NotesPanel 级联渲染
+      await vi.waitFor(() => {
+        const countEls = screen.getAllByTestId("notes-count");
+        expect(countEls.length).toBeGreaterThanOrEqual(1);
+        expect(countEls[0].textContent).toBe("2");
+      }, { timeout: 3000 });
+    });
+
+    it("passes noteHighlights to AnswerCard for saved notes", async () => {
+      const notes = {
+        "q1.1": [
+          { id: "n1", questionId: "q1.1", selectedText: "三种策略", noteText: "笔记", createdAt: 1700000000000, updatedAt: 1700000000000 },
+        ],
+      };
+      mockStore["gm-learn-notes"] = JSON.stringify(notes);
+
+      await renderPage(Promise.resolve({ q: "q1.1" }));
+
+      // 笔记高亮应通过 AnswerCard 渲染
+      await vi.waitFor(() => {
+        const marks = document.querySelectorAll("mark.note-highlight");
+        expect(marks.length).toBeGreaterThan(0);
+      }, { timeout: 3000 });
+    });
+  });
 });

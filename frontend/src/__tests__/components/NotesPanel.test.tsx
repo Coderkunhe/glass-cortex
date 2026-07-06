@@ -279,4 +279,97 @@ describe("NotesPanel", () => {
       expect(screen.getByTestId("note-card-n2")).toBeDefined();
     });
   });
+
+  // ── B66: initialSelectedText auto-create ───────────────────
+
+  describe("B66 initialSelectedText", () => {
+    it("auto-enters create mode when initialSelectedText is provided", async () => {
+      render(
+        <NotesPanel
+          questionId="q1.1"
+          initialSelectedText="选中的示例文本"
+        />,
+      );
+      const textarea = await screen.findByTestId("note-create-textarea");
+      expect(textarea).toBeDefined();
+      // 应显示选中文本引用
+      const quote = screen.getByTestId("note-create-quote");
+      expect(quote).toBeDefined();
+      expect(quote.textContent).toContain("选中的示例文本");
+    });
+
+    it("saves note with selectedText populated from initialSelectedText", async () => {
+      render(
+        <NotesPanel
+          questionId="q1.1"
+          initialSelectedText="被选中的溢出策略段落"
+        />,
+      );
+      const textarea = await screen.findByTestId("note-create-textarea");
+      fireEvent.change(textarea, { target: { value: "我的划词笔记" } });
+      fireEvent.click(screen.getByTestId("note-create-save-btn"));
+
+      await waitFor(() => {
+        const stored = JSON.parse(
+          mockStore["gm-learn-notes"],
+        ) as Record<string, LearnNote[]>;
+        const notes = stored["q1.1"];
+        expect(notes).toHaveLength(1);
+        expect(notes[0].selectedText).toBe("被选中的溢出策略段落");
+        expect(notes[0].noteText).toBe("我的划词笔记");
+      });
+    });
+
+    it("calls onNoteCreated after save", async () => {
+      const onNoteCreated = vi.fn();
+      render(
+        <NotesPanel
+          questionId="q1.1"
+          initialSelectedText="划词文本"
+          onNoteCreated={onNoteCreated}
+        />,
+      );
+      const textarea = await screen.findByTestId("note-create-textarea");
+      fireEvent.change(textarea, { target: { value: "笔记内容" } });
+      fireEvent.click(screen.getByTestId("note-create-save-btn"));
+
+      await waitFor(() => {
+        expect(onNoteCreated).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it("calls onNoteCreated after cancel", async () => {
+      const onNoteCreated = vi.fn();
+      render(
+        <NotesPanel
+          questionId="q1.1"
+          initialSelectedText="划词文本"
+          onNoteCreated={onNoteCreated}
+        />,
+      );
+      await screen.findByTestId("note-create-textarea");
+      fireEvent.click(screen.getByTestId("note-create-cancel-btn"));
+
+      await waitFor(() => {
+        expect(onNoteCreated).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it("does not auto-create when initialSelectedText is empty string", async () => {
+      render(
+        <NotesPanel questionId="q1.1" initialSelectedText="" />,
+      );
+      // empty string should not trigger create mode
+      const empty = await screen.findByTestId("notes-panel-empty");
+      expect(empty).toBeDefined();
+    });
+
+    it("does not show quote in create UI when initialSelectedText is absent", async () => {
+      render(<NotesPanel questionId="q1.1" />);
+      const addBtn = await screen.findByTestId("note-create-btn");
+      fireEvent.click(addBtn);
+      // 手动创建不应有选中引用块
+      expect(screen.queryByTestId("note-create-quote")).toBeNull();
+    });
+  });
 });
