@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import type { OverflowStrategy } from "@/lib/chatParams";
 import {
   RiFlaskLine,
@@ -14,9 +14,9 @@ import type { OverflowSimResponse, FetchState } from "@/lib/api/types";
 
 /** 溢出策略 → 标签映射（与 ParamSliders OVERFLOW_LABELS 一致） */
 const OVERFLOW_LABELS: Record<OverflowStrategy, string> = {
-  truncate: "truncate — FIFO 截断旧记忆",
-  prioritize: "prioritize — 按得分保留",
-  summarize: "summarize — 压缩旧记忆为摘要",
+  truncate: "FIFO 截断旧记忆",
+  prioritize: "按得分保留",
+  summarize: "压缩旧记忆为摘要",
 };
 
 /**
@@ -49,12 +49,6 @@ export default function OverflowSimPanel() {
       setState("error");
     }
   }, [strategy, windowSize, userInput]);
-
-  useEffect(() => {
-    if (state === "success") {
-      // keep data visible until next submit
-    }
-  }, [state]);
 
   return (
     <section className="rounded-gm-sm border border-border bg-surface-elevated p-gm-5">
@@ -103,6 +97,7 @@ export default function OverflowSimPanel() {
             value={windowSize}
             onChange={(e) => setWindowSize(Number(e.target.value))}
             className="gm-slider w-full"
+            aria-valuetext={`${windowSize} tokens`}
           />
           <div className="flex justify-between text-gm-xs text-text-muted mt-gm-0.5">
             <span>256</span>

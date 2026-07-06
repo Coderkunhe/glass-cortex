@@ -109,6 +109,7 @@ export default function StrategyComparePanel() {
             value={windowSize}
             onChange={(e) => setWindowSize(Number(e.target.value))}
             className="gm-slider w-full"
+            aria-valuetext={`${windowSize} tokens`}
           />
         </div>
         <div className="flex items-end">
@@ -279,15 +280,6 @@ export default function StrategyComparePanel() {
         </div>
       )}
 
-      {/* Idle */}
-      {state === "idle" && (
-        <div className="flex flex-col items-center justify-center gap-gm-2 py-gm-8 text-text-muted/60">
-          <RiScalesLine className="w-8 h-8" />
-          <p className="text-gm-xs">
-            调整参数后点击「运行对比」查看三种策略效果
-          </p>
-        </div>
-      )}
       </DataState>
     </section>
   );

@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, type ComponentType } from "react";
 import {
   RiFlaskLine,
   RiLoader4Line,
   RiCheckLine,
   RiCloseLine,
   RiFileEditLine,
+  RiFileReduceLine,
+  RiQuestionLine,
 } from "@remixicon/react";
 import { api } from "@/lib/api/client";
 import DataState from "@/components/ui/DataState";
@@ -143,11 +145,11 @@ const STRATEGY_META = [
   { key: "summarize", label: "压缩摘要", color: "text-accent" },
 ] as const;
 
-const CELL_RENDER: Record<CellStatus, { icon: string; className: string; label: string }> = {
-  kept: { icon: "✓", className: "text-success bg-success/10", label: "保留" },
-  dropped: { icon: "✗", className: "text-danger bg-danger/10", label: "丢弃" },
-  summarized: { icon: "📝", className: "text-accent bg-accent/10", label: "摘要" },
-  unknown: { icon: "?", className: "text-text-muted bg-surface-alt", label: "未知" },
+const CELL_RENDER: Record<CellStatus, { Icon: ComponentType<{ className?: string }>; className: string; label: string }> = {
+  kept: { Icon: RiCheckLine, className: "text-success bg-success/10", label: "保留" },
+  dropped: { Icon: RiCloseLine, className: "text-danger bg-danger/10", label: "丢弃" },
+  summarized: { Icon: RiFileReduceLine, className: "text-accent bg-accent/10", label: "摘要" },
+  unknown: { Icon: RiQuestionLine, className: "text-text-muted bg-surface-alt", label: "未知" },
 };
 
 /**
@@ -229,6 +231,7 @@ export default function OverflowSandboxPanel() {
                 setData(null);
                 setState("idle");
               }}
+              aria-pressed={i === presetIndex}
               className={`rounded-gm-xs px-gm-3 py-gm-1 text-gm-xs font-medium transition-colors ${
                 i === presetIndex
                   ? "bg-brand text-white"
@@ -418,16 +421,16 @@ export default function OverflowSandboxPanel() {
                       {/* Per-strategy cell */}
                       {STRATEGY_META.map((s) => {
                         const status = getCellStatus(item.content, s.key, data[s.key]);
-                        const render = CELL_RENDER[status];
+                        const { Icon, className: cellClassName, label } = CELL_RENDER[status];
                         return (
                           <div
                             key={s.key}
-                            className={`px-gm-2 py-gm-1 text-center ${render.className} flex items-center justify-center gap-gm-1`}
-                            title={`${s.label}: ${render.label}`}
+                            className={`px-gm-2 py-gm-1 text-center ${cellClassName} flex items-center justify-center gap-gm-1`}
+                            title={`${s.label}: ${label}`}
                           >
-                            <span className="font-semibold">{render.icon}</span>
+                            <Icon className="w-3.5 h-3.5" />
                             <span className="text-gm-xs hidden sm:inline">
-                              {render.label}
+                              {label}
                             </span>
                           </div>
                         );

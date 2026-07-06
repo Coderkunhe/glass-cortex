@@ -118,10 +118,10 @@ function PlanColumn({
   intervening?: boolean;
 }) {
   const dagChart = makeDagChart(plan.subtasks, plan.dagEdges);
-  const borderColor = side === "left" ? "border-amber-200" : "border-emerald-200";
+  const borderColor = side === "left" ? "border-warning/30" : "border-success/30";
   const bgAccent =
-    side === "left" ? "bg-amber-50/60" : "bg-emerald-50/60";
-  const badgeColor = side === "left" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700";
+    side === "left" ? "bg-warning/5" : "bg-success/5";
+  const badgeColor = side === "left" ? "bg-warning/15 text-warning" : "bg-success/15 text-success";
 
   return (
     <div
@@ -490,11 +490,11 @@ export default function ReplanComparePanel() {
                   置信度变化
                 </span>
                 <div className="flex items-center gap-gm-2 text-gm-xs text-text-muted">
-                  <span className="text-amber-600 font-mono">
+                  <span className="text-warning font-mono">
                     {(original.confidence * 100).toFixed(0)}%
                   </span>
                   <RiArrowLeftRightLine className="w-3 h-3" />
-                  <span className="text-emerald-600 font-mono">
+                  <span className="text-success font-mono">
                     {(revised.confidence * 100).toFixed(0)}%
                   </span>
                 </div>

@@ -257,6 +257,7 @@ export default function ExperimentComparePanel() {
                   key={preset.id}
                   onClick={() => setSelectedPreset(preset.id)}
                   data-testid={`preset-${preset.id}`}
+                  aria-pressed={isSelected}
                   className={`text-left rounded-gm-sm border p-gm-3 transition-all ${
                     isSelected
                       ? "border-warning bg-warning/5 ring-1 ring-warning/30"

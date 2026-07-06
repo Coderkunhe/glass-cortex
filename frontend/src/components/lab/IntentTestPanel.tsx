@@ -186,15 +186,6 @@ export default function IntentTestPanel() {
         </div>
       )}
 
-      {/* Idle */}
-      {state === "idle" && (
-        <div className="flex flex-col items-center justify-center gap-gm-2 py-gm-8 text-text-muted/60">
-          <RiFocus3Line className="w-8 h-8" />
-          <p className="text-gm-xs">
-            输入文本后点击「测试分类」查看 Planner 的意图判断
-          </p>
-        </div>
-      )}
       </DataState>
     </section>
   );

@@ -62,11 +62,7 @@ const HYBRID_PIPELINE_CHART = `graph LR
     K --> MERGE
     G --> MERGE
     MERGE --> MMR["⚖️ MMR 重排<br/>λ×相关性 + (1-λ)×多样性<br/>贪心 top_k"]
-    MMR --> OUT["✅ 最终结果<br/>既准又多样"]
-    style Q fill:#4f46e5,stroke:#4338ca,color:#fff
-    style MERGE fill:#f59e0b,stroke:#d97706,color:#111
-    style MMR fill:#8b5cf6,stroke:#7c3aed,color:#fff
-    style OUT fill:#34d399,stroke:#059669,color:#111`;
+    MMR --> OUT["✅ 最终结果<br/>既准又多样"]`;
 
 /**
  * 召回竞赛面板。
