@@ -465,5 +465,9 @@ export function renderMarkdown(md: string): string {
     return `<div class="gm-mermaid-block" data-chart="${base64}"${titleAttr}></div>`;
   });
 
-  return DOMPurify.sanitize(html, PURIFY_CONFIG);
+  // DOMPurify 依赖浏览器 DOM API，SSR 环境跳过（markdown-it 已做 HTML 转义）
+  if (typeof window !== "undefined") {
+    return DOMPurify.sanitize(html, PURIFY_CONFIG);
+  }
+  return html;
 }
