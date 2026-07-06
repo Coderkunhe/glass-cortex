@@ -82,10 +82,11 @@ export function useCodeHighlight(
     });
 
     // 组件卸载时清理所有残留 root，防止 createRoot 泄漏
+    // queueMicrotask 避免 React 渲染期间同步 unmount 产生的竞态警告
     const roots = copyRootsRef.current;
     return () => {
       roots.forEach((root) => {
-        root.unmount();
+        queueMicrotask(() => root.unmount());
       });
       roots.clear();
     };
