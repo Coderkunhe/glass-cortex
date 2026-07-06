@@ -284,134 +284,9 @@ export function MemoryVisualDetail({ response }: { response: ChatResponse }) {
   }
   return (
     <div className="space-y-gm-2">
-      {items.map((item) => {
-        const isFact = !!(item.subject || item.relation || item.object);
-        const score = item.similarity ?? item.composite_score;
-        return (
-          <div
-            key={item.id}
-            className="rounded-gm-sm border border-border/40 bg-surface p-gm-3"
-          >
-            {/* Type badge + score */}
-            <div className="flex items-center justify-between">
-              <span
-                className={
-                  "inline-flex items-center gap-gm-1 text-gm-2xs font-medium " +
-                  (isFact ? "text-info" : "text-success")
-                }
-              >
-                <span
-                  className="w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{
-                    background: isFact
-                      ? "var(--gm-info)"
-                      : "var(--gm-success)",
-                  }}
-                />
-                {isFact ? "事实" : "对话片段"}
-              </span>
-              {/* R1: per-item similarity / composite score */}
-              {score != null && (
-                <span className="text-gm-2xs text-text-muted font-mono">
-                  {(score * 100).toFixed(1)}%
-                </span>
-              )}
-            </div>
-            {/* Content */}
-            {isFact ? (
-              <p className="text-gm-xs text-text font-mono mt-gm-1_5 break-all">
-                {item.subject ?? "?"} → {item.relation ?? "?"} →{" "}
-                {item.object ?? "?"}
-              </p>
-            ) : (
-              <EpisodeContent text={item.content} />
-            )}
-            {/* R2+R4+R5: Episode stats — strength bar + access_count + lambda */}
-            {!isFact && (
-              <div className="mt-gm-2 space-y-gm-1">
-                {/* R2: importance / initial_strength 强度条 */}
-                {item.initial_strength != null && item.initial_strength > 0 && (
-                  <div className="flex items-center gap-gm-2">
-                    <span className="text-gm-2xs text-text-muted shrink-0 w-10">
-                      当前强度
-                    </span>
-                    <div className="flex-1 h-1.5 rounded-full bg-surface-alt overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-brand transition-all"
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            ((item.composite_score ?? 0) / item.initial_strength) * 100,
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                    <span className="text-gm-2xs text-text-muted font-mono shrink-0">
-                      {(
-                        ((item.composite_score ?? 0) / item.initial_strength) *
-                        100
-                      ).toFixed(0)}
-                      %
-                    </span>
-                  </div>
-                )}
-                {/* R2b: importance 原始值 */}
-                {item.importance != null && (
-                  <div className="text-gm-2xs text-text-muted">
-                    重要度{" "}
-                    <span className="text-text font-medium">
-                      {item.importance.toFixed(2)}
-                    </span>
-                  </div>
-                )}
-                {/* R4: access_count */}
-                {item.access_count != null && (
-                  <div className="text-gm-2xs text-text-muted">
-                    已访问{" "}
-                    <span className="text-text font-medium">
-                      {item.access_count}
-                    </span>{" "}
-                    次
-                  </div>
-                )}
-                {/* R5: lambda 衰减速率 */}
-                {item.lambda != null && (
-                  <div className="text-gm-2xs text-text-muted">
-                    衰减速率 λ ={" "}
-                    <span className="text-text font-mono">
-                      {item.lambda.toFixed(4)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-            {/* R3: Fact confidence bar */}
-            {isFact && item.confidence != null && (
-              <div className="mt-gm-2 flex items-center gap-gm-2">
-                <span className="text-gm-2xs text-text-muted shrink-0 w-10">
-                  置信度
-                </span>
-                <div className="flex-1 h-1.5 rounded-full bg-surface-alt overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-success transition-all"
-                    style={{
-                      width: `${(item.confidence * 100).toFixed(0)}%`,
-                    }}
-                  />
-                </div>
-                <span className="text-gm-2xs text-text-muted font-mono shrink-0">
-                  {(item.confidence * 100).toFixed(0)}%
-                </span>
-              </div>
-            )}
-            {item.recall_reason && (
-              <p className="text-gm-xs text-text-muted mt-gm-1 leading-relaxed">
-                {item.recall_reason}
-              </p>
-            )}
-          </div>
-        );
-      })}
+      {items.map((item) => (
+        <RecallItemCard key={item.id} item={item} />
+      ))}
       {/* Fact extraction explanatory mermaid */}
       {q2_1chart && (
         <div className="mt-gm-2 pt-gm-2 border-t border-border/50">
@@ -420,6 +295,121 @@ export function MemoryVisualDetail({ response }: { response: ChatResponse }) {
             title="图：事实抽取三条路线"
             maxHeight={MERMAID_DETAIL_MAX_HEIGHT}
           />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** B70 v2: 单条召回条目卡片 — 内容优先，统计折叠 */
+function RecallItemCard({ item }: { item: ChatResponse["recall_items"][number] }) {
+  const [showStats, setShowStats] = useState(false);
+  const isFact = !!(item.subject || item.relation || item.object);
+  const score = item.similarity ?? item.composite_score;
+
+  return (
+    <div className="rounded-gm-sm border border-border/40 bg-surface">
+      {/* ── 内容区（主体，视觉优先）── */}
+      <div className="p-gm-3">
+        {isFact ? (
+          <p className="text-gm-sm text-text font-mono break-all leading-relaxed">
+            {item.subject ?? "?"} → {item.relation ?? "?"} → {item.object ?? "?"}
+          </p>
+        ) : (
+          <EpisodeContent text={item.content} />
+        )}
+      </div>
+
+      {/* ── 元数据行（紧凑）── */}
+      <div className="flex items-center gap-gm-2 px-gm-3 pb-gm-2">
+        {/* Type badge */}
+        <span
+          className={`inline-flex items-center gap-gm-1 text-gm-2xs font-medium ${
+            isFact ? "text-info" : "text-success"
+          }`}
+        >
+          <span
+            className="w-1.5 h-1.5 rounded-full shrink-0"
+            style={{
+              background: isFact ? "var(--gm-info)" : "var(--gm-success)",
+            }}
+          />
+          {isFact ? "事实" : "对话片段"}
+        </span>
+        {/* Score */}
+        {score != null && (
+          <span className="text-gm-2xs text-text-muted font-mono">
+            {(score * 100).toFixed(1)}%
+          </span>
+        )}
+        {/* Recall reason (compact) */}
+        {item.recall_reason && (
+          <span className="text-gm-2xs text-text-muted/60 truncate flex-1 min-w-0">
+            {item.recall_reason}
+          </span>
+        )}
+        {/* Expand stats toggle */}
+        <button
+          type="button"
+          onClick={() => setShowStats(!showStats)}
+          className="shrink-0 text-gm-2xs text-text-muted/50 hover:text-text-muted transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none rounded-gm-xs"
+        >
+          {showStats ? "收起" : "详情"}
+        </button>
+      </div>
+
+      {/* ── 统计区（折叠，默认隐藏）── */}
+      {showStats && (
+        <div className="border-t border-border/30 px-gm-3 py-gm-2 space-y-gm-1 bg-surface-alt/30">
+          {!isFact && (
+            <>
+              {item.initial_strength != null && item.initial_strength > 0 && (
+                <div className="flex items-center gap-gm-2">
+                  <span className="text-gm-2xs text-text-muted shrink-0 w-10">强度</span>
+                  <div className="flex-1 h-1.5 rounded-full bg-surface-alt overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-brand transition-all"
+                      style={{
+                        width: `${Math.min(100, ((item.composite_score ?? 0) / item.initial_strength) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                  <span className="text-gm-2xs text-text-muted font-mono shrink-0">
+                    {(((item.composite_score ?? 0) / item.initial_strength) * 100).toFixed(0)}%
+                  </span>
+                </div>
+              )}
+              {item.importance != null && (
+                <div className="text-gm-2xs text-text-muted">
+                  重要度 <span className="text-text font-medium">{item.importance.toFixed(2)}</span>
+                </div>
+              )}
+              {item.access_count != null && (
+                <div className="text-gm-2xs text-text-muted">
+                  已访问 <span className="text-text font-medium">{item.access_count}</span> 次
+                </div>
+              )}
+              {item.lambda != null && (
+                <div className="text-gm-2xs text-text-muted">
+                  λ = <span className="text-text font-mono">{item.lambda.toFixed(4)}</span>
+                </div>
+              )}
+            </>
+          )}
+          {isFact && item.confidence != null && (
+            <div className="flex items-center gap-gm-2">
+              <span className="text-gm-2xs text-text-muted shrink-0 w-10">置信度</span>
+              <div className="flex-1 h-1.5 rounded-full bg-surface-alt overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-success transition-all"
+                  style={{ width: `${(item.confidence * 100).toFixed(0)}%` }}
+                />
+              </div>
+              <span className="text-gm-2xs text-text-muted font-mono shrink-0">
+                {(item.confidence * 100).toFixed(0)}%
+              </span>
+            </div>
+          )}
         </div>
       )}
     </div>

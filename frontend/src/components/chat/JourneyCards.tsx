@@ -277,8 +277,8 @@ function MemoryStorageDetail({ response }: { response: ChatResponse }) {
 
   return (
     <div className="space-y-gm-2">
-      {/* B70: 本次记忆内容 — 展示实际存储的对话原文 */}
-      {hasContent && (
+      {/* B70 v2: 本次记忆内容 — 优先展示对话原文，缺数据时提示 */}
+      {hasContent ? (
         <div className="rounded-gm-sm border border-border/50 bg-surface-alt/50 p-gm-3 space-y-gm-2">
           <p className="text-gm-2xs font-semibold text-text-muted">📝 本次记忆内容</p>
           {userMsg && (
@@ -294,7 +294,14 @@ function MemoryStorageDetail({ response }: { response: ChatResponse }) {
             </div>
           )}
         </div>
-      )}
+      ) : mergedItems.length > 0 ? (
+        /* 有 trace 数据（三元组）但缺对话原文 → 旧后端，提示重启 */
+        <div className="rounded-gm-sm border border-warning/30 bg-warning/5 px-gm-3 py-gm-2">
+          <p className="text-gm-2xs text-text-muted">
+            ⚠️ 对话原文不可用 — 请重启后端使 B70 新增字段生效，然后发送新消息
+          </p>
+        </div>
+      ) : null}
       {/* Stat pills row 1: counts + delta */}
       <div className="flex flex-wrap gap-gm-2">
         <span className="inline-flex items-center gap-gm-1_5 rounded-gm-sm border border-border/40 bg-surface px-gm-2_5 py-gm-1_5 text-gm-xs">
