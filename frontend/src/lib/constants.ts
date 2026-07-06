@@ -39,3 +39,24 @@ export const LEARN_SCROLL_POSITIONS_KEY = "gm-learn-scroll-positions";
 
 /** Learn 页阅读字号偏好 — "sm" | "md" | "lg"（默认 "md"）。 */
 export const LEARN_FONT_SIZE_KEY = "gm-learn-font-size";
+
+// ── 笔记类型 ──────────────────────────────────────────────────
+
+/** 用户划词笔记 */
+export interface LearnNote {
+  /** 唯一 ID（crypto.randomUUID()） */
+  id: string;
+  /** 所属问题 ID */
+  questionId: string;
+  /** 标注的源文本片段（≤200 字符，B65 "+"创建时为空，B66 划词创建时填充） */
+  selectedText: string;
+  /** 用户笔记内容 */
+  noteText: string;
+  /** 创建时间 (Date.now()) */
+  createdAt: number;
+  /** 最后修改时间 (Date.now()) */
+  updatedAt: number;
+}
+
+/** Learn 页用户笔记 — Record<questionId, LearnNote[]> */
+export const LEARN_NOTES_KEY = "gm-learn-notes";
