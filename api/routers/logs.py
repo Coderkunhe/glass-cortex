@@ -46,10 +46,10 @@ def _parse_log_lines(lines: list[str], start_line: int = 1) -> list[dict[str, st
             entries.append(
                 {
                     "id": str(line_number),
-                    "timestamp": str(entry.get("timestamp", "")),
+                    "timestamp": str(entry.get("ts") or entry.get("timestamp", "")),
                     "level": str(entry.get("level", "UNKNOWN")),
                     "logger": str(entry.get("logger", "")),
-                    "message": str(entry.get("message", "")),
+                    "message": str(entry.get("msg") or entry.get("message", "")),
                     "raw": line,
                 }
             )
@@ -168,10 +168,10 @@ def get_log_detail(
         entry = json.loads(line)
         return LogDetailResponse(
             id=log_id,
-            timestamp=str(entry.get("timestamp", "")),
+            timestamp=str(entry.get("ts") or entry.get("timestamp", "")),
             level=str(entry.get("level", "UNKNOWN")),
             logger=str(entry.get("logger", "")),
-            message=str(entry.get("message", "")),
+            message=str(entry.get("msg") or entry.get("message", "")),
             raw=line,
             prev_id=log_id - 1 if log_id > 1 else None,
             next_id=log_id + 1 if log_id < total_lines else None,
