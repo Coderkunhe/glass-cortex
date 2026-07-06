@@ -27,6 +27,7 @@ import {
 import type { Answer, Chapter } from "@/lib/content/types";
 import { getAnswerById } from "@/lib/content/questions";
 import { estimateReadingTime, formatReadingTime } from "@/lib/content/estimateReadingTime";
+import { formatChapterTitle } from "@/lib/formatChapter";
 import AppShell from "@/components/layout/AppShell";
 import QuestionList from "@/components/learn/QuestionList";
 import AnswerCard from "@/components/learn/AnswerCard";
@@ -521,7 +522,7 @@ export default function LearnClientShell({
               </button>
 
               <span className="text-gm-xs text-text-muted">
-                {selectedAnswer?.chapterTitle || currentChapter?.title || ""}
+                {selectedAnswer?.chapterTitle ? formatChapterTitle(selectedAnswer.chapterTitle) : currentChapter?.title || ""}
                 {questionIndexInChapter && (
                   <> · 第{questionIndexInChapter.index}问 / {questionIndexInChapter.total}问</>
                 )}
@@ -614,6 +615,7 @@ export default function LearnClientShell({
                     estimatedReadingTime={readingTime}
                     noteHighlights={noteHighlights}
                     onAddNote={(text) => setPendingSelectionText(text)}
+                    questionIndex={questionIndexInChapter ?? undefined}
                   />
                 </div>
 
@@ -718,6 +720,7 @@ export default function LearnClientShell({
                 estimatedReadingTime={readingTime}
                 noteHighlights={noteHighlights}
                 onAddNote={(text) => setPendingSelectionText(text)}
+                questionIndex={questionIndexInChapter ?? undefined}
               />
               {/* B66: NotesPanel — 移动端笔记面板 */}
               <div className="mt-gm-4">

@@ -481,11 +481,11 @@ button:active,
 }
 
 .chapter-tree-header-index {
-  font-size: var(--gm-text-lg);
-  font-weight: 700;
+  font-size: var(--gm-text-md);
+  font-weight: 600;
   color: var(--gm-text-muted);
   flex-shrink: 0;
-  min-width: 1.2em;
+  min-width: 1.6em;
   text-align: right;
   line-height: 1;
 }

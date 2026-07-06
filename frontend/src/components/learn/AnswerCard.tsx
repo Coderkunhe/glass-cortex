@@ -12,6 +12,7 @@ import { renderMarkdown } from "@/lib/renderMarkdown";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
 import { formatReadingTime } from "@/lib/content/estimateReadingTime";
 import SelectionToolbar from "@/components/learn/SelectionToolbar";
+import { formatChapterTitle } from "@/lib/formatChapter";
 
 /** 跨章关联类型 → 中文标签映射 */
 const CONNECTION_TYPE_LABELS: Record<string, string> = {
@@ -50,6 +51,7 @@ export interface AnswerCardProps {
   noteHighlights?: string[];
   /** 划词选中回调 — 用户选中正文文本并点击"记笔记"时触发 */
   onAddNote?: (selectedText: string) => void;
+  questionIndex?: { index: number; total: number };
 }
 
 /** 不高亮文本的 HTML 标签（这些标签内的文本不搜索高亮） */
@@ -172,6 +174,7 @@ export default function AnswerCard({
   estimatedReadingTime,
   noteHighlights,
   onAddNote,
+  questionIndex,
 }: AnswerCardProps) {
   const router = useRouter();
   const isStub = answer.l0 === "";
@@ -349,13 +352,16 @@ export default function AnswerCard({
       <div>
         {answer.chapterTitle && (
           <p className="text-gm-sm text-text-muted mb-gm-1">
-            {answer.chapterTitle}
+            {formatChapterTitle(answer.chapterTitle)}
             {estimatedReadingTime !== undefined && estimatedReadingTime > 0 && (
               <>{' · '}{formatReadingTime(estimatedReadingTime)}</>
             )}
           </p>
         )}
         <h1 className="text-gm-xl font-semibold text-text leading-tight">
+          {questionIndex && (
+            <span className="text-text-muted mr-gm-1">{questionIndex.index}.</span>
+          )}
           {answer.question}
         </h1>
       </div>

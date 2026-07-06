@@ -17,6 +17,8 @@ import {
   FIELD_LABELS,
 } from "@/lib/content/search";
 
+import { toChineseNumeral } from "@/lib/formatChapter";
+
 export interface QuestionListProps {
   /** 全部章节 */
   chapters: Chapter[];
@@ -333,7 +335,7 @@ export default function QuestionList({
               <div key={chapter.id}>
                 <div className="chapter-tree-header">
                   <span className="chapter-tree-header-index">
-                    {chIdx >= 0 ? chIdx + 1 : ""}
+                    {chIdx >= 0 ? `${toChineseNumeral(chIdx + 1)}、` : ""}
                   </span>
                   <span className="chapter-tree-header-title">
                     {chapter.title}
@@ -404,7 +406,7 @@ export default function QuestionList({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-gm-1">
                       <span className="chapter-tree-header-index">
-                        {chapters.findIndex((c) => c.id === ch.id) + 1}
+                        {`${toChineseNumeral(chapters.findIndex((c) => c.id === ch.id) + 1)}、`}
                       </span>
                       <span className="chapter-tree-header-title">
                         {ch.title}
@@ -476,7 +478,7 @@ export default function QuestionList({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-gm-1">
                       <span className="chapter-tree-header-index">
-                        {chIdx + 1}
+                        {`${toChineseNumeral(chIdx + 1)}、`}
                       </span>
                       <span className="chapter-tree-header-title">
                         {ch.title}
