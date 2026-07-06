@@ -258,6 +258,11 @@ function MemoryStorageDetail({ response }: { response: ChatResponse }) {
     return map[action] ?? action;
   };
 
+  // B70: 本次记忆内容 — user_msg/assistant_msg 从 trace 中提取
+  const userMsg = typeof fet?.user_msg === "string" ? (fet.user_msg as string) : "";
+  const assistantMsg = typeof fet?.assistant_msg === "string" ? (fet.assistant_msg as string) : "";
+  const hasContent = userMsg.length > 0 || assistantMsg.length > 0;
+
   // Merge triples with dedup results for per-item rendering
   const mergedItems: Array<{ triple: Record<string, unknown>; action?: string; detail?: string }> = [];
   for (let i = 0; i < Math.max(triples.length, dedupResults.length); i++) {
@@ -272,6 +277,24 @@ function MemoryStorageDetail({ response }: { response: ChatResponse }) {
 
   return (
     <div className="space-y-gm-2">
+      {/* B70: 本次记忆内容 — 展示实际存储的对话原文 */}
+      {hasContent && (
+        <div className="rounded-gm-sm border border-border/50 bg-surface-alt/50 p-gm-3 space-y-gm-2">
+          <p className="text-gm-2xs font-semibold text-text-muted">📝 本次记忆内容</p>
+          {userMsg && (
+            <div>
+              <span className="text-gm-2xs text-text-muted/70">用户</span>
+              <p className="text-gm-xs text-text-secondary leading-relaxed mt-gm-0_5">{userMsg}</p>
+            </div>
+          )}
+          {assistantMsg && (
+            <div>
+              <span className="text-gm-2xs text-text-muted/70">AI 回复</span>
+              <p className="text-gm-xs text-text-secondary leading-relaxed mt-gm-0_5">{assistantMsg}</p>
+            </div>
+          )}
+        </div>
+      )}
       {/* Stat pills row 1: counts + delta */}
       <div className="flex flex-wrap gap-gm-2">
         <span className="inline-flex items-center gap-gm-1_5 rounded-gm-sm border border-border/40 bg-surface px-gm-2_5 py-gm-1_5 text-gm-xs">

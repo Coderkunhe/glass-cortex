@@ -249,6 +249,30 @@ function StatPill({
   );
 }
 
+/** B70: Episode 召回内容 — 长文本可展开，提升内容可读性 */
+const EPISODE_CONTENT_TRUNCATE = 200;
+
+function EpisodeContent({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const long = text.length > EPISODE_CONTENT_TRUNCATE;
+  const displayText = long && !expanded ? text.slice(0, EPISODE_CONTENT_TRUNCATE) + "…" : text;
+
+  return (
+    <div className="mt-gm-1_5">
+      <p className="text-gm-sm text-text leading-relaxed">{displayText}</p>
+      {long && (
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="text-gm-xs text-info hover:text-info-light transition-colors mt-gm-0_5 cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none rounded-gm-xs"
+        >
+          {expanded ? "收起" : "展开全文"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function MemoryVisualDetail({ response }: { response: ChatResponse }) {
   const items = response.recall_items;
   if (items.length === 0) {
@@ -300,7 +324,7 @@ export function MemoryVisualDetail({ response }: { response: ChatResponse }) {
                 {item.object ?? "?"}
               </p>
             ) : (
-              <p className="text-gm-xs text-text mt-gm-1_5">{item.content}</p>
+              <EpisodeContent text={item.content} />
             )}
             {/* R2+R4+R5: Episode stats — strength bar + access_count + lambda */}
             {!isFact && (

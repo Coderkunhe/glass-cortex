@@ -103,6 +103,8 @@ class FactExtractor:
                 "stored_fact_ids": [],
                 "token_usage": api_trace.get("token_usage"),
                 "cache_hit": True,
+                "user_msg": user_msg,
+                "assistant_msg": assistant_msg,
             }
         else:
             trace = {
@@ -119,6 +121,8 @@ class FactExtractor:
                 "dedup_results": [],
                 "stored_fact_ids": [],
                 "token_usage": None,
+                "user_msg": user_msg,
+                "assistant_msg": assistant_msg,
             }
             try:
                 triples, api_trace = self._extract_via_api(user_msg, assistant_msg, existing)
