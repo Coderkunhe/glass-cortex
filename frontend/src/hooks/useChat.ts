@@ -1,0 +1,190 @@
+"use client";
+
+import { useState, useCallback, useRef, useEffect } from "react";
+import { api } from "@/lib/api/client";
+import type { ChatResponse, SessionForgetResponse } from "@/lib/api/types";
+import type { ChatParams } from "@/lib/chatParams";
+import { categorizeError } from "@/lib/errorCategories";
+import type { CategorizedError } from "@/lib/errorCategories";
+
+export interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  /** 消息创建时间（毫秒时间戳），用于显示相对时间 */
+  createdAt: number;
+  response?: ChatResponse;
+}
+
+type SendStatus = "idle" | "loading" | "success" | "error";
+
+/** 认知参数获取器——每次发送消息时调用，读取最新参数值。
+ *  使用 getter 而非传值，避免参数变化导致 sendMessage 重建。 */
+export function useChat(getParams?: () => ChatParams) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [status, setStatus] = useState<SendStatus>("idle");
+  const [error, setError] = useState<CategorizedError | null>(null);
+
+  // AbortController ref — 每次 sendMessage 创建新的，abort() 取消当前请求
+  const abortRef = useRef<AbortController | null>(null);
+
+  // 会话标识 — mount 时生成，组件生命周期内稳定。
+  // ChatRequest.session_id 字段 B20 已添加，此处开始透传。
+  const sessionIdRef = useRef<string>("");
+  useEffect(() => {
+    sessionIdRef.current = crypto.randomUUID();
+  }, []);
+
+  // C7: 组件卸载时取消进行中的请求，防止 setState on unmounted component
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
+
+  // Phase 66 B22 — 遗忘操作结果状态
+  const [forgetResult, setForgetResult] = useState<SessionForgetResponse | null>(null);
+  const [forgetError, setForgetError] = useState<CategorizedError | null>(null);
+
+  // ref 模式：始终持有最新 getter，sendMessage 身份稳定
+  const getParamsRef = useRef(getParams);
+  useEffect(() => {
+    getParamsRef.current = getParams;
+  });
+
+  /** M10: abort 时取消请求 + 清理孤儿用户消息 + 重置状态。
+   *  AbortError 在 sendMessage 的 catch 中被静默处理，但乐观追加的用户消息
+   *  已进入 messages 数组——此处同步移除，避免用户看到无响应的孤儿消息。
+   *  向后扫描找最后一条 user 消息（可能不是数组最后一个——若前一条 send 已
+   *  在 abort 前完成，其 assistant 会排在 orphan 之后）。 */
+  const abort = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setMessages((prev) => {
+      let lastUserIdx = -1;
+      for (let i = prev.length - 1; i >= 0; i--) {
+        if (prev[i].role === "user") { lastUserIdx = i; break; }
+      }
+      if (lastUserIdx === -1) return prev;
+      return [...prev.slice(0, lastUserIdx), ...prev.slice(lastUserIdx + 1)];
+    });
+    setStatus("idle");
+    setError(null);
+  }, []);
+
+  const sendMessage = useCallback(async (content: string) => {
+    if (!content.trim()) return;
+
+    const userMessage: Message = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content,
+      createdAt: Date.now(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setStatus("loading");
+    setError(null);
+
+    // 创建新的 AbortController 供 abort() 取消
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      const params = getParamsRef.current?.() ?? {};
+      const response = await api.chat(
+        {
+          user_input: content,
+          session_id: sessionIdRef.current,
+          context_window_size: params.context_window_size,
+          context_overflow_strategy: params.context_overflow_strategy,
+          model: params.model || undefined,
+          temperature: params.temperature ?? undefined,
+          max_tokens: params.max_tokens ?? undefined,
+          include_system_prompt: true,
+        },
+        { signal: controller.signal },
+      );
+
+      const assistantMessage: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: response.response_text,
+        createdAt: Date.now(),
+        response,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+      setStatus("success");
+    } catch (err) {
+      // 用户主动 abort 不视为错误 — 静默回 idle
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setStatus("idle");
+        return;
+      }
+      setError(categorizeError(err));
+      setStatus("error");
+    } finally {
+      // C5: 仅清理自己的 controller，避免清除后续调用的 controller 引用
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
+    }
+  }, []);
+
+  /** 纯本地清除——不触发遗忘，仅重置 React state。
+   *  Phase 66 B22：保留此方法供内部/测试使用；用户"清除对话"入口应走 forgetSession。 */
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+    setStatus("idle");
+    setError(null);
+  }, []);
+
+  /** Phase 66 B22 — 按当前 session_id 定向遗忘全部对话记忆。
+   *
+   *  调用 POST /session/forget 触发：
+   *  1. 后端级联删除（episodes → facts → recall_log → confidence_log → FAISS）
+   *  2. 前端清空消息列表
+   *  3. 返回删除统计摘要供 UI 展示
+   *
+   *  失败时抛出异常，由调用方（ChatPanel）在 ConfirmModal 中展示错误。 */
+  const forgetSession = useCallback(async (): Promise<SessionForgetResponse> => {
+    setForgetError(null);
+    try {
+      const result = await api.forgetSession({ session_id: sessionIdRef.current });
+      setForgetResult(result);
+      clearMessages();
+      return result;
+    } catch (err) {
+      const categorized = categorizeError(err);
+      setForgetError(categorized);
+      throw err;
+    }
+  }, [clearMessages]);
+
+  /** M9: 移除最后一条用户消息——供 retry 流程使用。
+   *  Error retry 会 sendMessage 相同内容，若不移除旧消息则出现两条相同用户消息。 */
+  const removeLastUserMessage = useCallback(() => {
+    setMessages((prev) => {
+      let lastUserIdx = -1;
+      for (let i = prev.length - 1; i >= 0; i--) {
+        if (prev[i].role === "user") { lastUserIdx = i; break; }
+      }
+      if (lastUserIdx === -1) return prev;
+      return [...prev.slice(0, lastUserIdx), ...prev.slice(lastUserIdx + 1)];
+    });
+  }, []);
+
+  return {
+    messages,
+    status,
+    error,
+    sendMessage,
+    abort,
+    clearMessages,
+    forgetSession,
+    forgetResult,
+    forgetError,
+    removeLastUserMessage,
+  };
+}

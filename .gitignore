@@ -1,0 +1,21 @@
+venv/
+__pycache__/
+*.pyc
+.eggs/
+*.egg-info/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.env
+data/
+backups/
+screenshots/
+tools/visual_diffs/
+
+# Node
+node_modules/
+
+# Next.js
+.next/
+out/

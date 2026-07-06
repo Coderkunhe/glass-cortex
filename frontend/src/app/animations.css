@@ -1,0 +1,45 @@
+/* ═══ GlassCortex 动画 — @keyframes + 工具类 ═══ */
+
+/* ── 洋葱面板展开动画 ── */
+@keyframes gm-onion-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-gm-onion-in {
+  animation: gm-onion-in var(--gm-duration-slow) var(--gm-ease-out);
+}
+
+/* ── 消息入场滑入 ── */
+@keyframes gm-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-gm-slide-in {
+  opacity: 0;
+  animation: gm-slide-in var(--gm-duration-glacial) var(--gm-ease-out) forwards;
+}
+
+/* ── 淡入（Hero、loading 等） ── */
+@keyframes gm-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-gm-fade-in {
+  opacity: 0;
+  animation: gm-fade-in var(--gm-duration-hero) var(--gm-ease-out) forwards;
+}

@@ -1,0 +1,298 @@
+@import "tailwindcss";
+
+/* ═══ Theme data attribute — user-controlled, not OS ═══ */
+:root {
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* ═══ Token 架构三层模型 ═══
+ *
+ * 定义层 (tokens.css)       — --gm-* 原始 token 定义，静态 grep ~70 个
+ * Theme 映射层 (theme.css)  — @theme inline 将 --gm-* 映射为 Tailwind 实用类
+ * 运行时层 (getComputedStyle) — 浏览器合并后 ~82 个（Tailwind 注入 + 双主题
+ *                              重复定义产生 ~12 个差额）
+ *
+ * 三层差异是 Tailwind v4 @theme inline 的正常行为，非泄漏。
+ * ═════════════════════════════════════════════════════════════════════ */
+
+/* ═══ GlassCortex 设计令牌 — 从 src/web/components/_tokens_core.py 迁移 ═══ */
+
+:root, [data-theme="light"] {
+  /* ── 间距 ── */
+  --gm-space-0\.5: 2px;
+  --gm-space-1: 4px;
+  --gm-space-2: 8px;
+  --gm-space-3: 12px;
+  --gm-space-4: 16px;
+  --gm-space-5: 24px;
+  --gm-space-6: 32px;
+  --gm-space-8: 48px;
+  --gm-space-1\.5: 6px;
+  --gm-space-2\.5: 10px;
+  /* 下划线别名 — 点号 CSS 变量在 JS 模板字符串中不可用，供跨文件引用 */
+  --gm-space-0_5: var(--gm-space-0\.5);
+  --gm-space-1_5: var(--gm-space-1\.5);
+  --gm-space-2_5: var(--gm-space-2\.5);
+
+  /* ── 排版 ── */
+  --gm-text-xs: clamp(0.65rem, 1.5vw, 0.7rem);
+  --gm-text-sm: clamp(0.75rem, 1.6vw, 0.82rem);
+  --gm-text-md: clamp(0.85rem, 1.8vw, 0.92rem);
+  --gm-text-base: clamp(0.9rem, 1.9vw, 1rem);
+  --gm-text-lg: clamp(1rem, 2vw, 1.12rem);
+  --gm-text-xl: clamp(1.25rem, 3vw, 1.5rem);
+  --gm-text-2xl: clamp(1.5rem, 4vw, 2rem);
+  --gm-text-3xl: clamp(2rem, 5vw, 2.75rem);
+
+  /* ── 图标 ── */
+  --gm-icon-md: clamp(1.1rem, 1.6vw, 1.25rem);
+
+  /* ── 品牌色 — indigo scale ── */
+  --gm-brand-50: #eef2ff;
+  --gm-brand-100: #e0e7ff;
+  --gm-brand-200: #c7d2fe;
+  --gm-brand-400: #818cf8;
+  --gm-brand: #4f46e5;
+  --gm-brand-600: #4338ca;
+  --gm-brand-700: #3730a3;
+  --gm-brand-800: #312e81;
+  --gm-brand-light: #6366f1;
+  --gm-brand-glow: rgba(99, 102, 241, 0.15);
+  --gm-brand-gradient: linear-gradient(135deg, #4338ca 0%, #6366f1 50%, #818cf8 100%);
+
+  /* ── 语义色 ── */
+  --gm-success: #059669;
+  --gm-success-light: #10b981;
+  --gm-success-glow: rgba(16, 185, 129, 0.15);
+  --gm-warning: #d97706;
+  --gm-warning-light: #f59e0b;
+  --gm-warning-glow: rgba(245, 158, 11, 0.15);
+  --gm-danger: #dc2626;
+  --gm-danger-light: #ef4444;
+  --gm-danger-hover: #b91c1c;
+  --gm-danger-glow: rgba(239, 68, 68, 0.15);
+  --gm-info: #0284c7;
+  --gm-info-light: #0ea5e9;
+  --gm-info-glow: rgba(2, 132, 199, 0.15);
+  --gm-accent: #7c3aed;
+  --gm-accent-light: #8b5cf6;
+
+  /* ── 文本 ── */
+  --gm-text: #0f172a;
+  --gm-text-secondary: #334155;
+  --gm-text-muted: #64748b;
+  --gm-text-inverse: #ffffff;
+
+  /* ── 表面 ── */
+  --gm-surface-elevated: #ffffff;
+  --gm-surface: #fafbfc;
+  --gm-surface-alt: #f0f2f5;
+  --gm-surface-lowered: #f4f6f8;
+  --gm-bg-subtle: #f8fafc;
+  --gm-bg: #f1f5f9;
+  --gm-bg-deep: #e8ecf1;
+
+  /* ── 边框 ── */
+  --gm-border: #e2e8f0;
+  --gm-border-light: #f1f5f9;
+  --gm-border-strong: #cbd5e1;
+  --gm-border-emphasis: #94a3b8;
+
+  /* ── 圆角 ── */
+  --gm-radius-xs: 4px;
+  --gm-radius-sm: 8px;
+  --gm-radius-md: 12px;
+  --gm-radius-lg: 20px;
+  --gm-radius-xl: 28px;
+
+  /* ── 阴影 ── */
+  --gm-shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --gm-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --gm-shadow-md: 0 4px 10px rgba(15, 23, 42, 0.06), 0 2px 6px rgba(15, 23, 42, 0.04);
+  --gm-shadow-lg: 0 12px 28px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.04);
+  --gm-shadow-xl: 0 20px 40px rgba(15, 23, 42, 0.1), 0 8px 16px rgba(15, 23, 42, 0.04);
+  --gm-shadow-glow: 0 0 30px var(--gm-brand-glow);
+  --gm-shadow-glow-success: 0 0 20px var(--gm-success-glow);
+  --gm-shadow-glow-warning: 0 0 20px var(--gm-warning-glow);
+
+  /* ── 动效 ── */
+  --gm-duration-fast: 120ms;
+  --gm-duration-base: 200ms;
+  --gm-duration-slow: 350ms;
+  --gm-duration-glacial: 600ms;
+  --gm-duration-hero: 1500ms;
+  --gm-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --gm-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --gm-ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ── 抽屉动效 ── */
+  --gm-duration-drawer-fast: 350ms;
+  --gm-duration-drawer: 420ms;
+  --gm-duration-drawer-slow: 600ms;
+  --gm-drawer-backdrop: rgba(0, 0, 0, 0.35);
+  --gm-drawer-backdrop-blur: 6px;
+  --gm-shadow-drawer: -4px 0 24px rgba(15, 23, 42, 0.12);
+  --gm-drawer-width: 480px;
+  --gm-drawer-width-wide: 520px;
+
+  /* ── 滚动条 ── */
+  --gm-scrollbar-thumb: #cbd5e1;
+  --gm-scrollbar-track: transparent;
+
+  /* ── 玻璃态 ── */
+  --gm-glass-bg: rgba(255, 255, 255, 0.85);
+  --gm-translucent-bg: rgba(255, 255, 255, 0.55);
+
+  /* ── 图表图例色 ── */
+  --gm-slate-500: #64748b;
+  --gm-emerald-500: #10b981;
+  --gm-amber-500: #f59e0b;
+
+  /* ── 搜索高亮 ── */
+  --gm-search-highlight: rgba(253, 224, 122, 0.7);
+
+  /* ── 图标尺寸 ── */
+  --gm-icon-sm: 0.875rem;
+
+  /* ── 排版扩展 ── */
+  --gm-leading-relaxed: 1.625;
+  --gm-text-2xs: 0.625rem;
+
+  /* ── 品牌交互 ── */
+  --gm-brand-hover: #4338ca;
+
+  /* ── 尺寸语义 token ── */
+  --gm-header-h: 86px;
+  --gm-sidebar-w: 256px;
+  --gm-accent-bar-h: 3px;
+
+  /* ── 文字-on-品牌 ── */
+  --gm-text-on-brand: var(--gm-text-inverse);
+
+  /* ── Z-index 分层系统 ── */
+  --gm-z-content: 1;
+  --gm-z-float: 40;
+  --gm-z-nav: 50;
+  --gm-z-overlay: 60;
+  --gm-z-modal: 100;
+  --gm-z-notify: 110;
+}
+
+[data-theme="dark"] {
+  /* ── 品牌色 — 暗色调亮 ── */
+  --gm-brand-50: #1e1b4b;
+  --gm-brand-100: #312e81;
+  --gm-brand-200: #3730a3;
+  --gm-brand-400: #818cf8;
+  --gm-brand: #818cf8;
+  --gm-brand-600: #6366f1;
+  --gm-brand-700: #a5b4fc;
+  --gm-brand-800: #c7d2fe;
+  --gm-brand-light: #6366f1;
+  --gm-brand-glow: rgba(129, 140, 248, 0.2);
+  --gm-brand-gradient: linear-gradient(135deg, #6366f1 0%, #818cf8 50%, #a5b4fc 100%);
+
+  /* ── 语义色 ── */
+  --gm-success: #34d399;
+  --gm-success-light: #10b981;
+  --gm-success-glow: rgba(52, 211, 153, 0.15);
+  --gm-warning: #fbbf24;
+  --gm-warning-light: #f59e0b;
+  --gm-warning-glow: rgba(251, 191, 36, 0.15);
+  --gm-danger: #f87171;
+  --gm-danger-light: #ef4444;
+  --gm-danger-hover: #ef4444;
+  --gm-danger-glow: rgba(248, 113, 113, 0.15);
+  --gm-info: #38bdf8;
+  --gm-info-light: #0ea5e9;
+  --gm-info-glow: rgba(56, 189, 248, 0.15);
+  --gm-accent: #a78bfa;
+  --gm-accent-light: #8b5cf6;
+
+  /* ── 文本 ── */
+  --gm-text: #f1f5f9;
+  --gm-text-secondary: #cbd5e1;
+  --gm-text-muted: #94a3b8;
+  --gm-text-inverse: #0f172a;
+
+  /* ── 表面 ── */
+  --gm-surface-elevated: #1e293b;
+  --gm-surface: #1a2332;
+  --gm-surface-alt: #243044;
+  --gm-surface-lowered: #162031;
+  --gm-bg-subtle: #111827;
+  --gm-bg: #0f172a;
+  --gm-bg-deep: #0b1120;
+
+  /* ── 边框 ── */
+  --gm-border: #1e293b;
+  --gm-border-light: #334155;
+  --gm-border-strong: #475569;
+  --gm-border-emphasis: #64748b;
+
+  /* ── 阴影 ── */
+  --gm-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --gm-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --gm-shadow-md: 0 4px 10px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.2);
+  --gm-shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
+  --gm-shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.6), 0 8px 16px rgba(0, 0, 0, 0.3);
+  --gm-shadow-glow: 0 0 30px var(--gm-brand-glow);
+  --gm-shadow-glow-success: 0 0 20px var(--gm-success-glow);
+  --gm-shadow-glow-warning: 0 0 20px var(--gm-warning-glow);
+
+  /* ── 抽屉动效 ── */
+  --gm-duration-drawer-fast: 350ms;
+  --gm-duration-drawer: 420ms;
+  --gm-duration-drawer-slow: 600ms;
+  --gm-drawer-backdrop: rgba(0, 0, 0, 0.55);
+  --gm-drawer-backdrop-blur: 6px;
+  --gm-shadow-drawer: -4px 0 24px rgba(0, 0, 0, 0.4);
+  --gm-drawer-width: 480px;
+  --gm-drawer-width-wide: 520px;
+
+  /* ── 滚动条 ── */
+  --gm-scrollbar-thumb: #334155;
+  --gm-scrollbar-track: transparent;
+
+  /* ── 玻璃态 ── */
+  --gm-glass-bg: rgba(15, 23, 42, 0.85);
+  --gm-translucent-bg: rgba(15, 23, 42, 0.55);
+
+  /* ── 图表图例色 — 暗色不变 ── */
+  --gm-slate-500: #64748b;
+  --gm-emerald-500: #10b981;
+  --gm-amber-500: #f59e0b;
+
+  /* ── 搜索高亮 ── */
+  --gm-search-highlight: rgba(251, 191, 36, 0.4);
+
+  /* ── 图标尺寸 ── */
+  --gm-icon-sm: 0.875rem;
+
+  /* ── 排版扩展 ── */
+  --gm-leading-relaxed: 1.625;
+  --gm-text-2xs: 0.625rem;
+
+  /* ── 品牌交互 ── */
+  --gm-brand-hover: #6366f1;
+
+  /* ── 尺寸语义 token ── */
+  --gm-header-h: 86px;
+  --gm-sidebar-w: 256px;
+  --gm-accent-bar-h: 3px;
+
+  /* ── 文字-on-品牌 ── */
+  --gm-text-on-brand: var(--gm-text-inverse);
+
+  /* ── Z-index 分层系统 ── */
+  --gm-z-content: 1;
+  --gm-z-float: 40;
+  --gm-z-nav: 50;
+  --gm-z-overlay: 60;
+  --gm-z-modal: 100;
+  --gm-z-notify: 110;
+}

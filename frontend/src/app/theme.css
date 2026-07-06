@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/* ═══ Tailwind v4 @theme — 将 --gm-* 令牌映射为实用类 ═══ */
+
+@theme inline {
+  /* ── 颜色 ── */
+  --color-brand-50: var(--gm-brand-50);
+  --color-brand-100: var(--gm-brand-100);
+  --color-brand-200: var(--gm-brand-200);
+  --color-brand-400: var(--gm-brand-400);
+  --color-brand: var(--gm-brand);
+  --color-brand-600: var(--gm-brand-600);
+  --color-brand-700: var(--gm-brand-700);
+  --color-brand-800: var(--gm-brand-800);
+  --color-brand-light: var(--gm-brand-light);
+  --color-brand-glow: var(--gm-brand-glow);
+
+  --color-success: var(--gm-success);
+  --color-success-light: var(--gm-success-light);
+  --color-warning: var(--gm-warning);
+  --color-warning-light: var(--gm-warning-light);
+  --color-danger: var(--gm-danger);
+  --color-danger-light: var(--gm-danger-light);
+  --color-danger-hover: var(--gm-danger-hover);
+  --color-info: var(--gm-info);
+  --color-info-light: var(--gm-info-light);
+  --color-accent: var(--gm-accent);
+  --color-accent-light: var(--gm-accent-light);
+
+  --color-search-highlight: var(--gm-search-highlight);
+
+  --color-text: var(--gm-text);
+  --color-text-secondary: var(--gm-text-secondary);
+  --color-text-muted: var(--gm-text-muted);
+  --color-text-inverse: var(--gm-text-inverse);
+  --color-text-on-brand: var(--gm-text-on-brand);
+  --color-surface-elevated: var(--gm-surface-elevated);
+  --color-surface: var(--gm-surface);
+  --color-surface-alt: var(--gm-surface-alt);
+  --color-surface-lowered: var(--gm-surface-lowered);
+  --color-bg-subtle: var(--gm-bg-subtle);
+  --color-bg: var(--gm-bg);
+  --color-bg-deep: var(--gm-bg-deep);
+
+  --color-border: var(--gm-border);
+  --color-border-light: var(--gm-border-light);
+  --color-border-strong: var(--gm-border-strong);
+
+  /* ── 间距 ── */
+  --spacing-gm-0_5: var(--gm-space-0\.5);
+  --spacing-gm-1: var(--gm-space-1);
+  --spacing-gm-2: var(--gm-space-2);
+  --spacing-gm-3: var(--gm-space-3);
+  --spacing-gm-4: var(--gm-space-4);
+  --spacing-gm-5: var(--gm-space-5);
+  --spacing-gm-6: var(--gm-space-6);
+  --spacing-gm-8: var(--gm-space-8);
+  --spacing-gm-1_5: var(--gm-space-1\.5);
+  --spacing-gm-2_5: var(--gm-space-2\.5);
+  --spacing-header-h: var(--gm-header-h);
+  --spacing-sidebar-w: var(--gm-sidebar-w);
+  --spacing-gm-accent-bar: var(--gm-accent-bar-h);
+  /* ── 字体大小 ── */
+  --text-gm-xs: var(--gm-text-xs);
+  --text-gm-sm: var(--gm-text-sm);
+  --text-gm-md: var(--gm-text-md);
+  --text-gm-base: var(--gm-text-base);
+  --text-gm-lg: var(--gm-text-lg);
+  --text-gm-xl: var(--gm-text-xl);
+  --text-gm-2xl: var(--gm-text-2xl);
+  --text-gm-3xl: var(--gm-text-3xl);
+  --text-gm-icon: var(--gm-icon-md);
+  --text-gm-2xs: var(--gm-text-2xs);
+  /* ── 圆角 ── */
+  --radius-gm-xs: var(--gm-radius-xs);
+  --radius-gm-sm: var(--gm-radius-sm);
+  --radius-gm-md: var(--gm-radius-md);
+  --radius-gm-lg: var(--gm-radius-lg);
+  --radius-gm-xl: var(--gm-radius-xl);
+
+  /* ── 阴影 ── */
+  --shadow-gm-xs: var(--gm-shadow-xs);
+  --shadow-gm-sm: var(--gm-shadow-sm);
+  --shadow-gm-md: var(--gm-shadow-md);
+  --shadow-gm-lg: var(--gm-shadow-lg);
+  --shadow-gm-xl: var(--gm-shadow-xl);
+  --shadow-gm-glow: var(--gm-shadow-glow);
+
+  /* ── 字体 ── */
+  --font-sans: var(--font-geist-sans, system-ui, -apple-system, sans-serif);
+  --font-mono: var(--font-geist-mono, ui-monospace, monospace);
+}

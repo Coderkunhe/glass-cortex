@@ -1,0 +1,167 @@
+/**
+ * Prism 语法高亮主题。
+ *
+ * 背景：Next.js/Turbopack 编译时会丢弃 prismjs/themes/prism-tomorrow.css，
+ * 因此此文件自包含 Dark + Light 两套 token 色值，作为唯一真相源。
+ *
+ * Dark 模式（默认，无 scope）— 使用 --gm-* token 作为颜色来源。
+ * Light 模式 — [data-theme="light"] 覆盖。
+ *
+ * @module app/prism-theme
+ */
+
+/* ── Dark mode (default) — base code block ── */
+code[class*="language-"],
+pre[class*="language-"] {
+  color: var(--gm-text-secondary);
+  font-family: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+  line-height: 1.5;
+  tab-size: 4;
+  hyphens: none;
+}
+
+/* ── Dark mode — token colors ── */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: var(--gm-text-muted);
+}
+
+.token.punctuation {
+  color: var(--gm-text-secondary);
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: var(--gm-warning-light);
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: var(--gm-success);
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.token.attr-value {
+  color: var(--gm-text-secondary);
+}
+
+.token.atrule,
+.token.keyword {
+  color: var(--gm-brand-600);
+}
+
+.token.function,
+.token.class-name {
+  color: var(--gm-accent-light);
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: var(--gm-warning);
+}
+
+.token.bold {
+  font-weight: bold;
+}
+
+.token.italic {
+  font-style: italic;
+}
+
+/* ── Dark mode — line-numbers background ── */
+pre[class*="language-"].line-numbers {
+  background: var(--gm-surface-alt);
+}
+
+.line-numbers-rows > span::before {
+  color: var(--gm-text-muted);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+ * Light mode overrides
+ * ══════════════════════════════════════════════════════════════════════ */
+
+[data-theme="light"] code[class*="language-"],
+[data-theme="light"] pre[class*="language-"] {
+  color: var(--gm-text);
+}
+
+[data-theme="light"] .token.comment,
+[data-theme="light"] .token.prolog,
+[data-theme="light"] .token.doctype,
+[data-theme="light"] .token.cdata {
+  color: var(--gm-text-muted);
+}
+
+[data-theme="light"] .token.punctuation {
+  color: var(--gm-text-secondary);
+}
+
+[data-theme="light"] .token.property,
+[data-theme="light"] .token.tag,
+[data-theme="light"] .token.boolean,
+[data-theme="light"] .token.number,
+[data-theme="light"] .token.constant,
+[data-theme="light"] .token.symbol,
+[data-theme="light"] .token.deleted {
+  color: var(--gm-accent);
+}
+
+[data-theme="light"] .token.selector,
+[data-theme="light"] .token.attr-name,
+[data-theme="light"] .token.string,
+[data-theme="light"] .token.char,
+[data-theme="light"] .token.builtin,
+[data-theme="light"] .token.inserted {
+  color: var(--gm-success);
+}
+
+[data-theme="light"] .token.operator,
+[data-theme="light"] .token.entity,
+[data-theme="light"] .token.url {
+  color: var(--gm-text);
+}
+
+[data-theme="light"] .token.atrule,
+[data-theme="light"] .token.attr-value,
+[data-theme="light"] .token.keyword {
+  color: var(--gm-brand-600);
+}
+
+[data-theme="light"] .token.function,
+[data-theme="light"] .token.class-name {
+  color: var(--gm-brand-700);
+}
+
+[data-theme="light"] .token.regex,
+[data-theme="light"] .token.important,
+[data-theme="light"] .token.variable {
+  color: var(--gm-warning);
+}
+
+[data-theme="light"] pre[class*="language-"].line-numbers {
+  background: var(--gm-surface-alt);
+}
+
+[data-theme="light"] .line-numbers-rows > span::before {
+  color: var(--gm-text-muted);
+}

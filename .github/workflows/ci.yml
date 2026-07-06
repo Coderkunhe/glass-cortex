@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install Python dependencies
+        run: |
+          python -m venv venv
+          ./venv/bin/pip install --upgrade pip
+          ./venv/bin/pip install -r requirements-lock.txt
+
+      - name: make check (lint + type + test)
+        run: make check
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Node dependencies
+        run: |
+          cd frontend
+          npm ci
+          npx playwright install chromium
+
+      - name: Frontend type check
+        run: cd frontend && npx tsc --noEmit
+
+      - name: Frontend lint
+        run: cd frontend && npm run lint
+
+      - name: Browser runtime gate (check-theme)
+        run: make check-theme
+
+      - name: Visual regression gate (check-visual)
+        run: make check-visual

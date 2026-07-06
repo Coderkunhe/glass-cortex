@@ -1,0 +1,19 @@
+# GlassCortex 直接依赖
+# 人工维护，pip-compile 生成 requirements-lock.txt
+
+faiss-cpu
+sentence-transformers
+rich
+numpy
+openai
+
+plotly
+torchvision
+ruff
+mypy
+pytest
+pre-commit
+beautifulsoup4
+fastapi[standard]
+httpx2
+playwright
