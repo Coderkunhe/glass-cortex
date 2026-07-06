@@ -146,21 +146,21 @@ export default function LogViewer() {
         onClick={() => setSelectedLogId(entry.id)}
         title="点击查看详情"
       >
-        {/* 时间戳 */}
-        <span className="shrink-0 text-text-muted" style={{ width: 155 }}>
+        {/* 时间戳 — truncate 防溢出 */}
+        <span className="shrink-0 truncate text-text-muted" style={{ width: 155 }}>
           {entry.timestamp.substring(0, 19)}
         </span>
 
-        {/* 级别 */}
+        {/* 级别 — truncate 防溢出 */}
         <span
-          className={`shrink-0 font-semibold ${levelColor(entry.level)}`}
+          className={`shrink-0 truncate font-semibold ${levelColor(entry.level)}`}
           style={{ width: 70 }}
         >
           [{LEVEL_LABELS[entry.level] ?? entry.level}]
         </span>
 
-        {/* Logger */}
-        <span className="shrink-0 text-brand" style={{ width: 120 }}>
+        {/* Logger — truncate + title 显示全名 */}
+        <span className="shrink-0 truncate text-brand" style={{ width: 180 }} title={entry.logger}>
           {entry.logger}
         </span>
 
@@ -295,27 +295,27 @@ export default function LogViewer() {
         <div className="rounded-gm-sm border border-border bg-surface-elevated overflow-hidden">
           {/* 表头 + 日志行共享同一滚动容器 → 列宽天然对齐，无 z-index 冲突 */}
           <div className="max-h-[500px] overflow-y-auto">
-            {/* 列头 — 随内容滚动 */}
+            {/* 列头 — 随内容滚动，固定列宽 + truncate 防溢出 */}
             <div className="flex gap-gm-3 px-gm-4 py-gm-1_5 border-b border-border bg-surface-lowered">
               <span
-                className="shrink-0 text-gm-xs font-semibold text-text-muted"
+                className="shrink-0 truncate text-gm-xs font-semibold text-text-muted"
                 style={{ width: 155 }}
               >
                 时间
               </span>
               <span
-                className="shrink-0 text-gm-xs font-semibold text-text-muted"
+                className="shrink-0 truncate text-gm-xs font-semibold text-text-muted"
                 style={{ width: 70 }}
               >
                 级别
               </span>
               <span
-                className="shrink-0 text-gm-xs font-semibold text-text-muted"
-                style={{ width: 120 }}
+                className="shrink-0 truncate text-gm-xs font-semibold text-text-muted"
+                style={{ width: 180 }}
               >
                 来源
               </span>
-              <span className="flex-1 text-gm-xs font-semibold text-text-muted">
+              <span className="flex-1 min-w-0 text-gm-xs font-semibold text-text-muted">
                 消息
               </span>
             </div>
@@ -382,14 +382,13 @@ export default function LogViewer() {
     </div>
     </DataState>
 
-      {/* 单条日志详情抽屉 */}
-      {selectedLogId !== null && (
-        <LogDetailModal
-          logId={selectedLogId}
-          onClose={() => setSelectedLogId(null)}
-          onNavigate={(id) => setSelectedLogId(id)}
-        />
-      )}
+      {/* 单条日志详情抽屉 — 始终渲染以支持 Drawer 退出动画 */}
+      <LogDetailModal
+        isOpen={selectedLogId !== null}
+        logId={selectedLogId ?? 0}
+        onClose={() => setSelectedLogId(null)}
+        onNavigate={(id) => setSelectedLogId(id)}
+      />
     </>
   );
 }
