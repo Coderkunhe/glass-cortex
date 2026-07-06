@@ -33,7 +33,7 @@ describe("ObserveShell", () => {
       screen.getByRole("tab", { name: "日志查看器" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("tab", { name: "Trace 历史" }),
+      screen.getByRole("tab", { name: "调用追踪" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("tab", { name: "压缩日志" }),
@@ -70,12 +70,12 @@ describe("ObserveShell", () => {
     expect(logsTab).toHaveAttribute("aria-selected", "true");
   });
 
-  // ── Tab 切换 → Trace 历史（已实现） ──
+  // ── Tab 切换 → 调用追踪（已实现） ──
 
-  it('renders PipelineTracePanel for "Trace 历史" tab', () => {
+  it('renders PipelineTracePanel for "调用追踪" tab', () => {
     render(<ObserveShell />);
 
-    fireEvent.click(screen.getByRole("tab", { name: "Trace 历史" }));
+    fireEvent.click(screen.getByRole("tab", { name: "调用追踪" }));
 
     expect(screen.getByTestId("pipeline-trace-panel")).toBeInTheDocument();
     expect(

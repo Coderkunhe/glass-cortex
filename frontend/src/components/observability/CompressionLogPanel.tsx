@@ -110,7 +110,7 @@ export default function CompressionLogPanel() {
       <div className="border-t border-border pt-gm-4 mt-gm-2">
         <div className="flex flex-col items-center justify-center py-gm-8 text-text-muted/50 gap-gm-2">
           <RiFileReduceLine className="w-8 h-8" />
-          <p className="text-gm-xs">详细压缩事件日志将在后续批次交付</p>
+          <p className="text-gm-xs">压缩事件日志即将上线</p>
         </div>
       </div>
     </div>

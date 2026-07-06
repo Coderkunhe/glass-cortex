@@ -142,8 +142,16 @@ export default function LogViewer() {
     return (
       <div
         key={`${entry.timestamp}-${idx}`}
+        role="button"
+        tabIndex={0}
         className="flex gap-gm-3 px-gm-4 py-gm-1 border-b border-border/50 font-mono text-gm-xs leading-relaxed cursor-pointer hover:bg-surface-alt/50 transition-colors"
         onClick={() => setSelectedLogId(entry.id)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setSelectedLogId(entry.id);
+          }
+        }}
         title="点击查看详情"
       >
         {/* 时间戳 — truncate 防溢出 */}

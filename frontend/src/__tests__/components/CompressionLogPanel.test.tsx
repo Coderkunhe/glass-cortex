@@ -131,7 +131,7 @@ describe("CompressionLogPanel", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("详细压缩事件日志将在后续批次交付"),
+        screen.getByText("压缩事件日志即将上线"),
       ).toBeInTheDocument();
     });
   });

@@ -10,7 +10,7 @@ import CompressionLogPanel from "./CompressionLogPanel";
 const TABS = [
   { key: "health", label: "健康仪表盘" },
   { key: "logs", label: "日志查看器" },
-  { key: "traces", label: "Trace 历史" },
+  { key: "traces", label: "调用追踪" },
   { key: "compression", label: "压缩日志" },
 ] as const;
 
@@ -19,7 +19,7 @@ type TabKey = (typeof TABS)[number]["key"];
 /**
  * Observability 页面外壳组件。
  * 顶部 Tab 导航栏 + 条件内容区。
- * 四个 tab 全部接入真实面板：健康仪表盘 / 日志查看器 / Trace 历史 / 压缩日志。
+ * 四个 tab 全部接入真实面板：健康仪表盘 / 日志查看器 / 调用追踪 / 压缩日志。
  */
 export default function ObserveShell() {
   const [activeTab, setActiveTab] = useState<TabKey>("health");
