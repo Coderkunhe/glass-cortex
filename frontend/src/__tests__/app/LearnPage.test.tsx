@@ -231,7 +231,7 @@ describe("LearnPage", () => {
     await renderPage();
 
     // 桌面 + 移动端各有一个搜索框
-    const inputs = screen.getAllByLabelText("搜索问题");
+    const inputs = screen.getAllByLabelText("搜索问题、概念、关键词");
     expect(inputs.length).toBeGreaterThanOrEqual(1);
   });
 

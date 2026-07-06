@@ -178,7 +178,7 @@ describe("QuestionList", () => {
         onSelect={vi.fn()}
       />
     );
-    const searchInput = screen.getByLabelText("搜索问题");
+    const searchInput = screen.getByLabelText("搜索问题、概念、关键词");
 
     // 搜索"超长"→ 只匹配"输出超长处理"
     fireEvent.change(searchInput, { target: { value: "超长" } });
@@ -196,7 +196,7 @@ describe("QuestionList", () => {
         onSelect={vi.fn()}
       />
     );
-    const searchInput = screen.getByLabelText("搜索问题");
+    const searchInput = screen.getByLabelText("搜索问题、概念、关键词");
     fireEvent.change(searchInput, { target: { value: "不存在的查询" } });
 
     expect(screen.getAllByText(/未找到匹配/).length).toBeGreaterThanOrEqual(1);
@@ -210,7 +210,7 @@ describe("QuestionList", () => {
         onSelect={vi.fn()}
       />
     );
-    const searchInput = screen.getByLabelText("搜索问题");
+    const searchInput = screen.getByLabelText("搜索问题、概念、关键词");
     fireEvent.change(searchInput, { target: { value: "超长" } });
 
     // 搜索后应出现清除按钮
@@ -307,7 +307,7 @@ describe("QuestionList", () => {
       fireEvent.click(screen.getByText("已答"));
 
       // Search for "溢出" → q1.1 matches both filter AND search
-      const searchInput = screen.getByLabelText("搜索问题");
+      const searchInput = screen.getByLabelText("搜索问题、概念、关键词");
       fireEvent.change(searchInput, { target: { value: "溢出" } });
 
       expect(screen.getByText("溢出处理策略")).toBeInTheDocument();
@@ -328,7 +328,7 @@ describe("QuestionList", () => {
       fireEvent.click(screen.getByText("已答"));
 
       // Search for something that doesn't match q1.1
-      const searchInput = screen.getByLabelText("搜索问题");
+      const searchInput = screen.getByLabelText("搜索问题、概念、关键词");
       fireEvent.change(searchInput, { target: { value: "事实抽取" } });
 
       expect(screen.getAllByText(/未找到匹配/).length).toBeGreaterThanOrEqual(1);
@@ -523,7 +523,7 @@ describe("QuestionList", () => {
       );
 
       // q1.1 的 L0 是 "三种策略"
-      const searchInput = screen.getByLabelText("搜索问题");
+      const searchInput = screen.getByLabelText("搜索问题、概念、关键词");
       fireEvent.change(searchInput, { target: { value: "三种策略" } });
 
       // 应匹配 q1.1
@@ -544,7 +544,7 @@ describe("QuestionList", () => {
       );
 
       // q1.1 的 L1 是 "详细内容"
-      const searchInput = screen.getByLabelText("搜索问题");
+      const searchInput = screen.getByLabelText("搜索问题、概念、关键词");
       fireEvent.change(searchInput, { target: { value: "详细内容" } });
 
       expect(screen.getByText("溢出处理策略")).toBeInTheDocument();
@@ -566,7 +566,7 @@ describe("QuestionList", () => {
       fireEvent.click(screen.getByText("已答"));
 
       // 搜索 L1 内容 "详细内容"
-      const searchInput = screen.getByLabelText("搜索问题");
+      const searchInput = screen.getByLabelText("搜索问题、概念、关键词");
       fireEvent.change(searchInput, { target: { value: "详细内容" } });
 
       // q1.1 应该同时满足两个条件
@@ -584,7 +584,7 @@ describe("QuestionList", () => {
       );
 
       // 搜索 L0 内容
-      const searchInput = screen.getByLabelText("搜索问题");
+      const searchInput = screen.getByLabelText("搜索问题、概念、关键词");
       fireEvent.change(searchInput, { target: { value: "三种策略" } });
 
       // 应显示字段标签 "L0 结论"（在 snippet 区域）

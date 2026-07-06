@@ -264,10 +264,10 @@ export default function QuestionList({
           ref={searchInputRef}
           type="text"
           className="search-bar-input"
-          placeholder="搜索你想了解的概念…"
+          placeholder="搜索问题、概念、关键词…"
           value={searchQuery}
           onChange={handleSearchChange}
-          aria-label="搜索问题"
+          aria-label="搜索问题、概念、关键词"
         />
         {searchQuery && (
           <button
@@ -304,7 +304,7 @@ export default function QuestionList({
               active={bookmarkFilter}
               onClick={toggleBookmarkFilter}
             >
-              收藏{bookmarks && bookmarks.length > 0 ? ` ${bookmarks.length}` : ''}
+              收藏 {bookmarks.length}
             </FilterChip>
           </>
         )}
