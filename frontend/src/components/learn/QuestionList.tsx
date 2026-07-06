@@ -2,14 +2,6 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import {
-  RiDashboardLine,
-  RiBrainLine,
-  RiTaskLine,
-  RiCoinsLine,
-  RiGitMergeLine,
-  RiTimerLine,
-  RiEyeLine,
-  RiMentalHealthLine,
   RiSearchLine,
   RiCloseLine,
   RiArrowDownSLine,
@@ -24,29 +16,6 @@ import {
   renderSnippetParts,
   FIELD_LABELS,
 } from "@/lib/content/search";
-
-/**
- * Remixicon 组件映射表。
- * 按 Chapter.icon 字符串查找对应图标组件。
- */
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  RiDashboardLine,
-  RiBrainLine,
-  RiTaskLine,
-  RiCoinsLine,
-  RiGitMergeLine,
-  RiTimerLine,
-  RiEyeLine,
-  RiMentalHealthLine,
-};
-
-/** 优先级圆点颜色 */
-const PRIORITY_DOT: Record<string, string> = {
-  P0: "bg-brand",
-  P1: "bg-warning",
-  P2: "bg-info",
-  P3: "bg-text-muted",
-};
 
 export interface QuestionListProps {
   /** 全部章节 */
@@ -359,13 +328,15 @@ export default function QuestionList({
         ) : hasTextSearch && filteredData ? (
           /* 文本搜索模式：展平树，无折叠 */
           filteredData.map(({ chapter, questions }) => {
-            const Icon = ICON_MAP[chapter.icon];
+            const chIdx = chapters.findIndex((c) => c.id === chapter.id);
             return (
               <div key={chapter.id}>
                 <div className="chapter-tree-header">
-                  {Icon && <Icon className="chapter-tree-header-icon" />}
+                  <span className="chapter-tree-header-index">
+                    {chIdx >= 0 ? chIdx + 1 : ""}
+                  </span>
                   <span className="chapter-tree-header-title">
-                    {chapter.shortLabel}
+                    {chapter.title}
                   </span>
                   <span className="chapter-tree-header-count">
                     {questions.length} 问
@@ -421,7 +392,6 @@ export default function QuestionList({
         ) : hasStatusFilter && filteredData ? (
           /* 纯过滤模式：保留树形折叠结构，只显示过滤后的问题 */
           filteredData.map(({ chapter: ch, questions }) => {
-            const Icon = ICON_MAP[ch.icon];
             const isCollapsed = collapsedChapters.has(ch.id);
 
             return (
@@ -431,9 +401,11 @@ export default function QuestionList({
                   className="chapter-tree-header"
                   aria-expanded={!isCollapsed}
                 >
-                  {Icon && <Icon className="chapter-tree-header-icon" />}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-gm-1">
+                      <span className="chapter-tree-header-index">
+                        {chapters.findIndex((c) => c.id === ch.id) + 1}
+                      </span>
                       <span className="chapter-tree-header-title">
                         {ch.title}
                       </span>
@@ -489,8 +461,7 @@ export default function QuestionList({
           })
         ) : (
           /* 正常浏览模式：全树形目录 */
-          visibleChapters.map((ch) => {
-            const Icon = ICON_MAP[ch.icon];
+          visibleChapters.map((ch, chIdx) => {
             const chQuestions = questionsByChapter[ch.id] || [];
             const isCollapsed = collapsedChapters.has(ch.id);
 
@@ -502,9 +473,11 @@ export default function QuestionList({
                   className="chapter-tree-header"
                   aria-expanded={!isCollapsed}
                 >
-                  {Icon && <Icon className="chapter-tree-header-icon" />}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-gm-1">
+                      <span className="chapter-tree-header-index">
+                        {chIdx + 1}
+                      </span>
                       <span className="chapter-tree-header-title">
                         {ch.title}
                       </span>
@@ -613,7 +586,7 @@ function FilterChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`inline-flex items-center px-gm-2 py-gm-0_5 rounded-full text-gm-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none min-h-[44px] ${
+      className={`inline-flex items-center px-gm-2 py-gm-0_5 rounded-gm-md text-gm-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none min-h-[44px] ${
         active
           ? "bg-brand text-white"
           : "bg-surface-alt text-text-muted hover:text-text hover:bg-surface-hover"
@@ -639,7 +612,6 @@ function QuestionItem({
   isBookmarked?: boolean;
 }) {
   const isStub = answer.l0 === "";
-  const dotColor = PRIORITY_DOT[answer.priority] || "bg-text-muted";
 
   return (
     <button
@@ -650,11 +622,6 @@ function QuestionItem({
           : "text-text-secondary"
       }`}
     >
-      {/* 优先级圆点 */}
-      <span
-        className={`mt-gm-0.5 w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`}
-        aria-hidden="true"
-      />
       <div className="flex-1 min-w-0">
         <p
           className={`text-gm-sm leading-snug line-clamp-2 ${isStub ? "text-text-muted" : ""}`}

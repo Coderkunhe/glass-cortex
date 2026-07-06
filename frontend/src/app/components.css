@@ -480,11 +480,14 @@ button:active,
   outline-offset: -2px;
 }
 
-.chapter-tree-header-icon {
-  width: var(--gm-icon-md);
-  height: var(--gm-icon-md);
-  color: var(--gm-brand);
+.chapter-tree-header-index {
+  font-size: var(--gm-text-lg);
+  font-weight: 700;
+  color: var(--gm-text-muted);
   flex-shrink: 0;
+  min-width: 1.2em;
+  text-align: right;
+  line-height: 1;
 }
 
 .chapter-tree-header-title {

@@ -225,7 +225,7 @@ export default function AnswerCard({
     const roots = rootsRef.current;
     return () => {
       roots.forEach((root) => {
-        root.unmount();
+        queueMicrotask(() => root.unmount());
       });
       roots.clear();
     };
