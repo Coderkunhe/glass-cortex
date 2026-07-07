@@ -44,8 +44,8 @@ export default function SessionHarvest() {
   }, []);
 
   useEffect(() => {
-    const id = setTimeout(() => fetchData(), 0);
-    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchData();
   }, [fetchData]);
 
   // 会话时长——useState 惰性初始化，避免 effect setState 警告

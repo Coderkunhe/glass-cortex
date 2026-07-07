@@ -66,8 +66,8 @@ export default function JourneyHistoryBrowser({ onCollapse }: JourneyHistoryBrow
   }, []);
 
   useEffect(() => {
-    const id = setTimeout(() => fetchEpisodes(), 0);
-    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchEpisodes();
   }, [fetchEpisodes]);
 
   // ── Search filter ──────────────────────────────────────────────────
