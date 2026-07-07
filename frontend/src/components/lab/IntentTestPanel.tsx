@@ -136,53 +136,72 @@ export default function IntentTestPanel() {
             </div>
           )}
 
-          {/* 调试区 — 可折叠 */}
-          {data.trace && Object.keys(data.trace).length > 0 && (
-            <CollapsibleSection title="调试详情">
-              <div className="space-y-gm-2">
-                {!!data.trace.system_prompt && (
-                  <details className="ml-gm-2">
-                    <summary className="text-gm-xs text-text-muted/70 cursor-pointer hover:text-text-secondary">
-                      System Prompt
-                    </summary>
-                    <pre className="mt-gm-1 rounded-gm-xs bg-surface-alt p-gm-2 text-gm-xs text-text-secondary overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto">
-                      {String(data.trace.system_prompt)}
-                    </pre>
-                  </details>
-                )}
-                {!!data.trace.raw_response && (
-                  <details className="ml-gm-2">
-                    <summary className="text-gm-xs text-text-muted/70 cursor-pointer hover:text-text-secondary">
-                      Raw Response
-                    </summary>
-                    <pre className="mt-gm-1 rounded-gm-xs bg-surface-alt p-gm-2 text-gm-xs text-text-secondary overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto">
-                      {String(data.trace.raw_response)}
-                    </pre>
-                  </details>
-                )}
-                {!!data.trace.parse_error && (
-                  <div className="ml-gm-2 rounded-gm-xs border border-danger/20 bg-danger/5 p-gm-2">
-                    <span className="text-gm-xs font-medium text-danger">
-                      Parse Error
-                    </span>
-                    <pre className="mt-gm-1 text-gm-xs text-danger/80 whitespace-pre-wrap">
-                      {String(data.trace.parse_error)}
-                    </pre>
-                  </div>
-                )}
-                {!!data.trace.token_usage && (
-                  <details className="ml-gm-2">
-                    <summary className="text-gm-xs text-text-muted/70 cursor-pointer hover:text-text-secondary">
-                      Token Usage
-                    </summary>
-                    <pre className="mt-gm-1 rounded-gm-xs bg-surface-alt p-gm-2 text-gm-xs text-text-secondary overflow-x-auto whitespace-pre-wrap max-h-32 overflow-y-auto">
-                      {JSON.stringify(data.trace.token_usage, null, 2)}
-                    </pre>
-                  </details>
-                )}
-              </div>
-            </CollapsibleSection>
-          )}
+          {/* 分类过程 — 默认展开，trace 为空时展示降级说明 */}
+          <CollapsibleSection title="分类过程" defaultOpen={true}>
+            <div className="space-y-gm-3">
+              {data.trace && Object.keys(data.trace).length > 0 ? (
+                <>
+                  {!!data.trace.user_prompt && (
+                    <div>
+                      <span className="text-gm-xs font-medium text-text-secondary block mb-gm-1">
+                        User Prompt
+                      </span>
+                      <pre className="rounded-gm-xs bg-surface-alt p-gm-2 text-gm-xs text-text-secondary overflow-x-auto whitespace-pre-wrap max-h-32 overflow-y-auto">
+                        {String(data.trace.user_prompt)}
+                      </pre>
+                    </div>
+                  )}
+                  {!!data.trace.system_prompt && (
+                    <div>
+                      <span className="text-gm-xs font-medium text-text-secondary block mb-gm-1">
+                        System Prompt
+                      </span>
+                      <pre className="rounded-gm-xs bg-surface-alt p-gm-2 text-gm-xs text-text-secondary overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto">
+                        {String(data.trace.system_prompt)}
+                      </pre>
+                    </div>
+                  )}
+                  {!!data.trace.raw_response && (
+                    <div>
+                      <span className="text-gm-xs font-medium text-text-secondary block mb-gm-1">
+                        Raw Response
+                      </span>
+                      <pre className="rounded-gm-xs bg-surface-alt p-gm-2 text-gm-xs text-text-secondary overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto">
+                        {String(data.trace.raw_response)}
+                      </pre>
+                    </div>
+                  )}
+                  {!!data.trace.parse_error && (
+                    <div className="rounded-gm-xs border border-danger/20 bg-danger/5 p-gm-2">
+                      <span className="text-gm-xs font-medium text-danger">
+                        Parse Error
+                      </span>
+                      <pre className="mt-gm-1 text-gm-xs text-danger/80 whitespace-pre-wrap">
+                        {String(data.trace.parse_error)}
+                      </pre>
+                    </div>
+                  )}
+                  {!!data.trace.token_usage && (
+                    <div>
+                      <span className="text-gm-xs font-medium text-text-secondary block mb-gm-1">
+                        Token Usage
+                      </span>
+                      <pre className="rounded-gm-xs bg-surface-alt p-gm-2 text-gm-xs text-text-secondary overflow-x-auto whitespace-pre-wrap max-h-32 overflow-y-auto">
+                        {JSON.stringify(data.trace.token_usage, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="rounded-gm-xs bg-warning/5 border border-warning/20 px-gm-3 py-gm-2">
+                  <p className="text-gm-xs text-text-secondary leading-relaxed">
+                    分类过程详情不可用 — LLM API 未配置或调用失败，当前为降级分类结果。
+                    配置 API key 后可查看完整的分类调用链（System Prompt · Raw Response · Token Usage · Parse Error）。
+                  </p>
+                </div>
+              )}
+            </div>
+          </CollapsibleSection>
         </div>
       )}
 

@@ -4,16 +4,14 @@ import { useCallback, type ChangeEvent } from "react";
 
 // ── Constants ─────────────────────────────────────────────────────────
 
-const MIN_WINDOW = 256;
+const MIN_WINDOW = 128;
 const MAX_WINDOW = 8192;
-const STEP = 256;
 
-const PRESETS = [512, 1024, 2048, 4096, 8192] as const;
+const PRESETS = [128, 256, 512, 1024, 2048, 4096] as const;
 
-/** Clamp value to [MIN_WINDOW, MAX_WINDOW] and round to nearest STEP. */
+/** Clamp value to [MIN_WINDOW, MAX_WINDOW]. */
 function clampWindow(raw: number): number {
-  const clamped = Math.max(MIN_WINDOW, Math.min(MAX_WINDOW, raw));
-  return Math.round(clamped / STEP) * STEP;
+  return Math.max(MIN_WINDOW, Math.min(MAX_WINDOW, raw));
 }
 
 function formatPreset(v: number): string {
@@ -40,10 +38,10 @@ export interface WindowSizeInputProps {
 // ── Component ──────────────────────────────────────────────────────────
 
 /**
- * WindowSizeInput — 窗口大小 combo box
+ * WindowSizeInput — 窗口大小自由输入 + 快捷预设
  *
- * 替代 range slider 的数字输入 + 快捷预设按钮组合。
- * 输入自动 clamp 到 [256, 8192] 并圆整到 step=256。
+ * 数字输入 + 快捷预设按钮组合。输入自动 clamp 到 [128, 8192]，
+ * 不做 step 圆整——用户可自由输入任意整数值。
  *
  * 用于 Lab 上下文 Tab 各面板的窗口大小控件。
  */
@@ -80,7 +78,7 @@ export function WindowSizeInput({
           type="number"
           min={MIN_WINDOW}
           max={MAX_WINDOW}
-          step={STEP}
+          step={1}
           value={value}
           onChange={handleChange}
           className="w-28 rounded-gm-xs border border-border bg-surface-elevated

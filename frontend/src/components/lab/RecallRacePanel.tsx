@@ -79,6 +79,9 @@ export default function RecallRacePanel() {
         <span className="text-gm-xs text-text-muted">
           同一查询 → 三条检索路线并排对比
         </span>
+        <span className="inline-flex items-center rounded-full bg-warning/10 border border-warning/20 px-gm-1.5 py-px text-gm-2xs font-medium text-warning">
+          演示数据
+        </span>
       </div>
 
       {/* 固定示例查询 */}

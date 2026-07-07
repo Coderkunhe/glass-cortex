@@ -111,7 +111,7 @@ describe("IntentTestPanel", () => {
     fireEvent.click(screen.getByText("测试分类"));
 
     await waitFor(() => {
-      expect(screen.getByText("调试详情")).toBeInTheDocument();
+      expect(screen.getByText("分类过程")).toBeInTheDocument();
     });
   });
 
@@ -233,7 +233,7 @@ describe("IntentTestPanel", () => {
     fireEvent.click(screen.getByText("测试分类"));
 
     await waitFor(() => {
-      expect(screen.getByText("调试详情")).toBeInTheDocument();
+      expect(screen.getByText("分类过程")).toBeInTheDocument();
     });
     // Token Usage summary label — the details element shows this when data.trace.token_usage is truthy
     expect(screen.getByText("Token Usage")).toBeInTheDocument();
