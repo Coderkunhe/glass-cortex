@@ -417,11 +417,18 @@ function TagCloud({
   const maxC = Math.max(...tags.map((t) => t.max_confidence));
   const range = maxC - minC || 1;
 
+  // ── 即时 tooltip state — 替代原生 title 属性 1-2s 延迟 ──
+  const [tooltipState, setTooltipState] = useState<{
+    x: number;
+    y: number;
+    text: string;
+  } | null>(null);
+
   return (
     <div
       className="flex flex-wrap items-center justify-center
                  gap-x-gm-4 gap-y-gm-2_5 leading-relaxed
-                 min-h-[200px] content-center"
+                 min-h-[200px] content-center relative"
     >
       {tags.map((t, i) => {
         const idx = Math.round(
@@ -437,7 +444,7 @@ function TagCloud({
               ? "text-warning hover:text-warning/80"
               : "text-text-muted hover:text-text-secondary";
 
-        const tooltip = [
+        const tooltipText = [
           t.subject,
           `×${t.fact_count} 条事实`,
           `${t.distinct_objects} 个关联`,
@@ -446,7 +453,6 @@ function TagCloud({
         return (
           <span
             key={`${t.subject}-${t.relation}-${i}`}
-            title={tooltip}
             role="button"
             tabIndex={0}
             onClick={() => onTagClick(t.subject, t.relation)}
@@ -456,6 +462,19 @@ function TagCloud({
                 onTagClick(t.subject, t.relation);
               }
             }}
+            onMouseEnter={(e) =>
+              setTooltipState({
+                x: e.clientX,
+                y: e.clientY,
+                text: tooltipText,
+              })
+            }
+            onMouseMove={(e) =>
+              setTooltipState((prev) =>
+                prev ? { ...prev, x: e.clientX, y: e.clientY } : null,
+              )
+            }
+            onMouseLeave={() => setTooltipState(null)}
             className={`${sizeClass} font-semibold cursor-pointer
                         transition-all duration-200 hover:scale-110
                         ${colorClass}`}
@@ -464,6 +483,21 @@ function TagCloud({
           </span>
         );
       })}
+
+      {/* 即时 tooltip — 替代原生 title 延迟 */}
+      {tooltipState && (
+        <div
+          className="fixed z-50 rounded-gm-sm border border-border-strong
+                     bg-surface-elevated px-gm-2.5 py-gm-1.5
+                     shadow-gm-md pointer-events-none"
+          style={{
+            left: tooltipState.x + 12,
+            top: tooltipState.y - 8,
+          }}
+        >
+          <p className="text-gm-xs text-text">{tooltipState.text}</p>
+        </div>
+      )}
     </div>
   );
 }
