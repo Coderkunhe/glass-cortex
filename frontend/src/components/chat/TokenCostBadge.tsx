@@ -12,6 +12,8 @@
 
 "use client";
 
+import { useState } from "react";
+
 /** 单调用点的 token 用量（镜像 api/routers/chat.py 注入结构） */
 interface TokenUsage {
   prompt_tokens: number;
@@ -89,33 +91,78 @@ export default function TokenCostBadge({
 }: {
   tokenBreakdown?: TokenBreakdown;
 }) {
+  // ── 即时 tooltip state — 替代原生 title 1-2s 延迟 ──
+  // 必须在所有 early return 之前声明，满足 Rules of Hooks
+  const [tooltip, setTooltip] = useState<{
+    x: number;
+    y: number;
+    text: string;
+  } | null>(null);
+
   if (!tokenBreakdown) return null;
 
-  const { totalTokens, cost, hasPricing } = computeCost(tokenBreakdown);
+  const { totalInput, totalOutput, totalTokens, cost, hasPricing } =
+    computeCost(tokenBreakdown);
 
   // 零 token 不渲染（空壳无意义）
   if (totalTokens === 0) return null;
 
+  const tooltipLines: string[] = [];
+  if (hasPricing) {
+    tooltipLines.push(`输入 ${totalInput.toLocaleString()} · 输出 ${totalOutput.toLocaleString()} token`);
+    tooltipLines.push(`合计 ${totalTokens.toLocaleString()} token · 估算成本 ${formatCost(cost)}`);
+  } else {
+    tooltipLines.push(`输入 ${totalInput.toLocaleString()} · 输出 ${totalOutput.toLocaleString()} token`);
+    tooltipLines.push(`合计 ${totalTokens.toLocaleString()} token`);
+  }
+
+  const tooltipText = tooltipLines.join("\n");
+
   return (
-    <span
-      role="status"
-      aria-label="Token 成本"
-      className="inline-flex items-center gap-gm-1 text-gm-xs text-text-muted select-none"
-      data-testid="token-cost-badge"
-      title={
-        hasPricing
-          ? `本轮实际消耗 ${totalTokens.toLocaleString()} token，估算成本 ${formatCost(cost)}`
-          : `本轮实际消耗 ${totalTokens.toLocaleString()} token`
-      }
-    >
-      {hasPricing && (
-        <span className="tabular-nums" data-testid="token-cost-amount">
-          {formatCost(cost)}
+    <>
+      <span
+        role="status"
+        aria-label="Token 成本"
+        className="inline-flex items-center gap-gm-1 text-gm-xs text-text-muted select-none"
+        data-testid="token-cost-badge"
+        onMouseEnter={(e) =>
+          setTooltip({ x: e.clientX, y: e.clientY, text: tooltipText })
+        }
+        onMouseMove={(e) =>
+          setTooltip((prev) =>
+            prev ? { ...prev, x: e.clientX, y: e.clientY } : null,
+          )
+        }
+        onMouseLeave={() => setTooltip(null)}
+      >
+        {hasPricing && (
+          <span className="tabular-nums" data-testid="token-cost-amount">
+            {formatCost(cost)}
+          </span>
+        )}
+        <span className="tabular-nums" data-testid="token-cost-count">
+          {totalTokens.toLocaleString()} token
         </span>
-      )}
-      <span className="tabular-nums" data-testid="token-cost-count">
-        {totalTokens.toLocaleString()} token
       </span>
-    </span>
+
+      {/* 即时 tooltip — 替代原生 title 延迟 */}
+      {tooltip && (
+        <div
+          className="fixed z-50 rounded-gm-sm border border-border-strong
+                     bg-surface-elevated px-gm-2.5 py-gm-1.5
+                     shadow-gm-md pointer-events-none"
+          style={{
+            left: tooltip.x + 12,
+            top: tooltip.y - 8,
+          }}
+        >
+          {tooltip.text.split("\n").map((line, i) => (
+            <p key={i} className="text-gm-xs text-text whitespace-nowrap">
+              {line}
+            </p>
+          ))}
+        </div>
+      )}
+    </>
   );
 }

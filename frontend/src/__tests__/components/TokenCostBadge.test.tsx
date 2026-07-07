@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent } from "@testing-library/react";
 import TokenCostBadge, {
   type TokenBreakdown,
 } from "@/components/chat/TokenCostBadge";
@@ -203,12 +203,40 @@ describe("TokenCostBadge", () => {
     expect(screen.getByTestId("token-cost-amount")).toBeInTheDocument();
   });
 
-  // ── title 属性 ──
+  // ── 即时 tooltip（替代原生 title） ──
 
-  it("sets descriptive title attribute with cost and tokens", () => {
+  it("shows instant tooltip on mouseEnter with input/output breakdown", () => {
     render(<TokenCostBadge tokenBreakdown={minimalBreakdown()} />);
     const badge = screen.getByTestId("token-cost-badge");
-    expect(badge.getAttribute("title")).toContain("250");
-    expect(badge.getAttribute("title")).toContain("≈¥0.0003");
+
+    // 初始无 tooltip
+    expect(document.querySelector(".fixed.z-50")).not.toBeInTheDocument();
+
+    // hover 触发即时 tooltip
+    fireEvent.mouseEnter(badge);
+    const tooltip = document.querySelector(".fixed.z-50");
+    expect(tooltip).toBeInTheDocument();
+    expect(tooltip!.textContent).toContain("200");
+    expect(tooltip!.textContent).toContain("50");
+    expect(tooltip!.textContent).toContain("250");
+    expect(tooltip!.textContent).toContain("≈¥0.0003");
+
+    // mouseLeave 关闭
+    fireEvent.mouseLeave(badge);
+    expect(document.querySelector(".fixed.z-50")).not.toBeInTheDocument();
+  });
+
+  it("shows tooltip without cost when pricing is missing", () => {
+    render(
+      <TokenCostBadge
+        tokenBreakdown={minimalBreakdown({ pricing: undefined })}
+      />,
+    );
+    const badge = screen.getByTestId("token-cost-badge");
+    fireEvent.mouseEnter(badge);
+    const tooltip = document.querySelector(".fixed.z-50");
+    expect(tooltip).toBeInTheDocument();
+    expect(tooltip!.textContent).toContain("250");
+    expect(tooltip!.textContent).not.toContain("¥");
   });
 });

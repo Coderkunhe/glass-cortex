@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import ContextHealthBadge from "@/components/chat/ContextHealthBadge";
 import type { ContextMeta } from "@/lib/api/types";
 
@@ -38,17 +38,33 @@ describe("ContextHealthBadge", () => {
     expect(screen.getByText("紧张")).toBeInTheDocument();
   });
 
-  it("has tooltip with health advice", () => {
+  it("shows instant tooltip with health advice on hover", () => {
     render(<ContextHealthBadge meta={buildMeta({ usage_pct: 30 })} />);
-    const badge = screen.getByTitle(/上下文健康/);
-    expect(badge).toBeInTheDocument();
-    expect(badge.getAttribute("title")).toContain("空间充足");
+    const badge = screen.getByRole("status", { name: "上下文健康状态" });
+
+    // 初始无 tooltip
+    expect(document.querySelector(".fixed.z-50")).not.toBeInTheDocument();
+
+    // hover 触发即时 tooltip
+    fireEvent.mouseEnter(badge);
+    const tooltip = document.querySelector(".fixed.z-50");
+    expect(tooltip).toBeInTheDocument();
+    expect(tooltip!.textContent).toContain("充裕");
+    expect(tooltip!.textContent).toContain("30%");
+    expect(tooltip!.textContent).toContain("空间充足");
+
+    // mouseLeave 关闭
+    fireEvent.mouseLeave(badge);
+    expect(document.querySelector(".fixed.z-50")).not.toBeInTheDocument();
   });
 
-  it("shows warning advice for high usage", () => {
+  it("shows warning advice for high usage on hover", () => {
     render(<ContextHealthBadge meta={buildMeta({ usage_pct: 92 })} />);
-    const badge = screen.getByTitle(/上下文健康/);
-    expect(badge.getAttribute("title")).toContain("满载");
+    const badge = screen.getByRole("status", { name: "上下文健康状态" });
+    fireEvent.mouseEnter(badge);
+    const tooltip = document.querySelector(".fixed.z-50");
+    expect(tooltip!.textContent).toContain("紧张");
+    expect(tooltip!.textContent).toContain("满载");
   });
 
   // ── 边界值 ──
@@ -85,11 +101,14 @@ describe("ContextHealthBadge", () => {
 
   // ── Tooltip 建议 ──
 
-  it("tooltip advice for mid-range '适中' level", () => {
+  it("tooltip shows mid-range advice for '适中' level", () => {
     render(<ContextHealthBadge meta={buildMeta({ usage_pct: 65 })} />);
-    const badge = screen.getByTitle(/上下文健康/);
-    expect(badge.getAttribute("title")).toContain("适中");
-    expect(badge.getAttribute("title")).toContain("使用过半");
+    const badge = screen.getByRole("status", { name: "上下文健康状态" });
+    fireEvent.mouseEnter(badge);
+    const tooltip = document.querySelector(".fixed.z-50");
+    expect(tooltip!.textContent).toContain("适中");
+    expect(tooltip!.textContent).toContain("65%");
+    expect(tooltip!.textContent).toContain("使用过半");
   });
 
   // ── 极端值 ──
