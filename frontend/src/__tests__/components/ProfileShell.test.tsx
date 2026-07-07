@@ -250,7 +250,8 @@ describe("ProfileShell", () => {
     });
 
     // Click delete button for "dev" profile
-    const deleteBtn = screen.getByTitle("删除 dev");
+    // B106 自检补漏 — title 已替换为即时 tooltip，改用 aria-label 选择器
+    const deleteBtn = screen.getByRole("button", { name: "删除 dev" });
     expect(deleteBtn).toBeDefined();
     fireEvent.click(deleteBtn);
 

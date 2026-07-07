@@ -39,6 +39,9 @@ export default function ProfileShell() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<Error | null>(null);
 
+  // B106 自检补漏 — 即时 tooltip 替代 Profile 删除按钮原生 title
+  const [deleteTooltip, setDeleteTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+
   const fetchAll = useCallback(async () => {
     try {
       const [pl, cp, t] = await Promise.all([
@@ -313,7 +316,10 @@ export default function ProfileShell() {
                           className="p-gm-1 rounded-gm-xs text-text-muted
                                      hover:text-danger hover:bg-danger/10
                                      transition-colors"
-                          title={`删除 ${p.name}`}
+                          aria-label={`删除 ${p.name}`}
+                          onMouseEnter={(e) => setDeleteTooltip({ x: e.clientX, y: e.clientY, text: `删除 ${p.name}` })}
+                          onMouseMove={(e) => setDeleteTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                          onMouseLeave={() => setDeleteTooltip(null)}
                         >
                           <RiDeleteBinLine className="w-3_5 h-3_5" />
                         </button>
@@ -368,6 +374,20 @@ export default function ProfileShell() {
         subject={tagDetailSubject ?? ""}
         relation={tagDetailRelation ?? ""}
       />
+      {/* B106 自检补漏 — 即时 tooltip 替代 Profile 删除按钮原生 title */}
+      {deleteTooltip && (
+        <div
+          className="fixed z-50 rounded-gm-sm border border-border-strong
+                     bg-surface-elevated px-gm-2.5 py-gm-1.5
+                     shadow-gm-md pointer-events-none"
+          style={{
+            left: deleteTooltip.x + 12,
+            top: deleteTooltip.y - 8,
+          }}
+        >
+          <p className="text-gm-xs text-text whitespace-nowrap">{deleteTooltip.text}</p>
+        </div>
+      )}
     </div>
   );
 }
