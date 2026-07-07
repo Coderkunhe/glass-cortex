@@ -88,7 +88,7 @@ export default function ProfileCard() {
   // ── 成功态 ──
   return (
     <div
-      className="shrink-0 gm-card-lift rounded-gm-sm bg-surface-elevated
+      className="shrink-0 rounded-gm-sm bg-surface-elevated
                  border border-border p-gm-3"
     >
       {/* 头像 + 名字 */}

@@ -256,9 +256,15 @@ export default function ProfileShell() {
           {/* Profile 列表 */}
           <div className="flex-1 overflow-y-auto px-gm-4 pb-gm-3 space-y-gm-1">
             {profiles.length === 0 ? (
-              <p className="text-gm-sm text-text-muted text-center py-gm-6">
-                暂无 Profile
-              </p>
+              <div className="flex flex-col items-center justify-center flex-1 text-center gap-gm-3 py-gm-8">
+                <RiUserSettingsLine className="w-10 h-10 text-text-muted/40" />
+                <p className="text-gm-sm text-text-muted">
+                  暂无 Profile
+                </p>
+                <p className="text-gm-xs text-text-muted/60">
+                  点击「新建」创建第一个 Profile，实现多身份管理
+                </p>
+              </div>
             ) : (
               profiles.map((p) => {
                 const isCurrent = p.name === currentName;
