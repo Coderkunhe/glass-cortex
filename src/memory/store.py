@@ -838,17 +838,37 @@ class MemoryStore:
         ).fetchall()
         return [dict(row) for row in rows]
 
-    def get_trace_count(self, session_id: str | None = None) -> int:
-        """trace 记录总数。session_id=None 返回所有 session 的总数。"""
+    def get_trace_count(self, session_id: str | None = None, step_name: str | None = None) -> int:
+        """trace 记录总数，可按 session 和/或 step 过滤。
+
+        Args:
+            session_id: 可选，按 session 过滤。
+            step_name: 可选，按步骤名过滤。
+        """
+        conditions: list[str] = []
+        params: list[str] = []
         if session_id is not None:
-            row = self._db.execute(
-                "SELECT COUNT(*) FROM pipeline_trace WHERE session_id = ?",
-                (session_id,),
-            ).fetchone()
+            conditions.append("session_id = ?")
+            params.append(session_id)
+        if step_name is not None:
+            conditions.append("step_name = ?")
+            params.append(step_name)
+        if conditions:
+            where = " WHERE " + " AND ".join(conditions)
         else:
-            row = self._db.execute("SELECT COUNT(*) FROM pipeline_trace").fetchone()
+            where = ""
+        row = self._db.execute(
+            f"SELECT COUNT(*) FROM pipeline_trace{where}", tuple(params)
+        ).fetchone()
         assert row is not None
         return int(row[0])
+
+    def get_trace_steps(self) -> list[str]:
+        """返回 pipeline_trace 表中所有出现过的步骤名（去重、按字母序）。"""
+        rows = self._db.execute(
+            "SELECT DISTINCT step_name FROM pipeline_trace ORDER BY step_name"
+        ).fetchall()
+        return [row[0] for row in rows]
 
     def get_latest_trace(self) -> dict[str, object] | None:
         """返回最近一条 pipeline_trace 记录，无数据时返回 None。

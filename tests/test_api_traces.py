@@ -60,6 +60,44 @@ class TestTraces:
             data = resp.json()
             assert data["count"] == 42
 
+    def test_trace_count_with_step_name(self) -> None:
+        store = MagicMock()
+        store.get_trace_count.return_value = 7
+        engines = build_mock_engines(store=store)
+        with make_client(engines) as client:
+            resp = client.get("/traces/count?step_name=chat")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["count"] == 7
+            assert data["step_name"] == "chat"
+            store.get_trace_count.assert_called_once_with(session_id=None, step_name="chat")
+
+    def test_trace_count_with_session_and_step(self) -> None:
+        store = MagicMock()
+        store.get_trace_count.return_value = 3
+        engines = build_mock_engines(store=store)
+        with make_client(engines) as client:
+            resp = client.get("/traces/count?session_id=s1&step_name=recall")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["count"] == 3
+            assert data["session_id"] == "s1"
+            assert data["step_name"] == "recall"
+            store.get_trace_count.assert_called_once_with(session_id="s1", step_name="recall")
+
+    def test_trace_steps(self) -> None:
+        store = MagicMock()
+        store.get_trace_steps.return_value = ["chat", "fact_extraction", "recall", "store"]
+        engines = build_mock_engines(store=store)
+        with make_client(engines) as client:
+            resp = client.get("/traces/steps")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert isinstance(data, list)
+            assert "chat" in data
+            assert "store" in data
+            assert len(data) == 4
+
     def test_delete_old_traces(self) -> None:
         store = MagicMock()
         store.delete_old_traces.return_value = 15

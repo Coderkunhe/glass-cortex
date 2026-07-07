@@ -400,6 +400,14 @@ class TestCompressMessage:
         # compression_savings 记录（原文远长于压缩结果）
         assert "compression_savings" in s
         assert s["compression_savings"]["prompt_tokens"] > 0
+
+        # 验证 pipeline_trace 写入
+        traces = engine._store.get_traces_by_step("compression")
+        assert len(traces) >= 1
+        comp_trace = traces[0]
+        assert comp_trace["step_name"] == "compression"
+        assert comp_trace["status"] == "ok"
+        assert cast("float", comp_trace["elapsed_ms"]) >= 0
         assert s["compression_savings"]["completion_tokens"] == 0
 
     def test_compress_no_ledger_no_error(self, engine: ChatEngine) -> None:
@@ -677,3 +685,31 @@ class TestSessionIdPassthrough:
         episodes = store.get_episodes([eid])
         assert len(episodes) == 1
         assert episodes[0].get("session_id") == "pipeline-sess"
+
+    def test_generate_and_store_writes_pipeline_traces(self, store: MemoryStore) -> None:
+        """generate_and_store 将 chat + store 两步写入 pipeline_trace 表。"""
+        idx = IndexManager()
+        engine = ChatEngine(store, idx, _dummy_embed)
+
+        mock_client = MagicMock()
+        mock_choice = MagicMock()
+        mock_choice.message.content = "trace-test"
+        mock_client.chat.completions.create.return_value = MagicMock(
+            choices=[mock_choice],
+            usage=MagicMock(prompt_tokens=30, completion_tokens=10),
+        )
+        engine._client = mock_client
+
+        recalled: list[dict[str, object]] = [{"content": "hello", "initial_strength": 0.5}]
+        engine.generate_and_store("hi", recalled, session_id="trace-sess")
+
+        traces = store.get_traces(session_id="trace-sess")
+        assert len(traces) >= 2
+
+        step_names = {t["step_name"] for t in traces}
+        assert "chat" in step_names
+        assert "store" in step_names
+
+        for t in traces:
+            assert t["status"] == "ok"
+            assert t["session_id"] == "trace-sess"

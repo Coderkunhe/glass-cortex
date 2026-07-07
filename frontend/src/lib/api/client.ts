@@ -181,9 +181,12 @@ export const api = {
   getTracesByStep: (stepName: string, limit = 200) =>
     request<TraceItem[]>(`/traces/by-step${buildQuery({ step_name: stepName, limit })}`),
 
-  /** Count traces, optionally by session */
-  getTraceCount: (sessionId?: string) =>
-    request<TraceCountResponse>(`/traces/count${buildQuery({ session_id: sessionId })}`),
+  /** Count traces, optionally by session and/or step name */
+  getTraceCount: (sessionId?: string, stepName?: string) =>
+    request<TraceCountResponse>(`/traces/count${buildQuery({ session_id: sessionId, step_name: stepName })}`),
+
+  /** List distinct step names appearing in traces */
+  getTraceSteps: () => request<string[]>("/traces/steps"),
 
   /** Delete oldest traces beyond retention limit */
   deleteOldTraces: (body: DeleteTracesRequest) =>

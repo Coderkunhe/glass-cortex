@@ -141,7 +141,7 @@ class FactExtractor:
                     fact_state_hash,
                     {"triples": triples, "api_trace": api_trace},
                 )
-            except APIError, RuntimeError, OSError, ValueError:
+            except (APIError, RuntimeError, OSError, ValueError):  # fmt: skip
                 logger.warning("事实抽取 API 调用失败", extra={"component": "fact_extraction"})
                 trace["status"] = "error"
                 return [], trace
@@ -277,7 +277,7 @@ class FactExtractor:
                     ],
                     True,
                 )
-        except json.JSONDecodeError, TypeError, KeyError:
+        except (json.JSONDecodeError, TypeError, KeyError):  # fmt: skip
             pass
         return [], False
 

@@ -32,6 +32,7 @@ export interface TraceItem {
 export interface TraceCountResponse {
   count: number;
   session_id: string | null;
+  step_name: string | null;
 }
 
 /** POST /traces/delete-old 请求 */

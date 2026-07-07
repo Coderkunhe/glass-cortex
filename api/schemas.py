@@ -520,6 +520,7 @@ class TraceCountResponse(BaseModel):
 
     count: int
     session_id: str | None = None
+    step_name: str | None = None
 
 
 class DeleteTracesRequest(BaseModel):

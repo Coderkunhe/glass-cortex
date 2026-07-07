@@ -469,8 +469,20 @@ class ChatEngine:
                 "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
                 "completion_tokens": response.usage.completion_tokens if response.usage else 0,
             }
+            self._store.insert_trace(
+                session_id="",
+                step_name="compression",
+                elapsed_ms=elapsed_ms,
+                status="ok",
+                metrics={
+                    "original_len": len(content),
+                    "compressed_len": len(compressed),
+                    "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
+                    "completion_tokens": response.usage.completion_tokens if response.usage else 0,
+                },
+            )
             return compressed, api_trace
-        except APIError, RuntimeError:
+        except (APIError, RuntimeError):  # fmt: skip
             logger.warning("消息压缩失败，降级为截断", extra={"component": "compress"})
             return content[:200] + "...", {}
 
@@ -498,7 +510,7 @@ class ChatEngine:
         skip_fact_extraction: bool = False,
         session_id: str | None = None,
     ) -> tuple[str, int, dict[str, object], dict[str, object]]:
-        """生成 LLM 回复 + 存储 + 可选事实抽取。
+        """生成 LLM 回复 + 存储 + 可选事实抽取 + 管线 trace 持久化。
 
         Args:
             user_input: 用户消息文本。
@@ -514,6 +526,8 @@ class ChatEngine:
         Returns:
             (response_text, episode_id, context_meta, api_trace)。
         """
+        sid = session_id or ""
+        # ── Step 1: 聊天引擎 ──
         response_text, context_meta, api_trace = self.generate(
             user_input,
             recalled,
@@ -524,17 +538,63 @@ class ChatEngine:
             max_tokens=max_tokens,
             two_stage=two_stage,
         )
-        eid = self.store_response(response_text, session_id=session_id)
+        self._store.insert_trace(
+            session_id=sid,
+            step_name="chat",
+            elapsed_ms=cast("float", api_trace.get("elapsed_ms", 0)),
+            status="ok",
+            metrics={
+                k: v
+                for k, v in api_trace.items()
+                if k
+                in (
+                    "model",
+                    "prompt_tokens",
+                    "completion_tokens",
+                    "temperature",
+                    "max_tokens",
+                )
+            },
+        )
 
-        # 事实抽取（可选，无 FactExtractor 或降级跳过时静默跳过）
+        # ── Step 2: 记忆存储 ──
+        t0_store = time.time()
+        eid = self.store_response(response_text, session_id=session_id)
+        store_elapsed = round((time.time() - t0_store) * 1000, 1)
+        self._store.insert_trace(
+            session_id=sid,
+            step_name="store",
+            elapsed_ms=store_elapsed,
+            status="ok",
+            metrics={"episode_id": eid},
+        )
+
+        # ── Step 3: 事实抽取（可选）──
         if self._fact_extractor is not None and not skip_fact_extraction:
+            t0_fact = time.time()
             try:
                 _, fact_trace = self._fact_extractor.extract_and_store(
                     user_input, response_text, eid
                 )
                 context_meta["fact_extraction_trace"] = fact_trace
-            except APIError, RuntimeError, ValueError:
+                self._store.insert_trace(
+                    session_id=sid,
+                    step_name="fact_extraction",
+                    elapsed_ms=round((time.time() - t0_fact) * 1000, 1),
+                    status="ok",
+                    metrics=(
+                        fact_trace if isinstance(fact_trace, dict) else {"trace": str(fact_trace)}
+                    ),
+                )
+            except (APIError, RuntimeError, ValueError):  # fmt: skip
                 logger.warning("事实抽取失败", extra={"component": "chat"})
+                self._store.insert_trace(
+                    session_id=sid,
+                    step_name="fact_extraction",
+                    elapsed_ms=round((time.time() - t0_fact) * 1000, 1),
+                    status="error",
+                    metrics={},
+                )
         elif skip_fact_extraction and self._fact_extractor is not None:
             logger.info(
                 "事实抽取已降级跳过",

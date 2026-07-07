@@ -38,7 +38,7 @@ def run(profile: str = "default") -> None:
         while True:
             try:
                 user_input = console.input("\n[bold cyan]你 > [/bold cyan]").strip()
-            except EOFError, KeyboardInterrupt:
+            except (EOFError, KeyboardInterrupt):  # fmt: skip
                 console.print("\n[dim]再见。[/dim]")
                 break
 

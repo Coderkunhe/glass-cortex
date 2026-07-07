@@ -329,6 +329,6 @@ class ExperimentRunner:
         finally:
             try:
                 idx.save(str(iso_settings.resolved_index_path))
-            except OSError, RuntimeError:
+            except (OSError, RuntimeError):  # fmt: skip
                 pass
             store.close()

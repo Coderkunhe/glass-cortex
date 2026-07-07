@@ -5,7 +5,7 @@ Trace 由引擎持久化到 pipeline_trace 表，此处作为只读可观测性�
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, Query
 
@@ -44,16 +44,27 @@ def list_traces_by_step(
     return [_row_to_trace_item(r) for r in rows]
 
 
+@router.get("/steps", response_model=list[str])
+def list_trace_steps(
+    engines: Any = EnginesDep,
+) -> list[str]:
+    """列出所有出现过的步骤名（去重、按字母序），供前端过滤下拉使用。"""
+    store, *_ = engines
+    return cast("list[str]", store.get_trace_steps())
+
+
 @router.get("/count", response_model=TraceCountResponse)
 def trace_count(
     engines: Any = EnginesDep,
     session_id: str | None = Query(None),
+    step_name: str | None = Query(None, description="Filter by step name"),
 ) -> TraceCountResponse:
-    """统计管线追踪记录数，可选按会话过滤。"""
+    """统计管线追踪记录数，可选按会话和/或步骤过滤。"""
     store, *_ = engines
     return TraceCountResponse(
-        count=store.get_trace_count(session_id=session_id),
+        count=store.get_trace_count(session_id=session_id, step_name=step_name),
         session_id=session_id,
+        step_name=step_name,
     )
 
 
@@ -77,7 +88,7 @@ def _row_to_trace_item(row: dict[str, object]) -> TraceItem:
 
         try:
             metrics = json.loads(raw_metrics)
-        except json.JSONDecodeError, TypeError:
+        except (json.JSONDecodeError, TypeError):  # fmt: skip
             pass
     elif isinstance(raw_metrics, dict):
         metrics = raw_metrics
