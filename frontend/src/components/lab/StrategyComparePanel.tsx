@@ -96,7 +96,7 @@ export default function StrategyComparePanel() {
       </div>
 
       {/* 表单区 */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-gm-3 mb-gm-4">
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-gm-3 mb-gm-4">
         <div>
           <label className="text-gm-xs font-medium text-text-secondary block mb-gm-1">
             窗口大小: {windowSize} tokens

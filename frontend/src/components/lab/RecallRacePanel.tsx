@@ -94,7 +94,7 @@ export default function RecallRacePanel() {
         {ROUTES.map((route) => (
           <div
             key={route.key}
-            className={`rounded-gm-sm border-2 p-gm-4 ${
+            className={`h-full flex flex-col rounded-gm-sm border-2 p-gm-4 ${
               route.key === "hybrid"
                 ? "border-brand/40 bg-brand/[0.03] ring-1 ring-brand/30"
                 : "border-border bg-surface-alt"
@@ -155,7 +155,7 @@ export default function RecallRacePanel() {
             </div>
 
             {/* 示例结果 */}
-            <div className="border-t border-border-light pt-gm-2">
+            <div className="border-t border-border-light pt-gm-2 mt-auto">
               <span className="text-gm-xs font-medium text-text-muted block mb-gm-1.5">
                 本查询结果示例
               </span>

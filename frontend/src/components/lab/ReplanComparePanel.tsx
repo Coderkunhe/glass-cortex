@@ -125,7 +125,7 @@ function PlanColumn({
 
   return (
     <div
-      className={`rounded-gm-sm border-2 p-gm-4 ${borderColor} ${bgAccent}`}
+      className={`h-full rounded-gm-sm border-2 p-gm-4 ${borderColor} ${bgAccent}`}
     >
       {/* 列标签 */}
       <span
@@ -375,7 +375,7 @@ export default function ReplanComparePanel() {
       {phase === "compare" && original && revised && (
         <>
           {/* 三列对比 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-gm-4 mb-gm-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-gm-4 mb-gm-5 items-stretch">
             {/* 左列：原始计划 */}
             <PlanColumn plan={original} label="较旧计划" side="left" />
 
