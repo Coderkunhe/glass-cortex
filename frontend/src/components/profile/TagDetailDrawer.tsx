@@ -18,6 +18,8 @@ import {
 import { api } from "@/lib/api/client";
 import type { TagDetailResponse } from "@/lib/api/types";
 import { fmtTimestamp } from "@/lib/formatTime";
+import { getConfidenceTier } from "@/lib/confidence";
+import type { ConfidenceTier } from "@/lib/confidence";
 
 /** 抽屉滑入动画参数。duration=600ms 与 ProcessDrawer 对齐（--gm-duration-drawer-slow）。 */
 
@@ -85,9 +87,9 @@ export default function TagDetailDrawer({
     }
   }, [subject, relation]);
 
-  /** 纠正事实 — 降低置信度 0.3，reason="user_correction"。 */
-  const handleCorrect = useCallback(
-    async (factId: number) => {
+  /** 通用置信度变更操作 — handleCorrect/handleStar 共享逻辑。 */
+  const mutateConfidence = useCallback(
+    async (factId: number, delta: number, reason: string, errorMsg: string) => {
       setMutating((prev) => new Set(prev).add(factId));
       setMutationErrors((prev) => {
         const next = new Map(prev);
@@ -95,13 +97,10 @@ export default function TagDetailDrawer({
         return next;
       });
       try {
-        await api.updateFactConfidence(factId, {
-          delta: -0.3,
-          reason: "user_correction",
-        });
+        await api.updateFactConfidence(factId, { delta, reason });
         await fetchDetail();
       } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "纠正失败";
+        const msg = e instanceof Error ? e.message : errorMsg;
         setMutationErrors((prev) => new Map(prev).set(factId, msg));
         errorTimers.current.set(
           factId,
@@ -122,52 +121,34 @@ export default function TagDetailDrawer({
       }
     },
     [fetchDetail],
+  );
+
+  /** 纠正事实 — 降低置信度 0.3，reason="user_correction"。 */
+  const handleCorrect = useCallback(
+    (factId: number) => mutateConfidence(factId, -0.3, "user_correction", "纠正失败"),
+    [mutateConfidence],
   );
 
   /** 加星事实 — 提升置信度 0.2，reason="user_star"。 */
   const handleStar = useCallback(
-    async (factId: number) => {
-      setMutating((prev) => new Set(prev).add(factId));
-      setMutationErrors((prev) => {
-        const next = new Map(prev);
-        next.delete(factId);
-        return next;
-      });
-      try {
-        await api.updateFactConfidence(factId, {
-          delta: 0.2,
-          reason: "user_star",
-        });
-        await fetchDetail();
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "加星失败";
-        setMutationErrors((prev) => new Map(prev).set(factId, msg));
-        errorTimers.current.set(
-          factId,
-          setTimeout(() => {
-            setMutationErrors((prev) => {
-              const next = new Map(prev);
-              next.delete(factId);
-              return next;
-            });
-          }, 3000),
-        );
-      } finally {
-        setMutating((prev) => {
-          const next = new Set(prev);
-          next.delete(factId);
-          return next;
-        });
-      }
-    },
-    [fetchDetail],
+    (factId: number) => mutateConfidence(factId, 0.2, "user_star", "加星失败"),
+    [mutateConfidence],
   );
 
-  // 打开时加载标签详情（通过 setTimeout 避免同步 setState 触发 React 19 警告）
+  // 打开时加载标签详情
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 对标 B89 消除模式，抽屉打开时同步触发加载
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 抽屉打开时同步触发加载，fetchDetail 含 setState
     if (isOpen) fetchDetail();
   }, [isOpen, fetchDetail]);
+
+  // 卸载时清理所有 error timer，防止在已卸载组件上 setState
+  useEffect(() => {
+    const timers = errorTimers.current;
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
 
   // ── 工具函数 ──
 
@@ -189,12 +170,13 @@ export default function TagDetailDrawer({
     });
   };
 
-  /** 置信度 → 颜色档位。与 TagCloud 规则一致：>0.7 success / >0.4 warning / ≤0.4 muted。 */
-  const confidenceBadgeClass = (c: number) => {
-    if (c > 0.7) return "text-success bg-success/10 border-success/20";
-    if (c > 0.4) return "text-warning bg-warning/10 border-warning/20";
-    return "text-text-muted bg-surface-lowered border-border";
+  /** 置信度 → badge 颜色。档位映射由共享 getConfidenceTier 判定，threshold 不再本地重复。 */
+  const BADGE_COLORS: Record<ConfidenceTier, string> = {
+    high: "text-success bg-success/10 border-success/20",
+    medium: "text-warning bg-warning/10 border-warning/20",
+    low: "text-text-muted bg-surface-lowered border-border",
   };
+  const confidenceBadgeClass = (c: number) => BADGE_COLORS[getConfidenceTier(c)];
 
   const showData = !loading && !error && data && data.facts.length > 0;
   const showEmpty = !loading && !error && data && data.facts.length === 0;
@@ -205,11 +187,7 @@ export default function TagDetailDrawer({
         {/* ═══ Header ═══ */}
         <div
           className="shrink-0 flex items-center justify-between
-                     px-gm-5 py-gm-4"
-          style={{
-            background: "var(--gm-surface-elevated)",
-            borderBottom: "1px solid var(--gm-border)",
-          }}
+                     px-gm-5 py-gm-4 bg-surface-elevated border-b border-border"
         >
           <div className="flex items-center gap-gm-2 min-w-0">
             <RiInformationLine className="w-5 h-5 text-brand shrink-0" />
@@ -298,8 +276,8 @@ export default function TagDetailDrawer({
               {/* Sub-header 统计 */}
               <div
                 className="shrink-0 flex items-center gap-gm-4 px-gm-5
-                           py-gm-2_5 text-gm-xs text-text-muted"
-                style={{ borderBottom: "1px solid var(--gm-border)" }}
+                           py-gm-2_5 text-gm-xs text-text-muted
+                           border-b border-border"
               >
                 <span>
                   主体:{" "}

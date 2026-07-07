@@ -8,6 +8,9 @@ import {
   RiCheckLine,
 } from "@remixicon/react";
 import { api } from "@/lib/api/client";
+import { fmtNum } from "@/lib/formatNum";
+import { getConfidenceTier } from "@/lib/confidence";
+import type { ConfidenceTier } from "@/lib/confidence";
 import type {
   ProfileInfo,
   ProfileListResponse,
@@ -399,7 +402,7 @@ function StatChip({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="flex items-baseline gap-gm-1_5">
       <span className="text-gm-2xl font-bold text-text tabular-nums">
-        {typeof value === "number" ? value.toLocaleString() : value}
+        {typeof value === "number" ? fmtNum(value) : value}
       </span>
       <span className="text-gm-xs text-text-muted">{label}</span>
     </div>
@@ -457,12 +460,13 @@ function TagCloud({
         const sizeClass = FONT_SIZES[Math.min(idx, FONT_SIZES.length - 1)];
 
         const c = t.max_confidence;
-        const colorClass =
-          c > 0.7
-            ? "text-success hover:text-success/80"
-            : c > 0.4
-              ? "text-warning hover:text-warning/80"
-              : "text-text-muted hover:text-text-secondary";
+        const tier = getConfidenceTier(c);
+        const TAG_COLORS: Record<ConfidenceTier, string> = {
+          high: "text-success hover:text-success/80",
+          medium: "text-warning hover:text-warning/80",
+          low: "text-text-muted hover:text-text-secondary",
+        };
+        const colorClass = TAG_COLORS[tier];
 
         const tooltipText = [
           t.subject,
@@ -548,7 +552,4 @@ function Skeleton() {
     </>
   );
 }
-
-// ── 工具函数 ──
-
 
