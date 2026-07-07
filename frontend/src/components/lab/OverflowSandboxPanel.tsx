@@ -169,6 +169,13 @@ export default function OverflowSandboxPanel() {
   const [windowSize, setWindowSize] = useState(4096);
   const [userInput, setUserInput] = useState("");
 
+  // ── 即时 tooltip state — 替代原生 title 属性延迟 ──
+  const [tooltipState, setTooltipState] = useState<{
+    x: number;
+    y: number;
+    text: string;
+  } | null>(null);
+
   const currentPreset = PRESETS[presetIndex];
   const items = currentPreset.items;
 
@@ -275,7 +282,19 @@ export default function OverflowSandboxPanel() {
               </div>
               <div
                 className="px-gm-2 py-gm-1 text-text-secondary truncate"
-                title={item.content}
+                onMouseEnter={(e) =>
+                  setTooltipState({
+                    x: e.clientX,
+                    y: e.clientY,
+                    text: item.content,
+                  })
+                }
+                onMouseMove={(e) =>
+                  setTooltipState((prev) =>
+                    prev ? { ...prev, x: e.clientX, y: e.clientY } : null,
+                  )
+                }
+                onMouseLeave={() => setTooltipState(null)}
               >
                 {item.content}
               </div>
@@ -401,7 +420,19 @@ export default function OverflowSandboxPanel() {
                         </span>
                         <span
                           className="truncate text-text-secondary"
-                          title={item.content}
+                          onMouseEnter={(e) =>
+                            setTooltipState({
+                              x: e.clientX,
+                              y: e.clientY,
+                              text: item.content,
+                            })
+                          }
+                          onMouseMove={(e) =>
+                            setTooltipState((prev) =>
+                              prev ? { ...prev, x: e.clientX, y: e.clientY } : null,
+                            )
+                          }
+                          onMouseLeave={() => setTooltipState(null)}
                         >
                           {item.content}
                         </span>
@@ -414,7 +445,19 @@ export default function OverflowSandboxPanel() {
                           <div
                             key={s.key}
                             className={`px-gm-2 py-gm-1 text-center ${cellClassName} flex items-center justify-center gap-gm-1`}
-                            title={`${s.label}: ${label}`}
+                            onMouseEnter={(e) =>
+                              setTooltipState({
+                                x: e.clientX,
+                                y: e.clientY,
+                                text: `${s.label}: ${label}`,
+                              })
+                            }
+                            onMouseMove={(e) =>
+                              setTooltipState((prev) =>
+                                prev ? { ...prev, x: e.clientX, y: e.clientY } : null,
+                              )
+                            }
+                            onMouseLeave={() => setTooltipState(null)}
                           >
                             <Icon className="w-3.5 h-3.5" />
                             <span className="text-gm-xs hidden sm:inline">
@@ -498,6 +541,21 @@ export default function OverflowSandboxPanel() {
           </div>
         )}
       </DataState>
+
+      {/* 即时 tooltip — 替代原生 title 延迟 */}
+      {tooltipState && (
+        <div
+          className="fixed z-50 rounded-gm-sm border border-border-strong
+                     bg-surface-elevated px-gm-2.5 py-gm-1.5
+                     shadow-gm-md pointer-events-none max-w-xs"
+          style={{
+            left: tooltipState.x + 12,
+            top: tooltipState.y - 8,
+          }}
+        >
+          <p className="text-gm-xs text-text break-words">{tooltipState.text}</p>
+        </div>
+      )}
     </section>
   );
 }

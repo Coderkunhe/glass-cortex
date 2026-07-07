@@ -34,6 +34,13 @@ export default function OverflowSimPanel() {
   const [windowSize, setWindowSize] = useState(4096);
   const [userInput, setUserInput] = useState("");
 
+  // ── 即时 tooltip state — 替代原生 title 属性延迟 ──
+  const [tooltipState, setTooltipState] = useState<{
+    x: number;
+    y: number;
+    text: string;
+  } | null>(null);
+
   const fetchSimulation = useCallback(async () => {
     setState("loading");
     setError(null);
@@ -199,7 +206,21 @@ export default function OverflowSimPanel() {
                     <li
                       key={i}
                       className="text-gm-xs text-text-secondary bg-surface-alt rounded-gm-xs px-gm-2 py-gm-1 truncate"
-                      title={typeof item.content === "string" ? item.content : undefined}
+                      onMouseEnter={(e) =>
+                        setTooltipState({
+                          x: e.clientX,
+                          y: e.clientY,
+                          text: typeof item.content === "string"
+                            ? item.content
+                            : String(item.content),
+                        })
+                      }
+                      onMouseMove={(e) =>
+                        setTooltipState((prev) =>
+                          prev ? { ...prev, x: e.clientX, y: e.clientY } : null,
+                        )
+                      }
+                      onMouseLeave={() => setTooltipState(null)}
                     >
                       {typeof item.content === "string"
                         ? item.content.slice(0, 80)
@@ -237,6 +258,21 @@ export default function OverflowSimPanel() {
       )}
 
       </DataState>
+
+      {/* 即时 tooltip — 替代原生 title 延迟 */}
+      {tooltipState && (
+        <div
+          className="fixed z-50 rounded-gm-sm border border-border-strong
+                     bg-surface-elevated px-gm-2.5 py-gm-1.5
+                     shadow-gm-md pointer-events-none max-w-xs"
+          style={{
+            left: tooltipState.x + 12,
+            top: tooltipState.y - 8,
+          }}
+        >
+          <p className="text-gm-xs text-text break-words">{tooltipState.text}</p>
+        </div>
+      )}
     </section>
   );
 }

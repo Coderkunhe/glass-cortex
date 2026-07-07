@@ -41,6 +41,13 @@ export default function TokenDashboardPanel() {
   const [data, setData] = useState<TokenSummary | null>(null);
   const [error, setError] = useState<Error | string | null>(null);
 
+  // ── 即时 tooltip state — 替代原生 title 属性延迟 ──
+  const [tooltipState, setTooltipState] = useState<{
+    x: number;
+    y: number;
+    text: string;
+  } | null>(null);
+
   const fetchTokens = useCallback(async () => {
     setState("loading");
     setError(null);
@@ -150,13 +157,37 @@ export default function TokenDashboardPanel() {
                   <div
                     className={`${colors.prompt} transition-all`}
                     style={{ width: `${Math.max(promptPct, 2)}%` }}
-                    title={`输入: ${fmtNum(usage.prompt_tokens)} tokens`}
+                    onMouseEnter={(e) =>
+                      setTooltipState({
+                        x: e.clientX,
+                        y: e.clientY,
+                        text: `输入: ${fmtNum(usage.prompt_tokens)} tokens`,
+                      })
+                    }
+                    onMouseMove={(e) =>
+                      setTooltipState((prev) =>
+                        prev ? { ...prev, x: e.clientX, y: e.clientY } : null,
+                      )
+                    }
+                    onMouseLeave={() => setTooltipState(null)}
                   />
                   {/* completion 段 */}
                   <div
                     className={`${colors.completion} transition-all`}
                     style={{ width: `${Math.max(completionPct, 2)}%` }}
-                    title={`输出: ${fmtNum(usage.completion_tokens)} tokens`}
+                    onMouseEnter={(e) =>
+                      setTooltipState({
+                        x: e.clientX,
+                        y: e.clientY,
+                        text: `输出: ${fmtNum(usage.completion_tokens)} tokens`,
+                      })
+                    }
+                    onMouseMove={(e) =>
+                      setTooltipState((prev) =>
+                        prev ? { ...prev, x: e.clientX, y: e.clientY } : null,
+                      )
+                    }
+                    onMouseLeave={() => setTooltipState(null)}
                   />
                 </div>
                 <div className="flex gap-gm-3 mt-gm-0.5">
@@ -173,6 +204,21 @@ export default function TokenDashboardPanel() {
         </div>
       )}
       </DataState>
+
+      {/* 即时 tooltip — 替代原生 title 延迟 */}
+      {tooltipState && (
+        <div
+          className="fixed z-50 rounded-gm-sm border border-border-strong
+                     bg-surface-elevated px-gm-2.5 py-gm-1.5
+                     shadow-gm-md pointer-events-none"
+          style={{
+            left: tooltipState.x + 12,
+            top: tooltipState.y - 8,
+          }}
+        >
+          <p className="text-gm-xs text-text">{tooltipState.text}</p>
+        </div>
+      )}
     </section>
   );
 }
