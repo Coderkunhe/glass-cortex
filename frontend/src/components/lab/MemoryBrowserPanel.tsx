@@ -226,7 +226,7 @@ export default function MemoryBrowserPanel() {
       {(currentState === "success" ||
         (isEpisodes ? epData.length > 0 : fctData.length > 0)) && (
         <div className="relative mb-gm-3">
-          <RiSearchLine className="absolute left-gm-2 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted/50" />
+          <RiSearchLine className="absolute left-gm-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted/70" />
           <input
             type="text"
             placeholder={isEpisodes ? "搜索记忆流…" : "搜索知识碎片…"}
@@ -236,7 +236,7 @@ export default function MemoryBrowserPanel() {
                 ? setEpSearch(e.target.value)
                 : setFctSearch(e.target.value)
             }
-            className="w-full rounded-gm-sm border border-border bg-surface pl-gm-7 pr-gm-3 py-gm-1.5 text-gm-xs text-text placeholder:text-text-muted/50 focus:outline-none focus:border-info/50"
+            className="w-full rounded-gm-sm border border-border bg-surface pl-gm-8 pr-gm-3 py-gm-1.5 text-gm-xs text-text placeholder:text-text-muted/50 focus:outline-none focus:border-info/50"
           />
         </div>
       )}
@@ -265,18 +265,29 @@ export default function MemoryBrowserPanel() {
                   key={ep.id}
                   className="rounded-gm-sm border border-border/50 hover:bg-surface-alt/50 transition-colors"
                 >
-                  <div className="flex items-center gap-gm-2 p-gm-3">
-                    <button
-                      onClick={() => toggleSetItem(setExpandedEpIds, ep.id)}
-                      title="展开详情"
-                      className="text-text-muted hover:text-text transition-colors shrink-0"
+                  <div
+                    className="flex items-center gap-gm-2 p-gm-3 cursor-pointer"
+                    onClick={() => toggleSetItem(setExpandedEpIds, ep.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggleSetItem(setExpandedEpIds, ep.id);
+                      }
+                    }}
+                    aria-expanded={isExpanded}
+                  >
+                    <span
+                      className="text-text-muted transition-colors shrink-0"
+                      aria-hidden="true"
                     >
                       {isExpanded ? (
                         <RiArrowDownSLine className="w-4 h-4" />
                       ) : (
                         <RiArrowRightSLine className="w-4 h-4" />
                       )}
-                    </button>
+                    </span>
                     <span className="text-gm-xs text-text-secondary line-clamp-2 flex-1">
                       {ep.content}
                     </span>
@@ -391,18 +402,29 @@ export default function MemoryBrowserPanel() {
                   key={f.id}
                   className="rounded-gm-sm border border-border/50 hover:bg-surface-alt/50 transition-colors"
                 >
-                  <div className="flex items-center gap-gm-2 p-gm-3">
-                    <button
-                      onClick={() => toggleSetItem(setExpandedFctIds, f.id)}
-                      title="展开详情"
-                      className="text-text-muted hover:text-text transition-colors shrink-0"
+                  <div
+                    className="flex items-center gap-gm-2 p-gm-3 cursor-pointer"
+                    onClick={() => toggleSetItem(setExpandedFctIds, f.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggleSetItem(setExpandedFctIds, f.id);
+                      }
+                    }}
+                    aria-expanded={isExpanded}
+                  >
+                    <span
+                      className="text-text-muted transition-colors shrink-0"
+                      aria-hidden="true"
                     >
                       {isExpanded ? (
                         <RiArrowDownSLine className="w-4 h-4" />
                       ) : (
                         <RiArrowRightSLine className="w-4 h-4" />
                       )}
-                    </button>
+                    </span>
                     <span className="text-gm-xs text-text-secondary line-clamp-2 flex-1">
                       {f.content}
                     </span>

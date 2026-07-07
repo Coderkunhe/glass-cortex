@@ -138,9 +138,9 @@ describe("MemoryBrowserPanel", () => {
       expect(screen.getByText("用户喜欢 Python 编程")).toBeInTheDocument();
     });
 
-    // 点击展开第一个 episode
-    const expandBtns = screen.getAllByTitle("展开详情");
-    fireEvent.click(expandBtns[0]);
+    // 点击展开第一个 episode（整行可点击，role="button" + aria-expanded）
+    const rows = screen.getAllByRole("button", { expanded: false });
+    fireEvent.click(rows[0]);
 
     // 展开后显示更多字段
     expect(screen.getByText(/initial_strength/)).toBeInTheDocument();
