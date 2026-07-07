@@ -64,6 +64,14 @@ function mockCountSuccess(count = 3) {
   };
 }
 
+/** 模拟 GET /traces/steps */
+function mockStepsSuccess(steps: string[] = ["chat", "recall"]) {
+  return {
+    ok: true,
+    json: () => Promise.resolve(steps),
+  };
+}
+
 function mockEmptyTraces() {
   return {
     ok: true,
@@ -79,19 +87,21 @@ function mockErrorResponse() {
   };
 }
 
-/** 辅助：设置双 fetch mock（traces + count 各一次） */
-function setupDualMock(
+/** 辅助：设置三 fetch mock（steps + traces + count，匹配 useEffect 调用顺序） */
+function setupTripleMock(
   tracesResp: object,
   countResp: object = mockCountSuccess(),
+  stepsResp: object = mockStepsSuccess(),
 ) {
   mockFetch
-    .mockResolvedValueOnce(tracesResp)
-    .mockResolvedValueOnce(countResp);
+    .mockResolvedValueOnce(stepsResp)   // getTraceSteps 无 setTimeout，先执行
+    .mockResolvedValueOnce(tracesResp)  // fetchTraces 有 setTimeout(0)
+    .mockResolvedValueOnce(countResp);  // fetchCount 有 setTimeout(0)
 }
 
 describe("PipelineTracePanel", () => {
   it("renders header and idle hint after auto-fetch returns empty", async () => {
-    setupDualMock(mockEmptyTraces(), mockCountSuccess(0));
+    setupTripleMock(mockEmptyTraces(), mockCountSuccess(0));
     render(<PipelineTracePanel />);
     expect(screen.getByText("Pipeline 追踪浏览器")).toBeInTheDocument();
     await waitFor(() => {
@@ -102,7 +112,10 @@ describe("PipelineTracePanel", () => {
   });
 
   it("auto-fetches on mount and shows loading", async () => {
-    mockFetch.mockImplementationOnce(() => new Promise(() => {}));
+    // getTraceSteps 先执行（无 setTimeout），然后 fetchTraces 进入 pending
+    mockFetch
+      .mockResolvedValueOnce(mockStepsSuccess())
+      .mockImplementationOnce(() => new Promise(() => {}));
     render(<PipelineTracePanel />);
     await waitFor(() => {
       expect(screen.getByText("加载追踪记录…")).toBeInTheDocument();
@@ -110,7 +123,7 @@ describe("PipelineTracePanel", () => {
   });
 
   it("displays trace list with status badges", async () => {
-    setupDualMock(mockTracesSuccess(), mockCountSuccess(3));
+    setupTripleMock(mockTracesSuccess(), mockCountSuccess(3));
     render(<PipelineTracePanel />);
 
     // 聊天引擎 出现 2 次（两个 chat 步骤 trace）
@@ -128,7 +141,7 @@ describe("PipelineTracePanel", () => {
   });
 
   it("can expand a trace row to show metrics detail", async () => {
-    setupDualMock(mockTracesSuccess(), mockCountSuccess(3));
+    setupTripleMock(mockTracesSuccess(), mockCountSuccess(3));
     render(<PipelineTracePanel />);
 
     await waitFor(() => {
@@ -146,7 +159,10 @@ describe("PipelineTracePanel", () => {
   });
 
   it("shows error and retry button on fetch failure", async () => {
-    mockFetch.mockResolvedValueOnce(mockErrorResponse());
+    // getTraceSteps succeeds silently, traces fail
+    mockFetch
+      .mockResolvedValueOnce(mockStepsSuccess())
+      .mockResolvedValueOnce(mockErrorResponse());
     render(<PipelineTracePanel />);
 
     await waitFor(() => {
@@ -154,7 +170,10 @@ describe("PipelineTracePanel", () => {
     });
 
     const retryBtn = screen.getByText("重试");
-    setupDualMock(mockTracesSuccess(), mockCountSuccess(3));
+    // 重试：traces + count（steps 已缓存不重调）
+    mockFetch
+      .mockResolvedValueOnce(mockTracesSuccess())
+      .mockResolvedValueOnce(mockCountSuccess(3));
     fireEvent.click(retryBtn);
 
     await waitFor(() => {
@@ -163,7 +182,7 @@ describe("PipelineTracePanel", () => {
   });
 
   it("shows load more button when count > fetched items", async () => {
-    setupDualMock(mockTracesSuccess(), mockCountSuccess(10));
+    setupTripleMock(mockTracesSuccess(), mockCountSuccess(10));
     render(<PipelineTracePanel />);
 
     await waitFor(() => {
@@ -175,29 +194,30 @@ describe("PipelineTracePanel", () => {
   });
 
   it("step filter dropdown changes fetch URL", async () => {
-    setupDualMock(mockTracesSuccess(), mockCountSuccess(3));
+    setupTripleMock(mockTracesSuccess(), mockCountSuccess(3));
     render(<PipelineTracePanel />);
 
     await waitFor(() => {
       expect(screen.getAllByText("聊天引擎").length).toBe(3);
     });
 
-    // 清除之前调用记录，设置新的双 fetch mock
+    // 清除之前调用记录，设置新的 mock（仅 traces + count，steps 不重调）
     mockFetch.mockClear();
-    setupDualMock(
-      mockTracesSuccess([
-        {
-          id: 2,
-          session_id: "s1",
-          step_name: "recall",
-          elapsed_ms: 300,
-          status: "ok",
-          metrics: {},
-          created_at: 1700000001,
-        },
-      ]),
-      mockCountSuccess(1),
-    );
+    mockFetch
+      .mockResolvedValueOnce(
+        mockTracesSuccess([
+          {
+            id: 2,
+            session_id: "s1",
+            step_name: "recall",
+            elapsed_ms: 300,
+            status: "ok",
+            metrics: {},
+            created_at: 1700000001,
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(mockCountSuccess(1));
 
     const filterSelect = screen.getByRole("combobox", { name: "按步骤过滤" });
     fireEvent.change(filterSelect, { target: { value: "recall" } });
@@ -217,7 +237,7 @@ describe("PipelineTracePanel", () => {
   // ── 展开后折叠 ──
 
   it("can collapse an expanded trace row", async () => {
-    setupDualMock(mockTracesSuccess(), mockCountSuccess(3));
+    setupTripleMock(mockTracesSuccess(), mockCountSuccess(3));
     render(<PipelineTracePanel />);
 
     await waitFor(() => {
@@ -241,7 +261,7 @@ describe("PipelineTracePanel", () => {
   // ── 未知状态徽章 ──
 
   it("renders raw status label for unrecognized status", async () => {
-    setupDualMock(
+    setupTripleMock(
       mockTracesSuccess([
         {
           id: 9,
@@ -266,7 +286,7 @@ describe("PipelineTracePanel", () => {
   // ── 空 metrics ──
 
   it("shows '无额外指标' when trace has no metrics", async () => {
-    setupDualMock(
+    setupTripleMock(
       mockTracesSuccess([
         {
           id: 2,

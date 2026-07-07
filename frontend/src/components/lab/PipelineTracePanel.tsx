@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   RiGitBranchLine,
   RiArrowDownSLine,
@@ -82,16 +82,19 @@ export default function PipelineTracePanel() {
     }
   }, [stepFilter, limit]);
 
-  // 获取总数（带独立错误处理）
+  // I5: 获取总数（支持 stepFilter 过滤）
   const fetchCount = useCallback(async () => {
     try {
-      const r = await api.getTraceCount();
+      const r = await api.getTraceCount(
+        undefined,
+        stepFilter || undefined,
+      );
       setTotalCount(r.count);
       setCountError(false);
     } catch {
       setCountError(true);
     }
-  }, []);
+  }, [stepFilter]);
 
   // auto-fetch on mount + when filter/limit changes
   useEffect(() => {
@@ -99,18 +102,18 @@ export default function PipelineTracePanel() {
     return () => clearTimeout(id);
   }, [fetchTraces]);
 
-  // auto-fetch count on mount
+  // auto-fetch count on mount + when filter changes
   useEffect(() => {
     const id = setTimeout(() => fetchCount(), 0);
     return () => clearTimeout(id);
   }, [fetchCount]);
 
 
-  // extract unique step names for filter dropdown
-  const stepNames = useMemo(() => {
-    const names = new Set(data.map((t) => t.step_name));
-    return Array.from(names).sort();
-  }, [data]);
+  // I4: step names from API (not client-side extraction from loaded data)
+  const [stepNames, setStepNames] = useState<string[]>([]);
+  useEffect(() => {
+    api.getTraceSteps().then(setStepNames).catch(() => setStepNames([]));
+  }, []);
 
   const toggleExpand = (id: number) => {
     setExpandedRows((prev) => {
@@ -160,7 +163,7 @@ export default function PipelineTracePanel() {
               value={stepFilter}
               onChange={(e) => handleFilterChange(e.target.value)}
               aria-label="按步骤过滤"
-              className="text-gm-xs rounded-gm-sm border border-border bg-surface px-gm-2 py-gm-0.5 text-text-muted"
+              className="text-gm-xs rounded-gm-sm border border-border bg-surface px-gm-2 py-gm-0.5 text-text-muted focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none cursor-pointer"
             >
               <option value="">全部步骤</option>
               {stepNames.map((name) => (
@@ -205,7 +208,8 @@ export default function PipelineTracePanel() {
                   <button
                     onClick={() => toggleExpand(trace.id)}
                     title="展开详情"
-                    className="text-text-muted hover:text-text transition-colors shrink-0"
+                    aria-expanded={isExpanded}
+                    className="text-text-muted hover:text-text transition-colors shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none rounded-gm-xs"
                   >
                     {isExpanded ? (
                       <RiArrowDownSLine className="w-4 h-4" />
@@ -295,7 +299,7 @@ export default function PipelineTracePanel() {
             <div className="flex justify-center pt-gm-3">
               <button
                 onClick={handleLoadMore}
-                className="text-gm-xs text-brand hover:text-brand/80 transition-colors px-gm-3 py-gm-1 rounded-gm-sm border border-border hover:border-brand/30"
+                className="text-gm-xs text-brand hover:text-brand/80 transition-colors px-gm-3 py-gm-1 rounded-gm-sm border border-border hover:border-brand/30 cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
               >
                 加载更多
               </button>

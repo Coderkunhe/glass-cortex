@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import {
   RiDashboardLine,
+  RiLightbulbFlashLine,
 } from "@remixicon/react";
 import { RefreshButton } from "@/components/ui/RefreshButton";
 import { api } from "@/lib/api/client";
@@ -127,7 +128,7 @@ export default function TokenDashboardPanel() {
           {/* Grand total */}
           <div className="text-center pb-gm-2">
             <p className="text-gm-xs text-text-muted mb-gm-1">总计消耗</p>
-            <p className="text-3xl font-bold text-brand tabular-nums">
+            <p className="text-gm-3xl font-bold text-brand tabular-nums">
               {fmtNum(data.total_tokens)}
             </p>
             <p className="text-gm-xs text-text-muted mt-gm-1">
@@ -140,8 +141,9 @@ export default function TokenDashboardPanel() {
                 data.total_tokens,
               );
               return dominant ? (
-                <p className="text-gm-xs text-text-muted/70 italic mt-gm-1">
-                  💡 主要消耗来自 {dominant.label}（{dominant.pct}%），查看对应面板了解优化空间
+                <p className="text-gm-xs text-text-muted/70 italic mt-gm-1 flex items-center justify-center gap-gm-1">
+                  <RiLightbulbFlashLine className="w-3.5 h-3.5 shrink-0" />
+                  主要消耗来自 {dominant.label}（{dominant.pct}%），查看对应面板了解优化空间
                 </p>
               ) : null;
             })()}
