@@ -10,7 +10,7 @@
 
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { RiCloseLine, RiSearchLine, RiShareBoxLine, RiDownloadLine, RiFileListLine, RiHashtag, RiErrorWarningLine, RiGitBranchLine } from "@remixicon/react";
 import { useDrawer } from "./DrawerContext";
 import Drawer from "@/components/ui/Drawer";
@@ -337,6 +337,9 @@ export default function ProcessDrawer() {
     };
   }, []);
 
+  // ── 即时 tooltip state — 替代原生 title 1-2s 延迟 ──
+  const [closeTooltip, setCloseTooltip] = useState<{ x: number; y: number } | null>(null);
+
   if (!trace) return null;
 
   // Read extra fields — use getExtraString for validated string access
@@ -376,6 +379,7 @@ export default function ProcessDrawer() {
   const pythonRequestCode = generatePythonRequestCode(trace);
 
   return (
+    <>
     <Drawer isOpen={isOpen} onClose={closeDrawer} maxWidth={DRAWER_MAX_WIDTH} duration={DRAWER_ANIMATION_DURATION_MS} ariaLabel="深度抽屉">
         {/* ── Header ── */}
         <div
@@ -394,8 +398,10 @@ export default function ProcessDrawer() {
             type="button"
             onClick={closeDrawer}
             className="flex items-center justify-center rounded-gm-md p-gm-1_5 transition-all hover:scale-110 active:scale-90 text-text-muted bg-bg-subtle cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
-            title="关闭 (Esc)"
             aria-label="关闭"
+            onMouseEnter={(e) => setCloseTooltip({ x: e.clientX, y: e.clientY })}
+            onMouseMove={(e) => setCloseTooltip((prev) => prev ? { x: e.clientX, y: e.clientY } : null)}
+            onMouseLeave={() => setCloseTooltip(null)}
           >
             <RiCloseLine className="text-gm-icon" />
           </button>
@@ -631,5 +637,19 @@ export default function ProcessDrawer() {
           </CollapsibleSection>
         </div>
     </Drawer>
+    {closeTooltip && (
+      <div
+        className="fixed z-50 rounded-gm-sm border border-border-strong
+                   bg-surface-elevated px-gm-2.5 py-gm-1.5
+                   shadow-gm-md pointer-events-none"
+        style={{
+          left: closeTooltip.x + 12,
+          top: closeTooltip.y - 8,
+        }}
+      >
+        <p className="text-gm-xs text-text whitespace-nowrap">关闭 (Esc)</p>
+      </div>
+    )}
+    </>
   );
 }
