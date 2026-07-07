@@ -145,6 +145,10 @@ function mockExperimentRunSuccess() {
 // ── Tests ────────────────────────────────────────────────────────────────
 
 describe("ExperimentComparePanel", () => {
+  // B96 E1: clear history from localStorage before each test
+  beforeEach(() => {
+    localStorage.removeItem("gc_experiment_history");
+  });
   it("renders header with title", () => {
     render(<ExperimentComparePanel />);
     expect(screen.getByText("A/B 实验对比")).toBeInTheDocument();
@@ -282,5 +286,137 @@ describe("ExperimentComparePanel", () => {
     fireEvent.click(screen.getByTestId("preset-recall_top_k_3_vs_7"));
     // 未输入文本 → 按钮仍禁用
     expect(screen.getByTestId("experiment-run-btn")).toBeDisabled();
+  });
+
+  // ── B96 E1: 运行历史 ────────────────────────────────────────────
+
+  it("shows history toggle after running an experiment", async () => {
+    mockFetch
+      .mockResolvedValueOnce(mockPresetsSuccess())
+      .mockResolvedValueOnce(mockExperimentRunSuccess());
+
+    render(<ExperimentComparePanel />);
+    await waitFor(() => {
+      expect(screen.getByTestId("presets-loaded")).toBeInTheDocument();
+    });
+
+    // Run experiment
+    fireEvent.click(screen.getByTestId("preset-recall_top_k_3_vs_7"));
+    fireEvent.change(
+      screen.getByPlaceholderText("输入测试文本，例如：什么是记忆衰减？"),
+      { target: { value: "什么是记忆？" } },
+    );
+    fireEvent.click(screen.getByTestId("experiment-run-btn"));
+
+    // Wait for results, then history toggle should appear
+    await waitFor(() => {
+      expect(screen.getByTestId("experiment-results")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("history-toggle")).toBeInTheDocument();
+    expect(screen.getByText(/运行历史/)).toBeInTheDocument();
+  });
+
+  it("opens history panel and shows past run entry", async () => {
+    mockFetch
+      .mockResolvedValueOnce(mockPresetsSuccess())
+      .mockResolvedValueOnce(mockExperimentRunSuccess());
+
+    render(<ExperimentComparePanel />);
+    await waitFor(() => {
+      expect(screen.getByTestId("presets-loaded")).toBeInTheDocument();
+    });
+
+    // Run experiment
+    fireEvent.click(screen.getByTestId("preset-recall_top_k_3_vs_7"));
+    fireEvent.change(
+      screen.getByPlaceholderText("输入测试文本，例如：什么是记忆衰减？"),
+      { target: { value: "什么是记忆？" } },
+    );
+    fireEvent.click(screen.getByTestId("experiment-run-btn"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("experiment-results")).toBeInTheDocument();
+    });
+
+    // History toggle should be visible
+    expect(screen.getByTestId("history-toggle")).toBeInTheDocument();
+
+    // Expand history — entries should appear
+    fireEvent.click(screen.getByTestId("history-toggle"));
+
+    // After expanding, history entry buttons with data-testid should appear
+    await waitFor(() => {
+      const entries = screen.getAllByTestId(/^history-entry-/);
+      expect(entries.length).toBe(1);
+    });
+
+    // And the clear button should be visible
+    expect(screen.getByTestId("history-clear")).toBeInTheDocument();
+  });
+
+  it("clears history when clear button is clicked", async () => {
+    mockFetch
+      .mockResolvedValueOnce(mockPresetsSuccess())
+      .mockResolvedValueOnce(mockExperimentRunSuccess());
+
+    render(<ExperimentComparePanel />);
+    await waitFor(() => {
+      expect(screen.getByTestId("presets-loaded")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("preset-recall_top_k_3_vs_7"));
+    fireEvent.change(
+      screen.getByPlaceholderText("输入测试文本，例如：什么是记忆衰减？"),
+      { target: { value: "什么是记忆？" } },
+    );
+    fireEvent.click(screen.getByTestId("experiment-run-btn"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("experiment-results")).toBeInTheDocument();
+    });
+
+    // Expand history and clear
+    fireEvent.click(screen.getByTestId("history-toggle"));
+    await waitFor(() => {
+      expect(screen.getByTestId("history-clear")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("history-clear"));
+
+    // History toggle should disappear
+    await waitFor(() => {
+      expect(screen.queryByTestId("history-toggle")).not.toBeInTheDocument();
+    });
+  });
+
+  it("persists history to localStorage", async () => {
+    mockFetch
+      .mockResolvedValueOnce(mockPresetsSuccess())
+      .mockResolvedValueOnce(mockExperimentRunSuccess());
+
+    render(<ExperimentComparePanel />);
+    await waitFor(() => {
+      expect(screen.getByTestId("presets-loaded")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("preset-recall_top_k_3_vs_7"));
+    fireEvent.change(
+      screen.getByPlaceholderText("输入测试文本，例如：什么是记忆衰减？"),
+      { target: { value: "什么是记忆？" } },
+    );
+    fireEvent.click(screen.getByTestId("experiment-run-btn"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("experiment-results")).toBeInTheDocument();
+    });
+
+    // Check localStorage
+    const raw = localStorage.getItem("gc_experiment_history");
+    expect(raw).not.toBeNull();
+    const parsed = JSON.parse(raw!);
+    expect(Array.isArray(parsed)).toBe(true);
+    expect(parsed.length).toBe(1);
+    expect(parsed[0].userInput).toBe("什么是记忆？");
+    expect(parsed[0].presetId).toBe("recall_top_k_3_vs_7");
   });
 });

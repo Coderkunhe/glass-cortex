@@ -274,4 +274,76 @@ describe("CostWaterfallPanel", () => {
       expect(screen.getByText("按调用点分组 → 净消耗")).toBeInTheDocument();
     });
   });
+
+  // ── B96 E4: time range filter ───────────────────────────────────
+
+  it("renders time range pills when data loaded", async () => {
+    mockFetch.mockResolvedValueOnce(mockWaterfallSuccess(500, 0, 0));
+    render(<CostWaterfallPanel />);
+    await waitFor(() => {
+      expect(screen.getByTestId("time-range-1h")).toBeInTheDocument();
+      expect(screen.getByTestId("time-range-24h")).toBeInTheDocument();
+      expect(screen.getByTestId("time-range-7d")).toBeInTheDocument();
+      expect(screen.getByTestId("time-range-30d")).toBeInTheDocument();
+      expect(screen.getByTestId("time-range-all")).toBeInTheDocument();
+    });
+  });
+
+  it('"all" is the default active time range', async () => {
+    mockFetch.mockResolvedValueOnce(mockWaterfallSuccess(500, 0, 0));
+    render(<CostWaterfallPanel />);
+    await waitFor(() => {
+      const allBtn = screen.getByTestId("time-range-all");
+      expect(allBtn.getAttribute("aria-checked")).toBe("true");
+    });
+  });
+
+  it("selecting a time range triggers re-fetch with since/until params", async () => {
+    mockFetch
+      .mockResolvedValueOnce(mockWaterfallSuccess(500, 0, 0))
+      .mockResolvedValueOnce(mockWaterfallSuccess(300, 50, 0));
+
+    render(<CostWaterfallPanel />);
+    await waitFor(() => {
+      expect(screen.getByTestId("time-range-24h")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("time-range-24h"));
+
+    await waitFor(() => {
+      const calls = mockFetch.mock.calls;
+      const timeCall = calls.find((call: string[]) => {
+        const url = String(call[0]);
+        return url.includes("since=") && url.includes("until=");
+      });
+      expect(timeCall).toBeDefined();
+    });
+  });
+
+  it('"all" does not send since/until params', async () => {
+    // First fetch with another range, then back to all
+    mockFetch
+      .mockResolvedValueOnce(mockWaterfallSuccess(500, 0, 0))
+      .mockResolvedValueOnce(mockWaterfallSuccess(300, 50, 0))
+      .mockResolvedValueOnce(mockWaterfallSuccess(500, 50, 30));
+
+    render(<CostWaterfallPanel />);
+    await waitFor(() => {
+      expect(screen.getByTestId("time-range-24h")).toBeInTheDocument();
+    });
+
+    // Switch to 24h then back to all
+    fireEvent.click(screen.getByTestId("time-range-24h"));
+    await waitFor(() => {
+      expect(screen.getByTestId("time-range-all").getAttribute("aria-checked")).toBe("false");
+    });
+
+    fireEvent.click(screen.getByTestId("time-range-all"));
+
+    await waitFor(() => {
+      const lastCall = String(mockFetch.mock.calls[mockFetch.mock.calls.length - 1][0]);
+      // The last call for "all" should NOT have since/until
+      expect(lastCall).not.toContain("since=");
+    });
+  });
 });

@@ -10,27 +10,74 @@ import DataState from "@/components/ui/DataState";
 import type { CostWaterfallResponse, FetchState } from "@/lib/api/types";
 import { fmtTokens } from "@/lib/formatNum";
 
+/** Time range presets for the quick-select pills (B96 E4). */
+type TimeRange = "1h" | "24h" | "7d" | "30d" | "all";
+
+interface TimeRangeOption {
+  key: TimeRange;
+  label: string;
+}
+
+const TIME_RANGE_OPTIONS: TimeRangeOption[] = [
+  { key: "1h", label: "1 小时" },
+  { key: "24h", label: "24 小时" },
+  { key: "7d", label: "7 天" },
+  { key: "30d", label: "30 天" },
+  { key: "all", label: "全部" },
+];
+
+/** Compute since/until epoch seconds from a TimeRange key (B96 E4). */
+function timeRangeToEpoch(range: TimeRange): { since?: number; until?: number } {
+  if (range === "all") return {};
+  const now = Math.floor(Date.now() / 1000);
+  const until = now;
+  let since: number;
+  switch (range) {
+    case "1h":
+      since = now - 3600;
+      break;
+    case "24h":
+      since = now - 86400;
+      break;
+    case "7d":
+      since = now - 604800;
+      break;
+    case "30d":
+      since = now - 2592000;
+      break;
+    default:
+      return {};
+  }
+  return { since, until };
+}
+
 export default function CostWaterfallPanel() {
   const [state, setState] = useState<FetchState>("idle");
   const [data, setData] = useState<CostWaterfallResponse | null>(null);
   const [error, setError] = useState<Error | string | null>(null);
   const [viewMode, setViewMode] = useState<"waterfall" | "call_point">("waterfall");
+  const [timeRange, setTimeRange] = useState<TimeRange>("all");
 
   const fetchWaterfall = useCallback(async () => {
     setState("loading");
     setError(null);
     try {
-      const params: { by?: string } = {};
+      const params: { by?: string; since?: number; until?: number } = {};
       if (viewMode === "call_point") params.by = "call_point";
+      // B96 E4: time range filter
+      const range = timeRangeToEpoch(timeRange);
+      if (range.since !== undefined) {
+        params.since = range.since;
+        params.until = range.until;
+      }
       const result = await api.getCostWaterfall(params);
       setData(result);
-      // If there are any token records at all, show success; otherwise idle
       setState(result.gross_tokens > 0 ? "success" : "idle");
     } catch (err) {
       setError(err instanceof Error ? err : new Error("获取成本瀑布数据失败"));
       setState("error");
     }
-  }, [viewMode]);
+  }, [viewMode, timeRange]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -75,6 +122,27 @@ export default function CostWaterfallPanel() {
                 className={`text-gm-xs px-gm-2 py-gm-0.5 rounded-gm-sm border transition-colors ${
                   isActive
                     ? "border-accent bg-accent/10 text-accent ring-1 ring-accent/50"
+                    : "border-text-muted/30 text-text-muted opacity-60 hover:opacity-80"
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+          {/* B96 E4: time range quick-select pills */}
+          <span className="text-text-muted/30 mx-gm-1 select-none">|</span>
+          {TIME_RANGE_OPTIONS.map((opt) => {
+            const isActive = timeRange === opt.key;
+            return (
+              <button
+                key={opt.key}
+                role="radio"
+                aria-checked={isActive}
+                data-testid={`time-range-${opt.key}`}
+                onClick={() => setTimeRange(opt.key)}
+                className={`text-gm-xs px-gm-2 py-gm-0.5 rounded-gm-sm border transition-colors ${
+                  isActive
+                    ? "border-warning bg-warning/10 text-warning ring-1 ring-warning/50"
                     : "border-text-muted/30 text-text-muted opacity-60 hover:opacity-80"
                 }`}
               >

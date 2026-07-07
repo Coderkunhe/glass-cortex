@@ -78,6 +78,7 @@ export type {
   ExperimentResultSchema,
   ExperimentDiffSchema,
   ExperimentRunResponse,
+  ExperimentHistoryEntry,
   StrategyPersona,
   StrategyPersonasResponse,
   CostWaterfallStep,

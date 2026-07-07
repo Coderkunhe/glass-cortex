@@ -6,6 +6,10 @@ import {
   RiLoader4Line,
   RiArrowRightLine,
   RiArrowLeftLine,
+  RiHistoryLine,
+  RiDeleteBinLine,
+  RiArrowUpSLine,
+  RiArrowDownSLine,
 } from "@remixicon/react";
 import { RefreshButton } from "@/components/ui/RefreshButton";
 import { api } from "@/lib/api/client";
@@ -18,11 +22,17 @@ import type {
   ExperimentResultSchema,
   ExperimentDiffSchema,
   FetchState,
+  ExperimentHistoryEntry,
 } from "@/lib/api/types";
-import { fmtMs } from "@/lib/formatTime";
+import { fmtMs, formatRelativeTime } from "@/lib/formatTime";
 import { fmtTokens } from "@/lib/formatNum";
 
 type RunState = "idle" | "running" | "done" | "error";
+
+/** localStorage key for experiment run history (B96 E1). */
+const HISTORY_KEY = "gc_experiment_history";
+/** Max history entries retained. */
+const HISTORY_MAX = 20;
 
 /** B95 E2: compute differing keys between A/B settings for inline display */
 function computePresetDiff(
@@ -75,6 +85,58 @@ export default function ExperimentComparePanel() {
   const [expandedA, setExpandedA] = useState(false);
   const [expandedB, setExpandedB] = useState(false);
 
+  // B96 E1: 运行历史
+  const [history, setHistory] = useState<ExperimentHistoryEntry[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [viewingHistoryId, setViewingHistoryId] = useState<number | null>(null);
+
+  /** Load history from localStorage on mount. */
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      if (raw) {
+        const parsed: ExperimentHistoryEntry[] = JSON.parse(raw);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setHistory(parsed.slice(0, HISTORY_MAX));
+      }
+    } catch {
+      // Corrupted storage — silently reset
+    }
+  }, []);
+
+  /** Persist a new entry to localStorage history. */
+  const saveToHistory = useCallback(
+    (presetId: string, presetLabel: string, input: string, result: ExperimentRunResponse) => {
+      const entry: ExperimentHistoryEntry = {
+        id: Date.now(),
+        timestamp: Date.now(),
+        presetId,
+        presetLabel,
+        userInput: input,
+        result,
+      };
+      const updated = [entry, ...history].slice(0, HISTORY_MAX);
+      setHistory(updated);
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+      } catch {
+        // Storage full — silently drop
+      }
+    },
+    [history],
+  );
+
+  /** Clear all history. */
+  const clearHistory = useCallback(() => {
+    setHistory([]);
+    setViewingHistoryId(null);
+    try {
+      localStorage.removeItem(HISTORY_KEY);
+    } catch {
+      // noop
+    }
+  }, []);
+
   const fetchPresets = useCallback(async () => {
     setPresetState("loading");
     setPresetError(null);
@@ -107,11 +169,15 @@ export default function ExperimentComparePanel() {
       });
       setRunResult(result);
       setRunState("done");
+      // B96 E1: persist to history
+      const preset = presets?.presets.find((p) => p.id === selectedPreset);
+      const label = preset ? `${preset.label_a} vs ${preset.label_b}` : selectedPreset;
+      saveToHistory(selectedPreset, label, userInput.trim(), result);
     } catch (err) {
       setRunError(err instanceof Error ? err : new Error("实验运行失败"));
       setRunState("error");
     }
-  }, [userInput, selectedPreset]);
+  }, [userInput, selectedPreset, presets, saveToHistory]);
 
   const isRunning = runState === "running";
   const canRun = userInput.trim().length > 0 && selectedPreset !== null && !isRunning;
@@ -240,6 +306,93 @@ export default function ExperimentComparePanel() {
           <RefreshButton onClick={fetchPresets} className="ml-auto" />
         )}
       </div>
+
+      {/* B96 E1: 运行历史（可折叠） */}
+      {history.length > 0 && (
+        <div className="border-t border-border pt-gm-4 mb-gm-4">
+          <button
+            onClick={() => setHistoryOpen(!historyOpen)}
+            data-testid="history-toggle"
+            className="flex items-center gap-gm-2 text-gm-xs text-text-muted hover:text-text-secondary transition-colors w-full"
+          >
+            <RiHistoryLine className="w-4 h-4 shrink-0" />
+            <span className="font-medium">运行历史 ({history.length})</span>
+            <span className="flex-1" />
+            {historyOpen ? (
+              <RiArrowUpSLine className="w-4 h-4" />
+            ) : (
+              <RiArrowDownSLine className="w-4 h-4" />
+            )}
+          </button>
+
+          {historyOpen && (
+            <div className="mt-gm-3 space-y-gm-1.5 max-h-64 overflow-y-auto">
+              {history.map((entry) => {
+                const isActive = viewingHistoryId === entry.id;
+                const relTime = formatRelativeTime(entry.timestamp);
+                const preview =
+                  entry.userInput.length > 40
+                    ? entry.userInput.slice(0, 40) + "…"
+                    : entry.userInput;
+                const chatDiff = entry.result.diffs.find(
+                  (d: ExperimentDiffSchema) => d.dimension === "chat_token_usage",
+                );
+                const netTokens =
+                  chatDiff != null
+                    ? (Number(chatDiff.value_a ?? 0) + Number(chatDiff.value_b ?? 0))
+                    : null;
+
+                return (
+                  <button
+                    key={entry.id}
+                    onClick={() => {
+                      setViewingHistoryId(isActive ? null : entry.id);
+                      if (!isActive) {
+                        setRunResult(entry.result);
+                        setRunState("done");
+                        setSelectedPreset(entry.presetId);
+                        setUserInput(entry.userInput);
+                      }
+                    }}
+                    data-testid={`history-entry-${entry.id}`}
+                    className={`w-full text-left rounded-gm-sm border p-gm-2.5 transition-colors ${
+                      isActive
+                        ? "border-warning bg-warning/5 ring-1 ring-warning/20"
+                        : "border-border bg-surface hover:border-warning/30"
+                    }`}
+                  >
+                    <div className="flex items-center gap-gm-2">
+                      <span className="text-gm-xs font-medium text-text truncate">
+                        {entry.presetLabel}
+                      </span>
+                      <span className="text-gm-xs text-text-muted/50 shrink-0">
+                        {relTime}
+                      </span>
+                    </div>
+                    <div className="text-gm-xs text-text-muted mt-gm-0.5 truncate">
+                      {preview}
+                    </div>
+                    <div className="flex items-center gap-gm-3 mt-gm-1 text-gm-xs text-text-muted/60">
+                      <span>耗时 {fmtMs(entry.result.elapsed_ms)}</span>
+                      {netTokens !== null && (
+                        <span>Token {fmtTokens(netTokens)}</span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+              <button
+                onClick={clearHistory}
+                data-testid="history-clear"
+                className="flex items-center gap-gm-1 text-gm-xs text-error/70 hover:text-error transition-colors mt-gm-1"
+              >
+                <RiDeleteBinLine className="w-3 h-3" />
+                清空历史
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Preset state: loading / error / success */}
       <DataState
