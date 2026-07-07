@@ -97,7 +97,7 @@ export default function RecallRacePanel() {
             className={`h-full flex flex-col rounded-gm-sm border-2 p-gm-4 ${
               route.key === "hybrid"
                 ? "border-brand/40 bg-brand/[0.03] ring-1 ring-brand/30"
-                : "border-border bg-surface-alt"
+                : "border-border bg-surface"
             }`}
           >
             {/* 卡片头 */}

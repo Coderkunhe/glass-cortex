@@ -87,14 +87,16 @@
   --gm-text-muted: #64748b;
   --gm-text-inverse: #ffffff;
 
-  /* ── 表面 ── */
-  --gm-surface-elevated: #ffffff;
-  --gm-surface: #fafbfc;
-  --gm-surface-alt: #f0f2f5;
-  --gm-surface-lowered: #f4f6f8;
-  --gm-bg-subtle: #f8fafc;
-  --gm-bg: #f1f5f9;
-  --gm-bg-deep: #e8ecf1;
+  /* ── 表面 ──
+     4 层灰阶 (B81 收敛): L0 白 · L1 极浅灰 · L2 浅灰 · L3 中灰
+     7 token 名 → 4 色值, 向后兼容存量组件 */
+  --gm-surface-elevated: #ffffff;    /* L0: 白色 — 卡片顶层 */
+  --gm-surface: #f8fafc;            /* L1: 极浅灰 — 区块/悬停 (曾 #fafbfc) */
+  --gm-surface-alt: #f1f5f9;        /* L2: 浅灰 — 侧栏/次要区 (曾 #f0f2f5) */
+  --gm-surface-lowered: #f8fafc;    /* → L1 (曾 #f4f6f8) */
+  --gm-bg-subtle: #f8fafc;          /* → L1 */
+  --gm-bg: #f1f5f9;                 /* → L2 */
+  --gm-bg-deep: #e2e8f0;            /* L3: 中灰 — 最深底 (曾 #e8ecf1) */
 
   /* ── 边框 ── */
   --gm-border: #e2e8f0;
