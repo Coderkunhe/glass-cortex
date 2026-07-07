@@ -46,7 +46,12 @@ export default function Header({ onOpenMap, onOpenMobileSidebar }: HeaderProps) 
     return () => main.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
+  // Phase 66 B104 — 即时 tooltip 替代原生 title (T1+T2)
+  const [menuTooltip, setMenuTooltip] = useState<{ x: number; y: number } | null>(null);
+  const [mapTooltip, setMapTooltip] = useState<{ x: number; y: number } | null>(null);
+
   return (
+    <>
     <header
       className={`lg:col-span-2 gm-header
                  px-gm-5 py-gm-3
@@ -63,7 +68,9 @@ export default function Header({ onOpenMap, onOpenMobileSidebar }: HeaderProps) 
               onClick={onOpenMobileSidebar}
               className="lg:hidden rounded-gm-md p-gm-2 text-text-secondary hover:bg-surface-alt transition-colors"
               aria-label="打开菜单"
-              title="菜单"
+              onMouseEnter={(e) => setMenuTooltip({ x: e.clientX, y: e.clientY })}
+              onMouseMove={(e) => setMenuTooltip((prev) => prev ? { x: e.clientX, y: e.clientY } : null)}
+              onMouseLeave={() => setMenuTooltip(null)}
             >
               <RiMenuLine className="text-gm-icon" />
             </button>
@@ -85,7 +92,9 @@ export default function Header({ onOpenMap, onOpenMobileSidebar }: HeaderProps) 
               onClick={onOpenMap}
               className="rounded-gm-md p-gm-2 text-text-secondary hover:bg-surface-alt transition-colors"
               aria-label="项目地图"
-              title="项目地图"
+              onMouseEnter={(e) => setMapTooltip({ x: e.clientX, y: e.clientY })}
+              onMouseMove={(e) => setMapTooltip((prev) => prev ? { x: e.clientX, y: e.clientY } : null)}
+              onMouseLeave={() => setMapTooltip(null)}
             >
               <RiRoadMapLine className="text-gm-icon" />
             </button>
@@ -98,5 +107,18 @@ export default function Header({ onOpenMap, onOpenMobileSidebar }: HeaderProps) 
         逐层解剖 AI Robot 工作原理 — See How AI Remembers, Thinks, and Plans
       </p>
     </header>
+    {menuTooltip && (
+      <div className="fixed z-50 rounded-gm-sm border border-border-strong bg-surface-elevated px-gm-2.5 py-gm-1.5 shadow-gm-md pointer-events-none"
+           style={{ left: menuTooltip.x + 12, top: menuTooltip.y - 8 }}>
+        <p className="text-gm-xs text-text whitespace-nowrap">菜单</p>
+      </div>
+    )}
+    {mapTooltip && (
+      <div className="fixed z-50 rounded-gm-sm border border-border-strong bg-surface-elevated px-gm-2.5 py-gm-1.5 shadow-gm-md pointer-events-none"
+           style={{ left: mapTooltip.x + 12, top: mapTooltip.y - 8 }}>
+        <p className="text-gm-xs text-text whitespace-nowrap">项目地图</p>
+      </div>
+    )}
+    </>
   );
 }

@@ -150,7 +150,7 @@ describe("PipelineTracePanel", () => {
     });
 
     // 点击第一个展开按钮
-    const expandBtns = screen.getAllByTitle("展开详情");
+    const expandBtns = screen.getAllByRole("button", { name: "展开详情" });
     fireEvent.click(expandBtns[0]);
 
     // 展开后应显示 metrics JSON
@@ -246,7 +246,7 @@ describe("PipelineTracePanel", () => {
       expect(screen.getAllByText("聊天引擎").length).toBe(3);
     });
 
-    const expandBtns = screen.getAllByTitle("展开详情");
+    const expandBtns = screen.getAllByRole("button", { name: "展开详情" });
     // 展开第一行
     fireEvent.click(expandBtns[0]);
     await waitFor(() => {
@@ -310,7 +310,7 @@ describe("PipelineTracePanel", () => {
       expect(occurrences.length).toBeGreaterThanOrEqual(1);
     });
 
-    const expandBtns = screen.getAllByTitle("展开详情");
+    const expandBtns = screen.getAllByRole("button", { name: "展开详情" });
     fireEvent.click(expandBtns[0]);
 
     await waitFor(() => {

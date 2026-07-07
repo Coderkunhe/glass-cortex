@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { useRouter } from "next/navigation";
 import { RiArrowLeftLine, RiStarLine, RiStarFill, RiFlaskLine, RiLinkM, RiArrowRightUpLine, RiNodeTree } from "@remixicon/react";
@@ -305,6 +305,9 @@ export default function AnswerCard({
     };
   }, [noteHighlights, answer.id]);
 
+  // Phase 66 B104 — 即时 tooltip 替代原生 title (T3)
+  const [bookmarkTooltip, setBookmarkTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+
   if (isStub) {
     return (
       <article className="flex flex-col gap-gm-4">
@@ -335,6 +338,7 @@ export default function AnswerCard({
   }
 
   return (
+    <>
     <article ref={articleRef} className={`flex flex-col gap-gm-6 ${immersive ? "answer-reading-mode" : ""}`}>
       {/* 移动端返回按钮 */}
       {onBack && (
@@ -377,7 +381,9 @@ export default function AnswerCard({
                 : "text-text-muted hover:text-warning-light"
             }`}
             aria-label={isBookmarked ? "取消收藏" : "收藏"}
-            title={isBookmarked ? "取消收藏" : "收藏"}
+            onMouseEnter={(e) => setBookmarkTooltip({ x: e.clientX, y: e.clientY, text: isBookmarked ? "取消收藏" : "收藏" })}
+            onMouseMove={(e) => setBookmarkTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+            onMouseLeave={() => setBookmarkTooltip(null)}
           >
             {isBookmarked ? (
               <RiStarFill className="w-gm-icon-md h-gm-icon-md" />
@@ -524,6 +530,13 @@ export default function AnswerCard({
         />
       )}
     </article>
+    {bookmarkTooltip && (
+      <div className="fixed z-50 rounded-gm-sm border border-border-strong bg-surface-elevated px-gm-2.5 py-gm-1.5 shadow-gm-md pointer-events-none"
+           style={{ left: bookmarkTooltip.x + 12, top: bookmarkTooltip.y - 8 }}>
+        <p className="text-gm-xs text-text whitespace-nowrap">{bookmarkTooltip.text}</p>
+      </div>
+    )}
+    </>
   );
 }
 

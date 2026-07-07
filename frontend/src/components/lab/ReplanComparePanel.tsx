@@ -123,7 +123,11 @@ function PlanColumn({
     side === "left" ? "bg-warning/5" : "bg-success/5";
   const badgeColor = side === "left" ? "bg-warning/15 text-warning" : "bg-success/15 text-success";
 
+  // Phase 66 B104 — 即时 tooltip 替代原生 title (T5+T6+T7)
+  const [interveneTooltip, setInterveneTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+
   return (
+    <>
     <div
       className={`h-full rounded-gm-sm border-2 p-gm-4 ${borderColor} ${bgAccent}`}
     >
@@ -183,7 +187,9 @@ function PlanColumn({
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onIntervene(t.id, "accept"); }}
                     disabled={intervening}
-                    title="接受此步骤"
+                    onMouseEnter={(e) => setInterveneTooltip({ x: e.clientX, y: e.clientY, text: "接受此步骤" })}
+                    onMouseMove={(e) => setInterveneTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                    onMouseLeave={() => setInterveneTooltip(null)}
                     className="p-gm-1 rounded-gm-xs text-success hover:bg-success/10 disabled:opacity-40"
                   >
                     <RiCheckLine className="w-4 h-4" />
@@ -192,7 +198,9 @@ function PlanColumn({
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onIntervene(t.id, "reject"); }}
                     disabled={intervening}
-                    title="拒绝此步骤"
+                    onMouseEnter={(e) => setInterveneTooltip({ x: e.clientX, y: e.clientY, text: "拒绝此步骤" })}
+                    onMouseMove={(e) => setInterveneTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                    onMouseLeave={() => setInterveneTooltip(null)}
                     className="p-gm-1 rounded-gm-xs text-danger hover:bg-danger/10 disabled:opacity-40"
                   >
                     <RiCloseLine className="w-4 h-4" />
@@ -201,7 +209,9 @@ function PlanColumn({
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onIntervene(t.id, "skip"); }}
                     disabled={intervening}
-                    title="跳过此步骤"
+                    onMouseEnter={(e) => setInterveneTooltip({ x: e.clientX, y: e.clientY, text: "跳过此步骤" })}
+                    onMouseMove={(e) => setInterveneTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                    onMouseLeave={() => setInterveneTooltip(null)}
                     className="p-gm-1 rounded-gm-xs text-text-muted hover:bg-surface-alt disabled:opacity-40"
                   >
                     <RiSkipForwardLine className="w-4 h-4" />
@@ -227,6 +237,13 @@ function PlanColumn({
         </span>
       </div>
     </div>
+    {interveneTooltip && (
+      <div className="fixed z-50 rounded-gm-sm border border-border-strong bg-surface-elevated px-gm-2.5 py-gm-1.5 shadow-gm-md pointer-events-none"
+           style={{ left: interveneTooltip.x + 12, top: interveneTooltip.y - 8 }}>
+        <p className="text-gm-xs text-text whitespace-nowrap">{interveneTooltip.text}</p>
+      </div>
+    )}
+    </>
   );
 }
 

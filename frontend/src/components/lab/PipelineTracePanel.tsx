@@ -117,7 +117,11 @@ export default function PipelineTracePanel() {
 
   const hasMore = data.length < totalCount;
 
+  // Phase 66 B104 — 即时 tooltip 替代原生 title (T4)
+  const [expandTooltip, setExpandTooltip] = useState<{ x: number; y: number } | null>(null);
+
   return (
+    <>
     <section className="rounded-gm-sm border border-border bg-surface-elevated p-gm-5">
       {/* Header */}
       <div className="flex items-center gap-gm-2 mb-gm-4">
@@ -186,8 +190,11 @@ export default function PipelineTracePanel() {
                 <div className="flex items-center gap-gm-3 p-gm-3">
                   <button
                     onClick={() => toggleExpand(trace.id)}
-                    title="展开详情"
                     aria-expanded={isExpanded}
+                    aria-label="展开详情"
+                    onMouseEnter={(e) => setExpandTooltip({ x: e.clientX, y: e.clientY })}
+                    onMouseMove={(e) => setExpandTooltip((prev) => prev ? { x: e.clientX, y: e.clientY } : null)}
+                    onMouseLeave={() => setExpandTooltip(null)}
                     className="text-text-muted hover:text-text transition-colors shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none rounded-gm-xs"
                   >
                     {isExpanded ? (
@@ -289,5 +296,12 @@ export default function PipelineTracePanel() {
 
       </DataState>
     </section>
+    {expandTooltip && (
+      <div className="fixed z-50 rounded-gm-sm border border-border-strong bg-surface-elevated px-gm-2.5 py-gm-1.5 shadow-gm-md pointer-events-none"
+           style={{ left: expandTooltip.x + 12, top: expandTooltip.y - 8 }}>
+        <p className="text-gm-xs text-text whitespace-nowrap">展开详情</p>
+      </div>
+    )}
+    </>
   );
 }
