@@ -10,6 +10,7 @@ import {
   RiCloseLine,
 } from "@remixicon/react";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
+import { StatBadge } from "@/components/ui/StatBadge";
 import { extractMermaidFromAnswer } from "@/lib/content/extractMermaid";
 import { buildPartitionChart } from "@/lib/partition-chart";
 import { CH2_ANSWERS } from "@/lib/content/answers/ch2";
@@ -240,33 +241,6 @@ function PillarCard({
   );
 }
 
-// ── Visual detail components (expanded state) ──────────────────────────
-
-/** Compact stat pill used in Context/Token detail panels. */
-function StatPill({
-  label,
-  value,
-  warn,
-}: {
-  label: string;
-  value: string;
-  warn?: boolean;
-}) {
-  return (
-    <span
-      className={
-        "inline-flex items-center gap-gm-1_5 rounded-gm-sm border px-gm-2_5 py-gm-1_5 text-gm-xs " +
-        (warn
-          ? "border-warning/30 bg-warning/5 text-warning"
-          : "border-border/40 bg-surface text-text-secondary")
-      }
-    >
-      <span className="text-text-muted">{label}</span>
-      <span className="font-medium">{value}</span>
-    </span>
-  );
-}
-
 /** B70: Episode 召回内容 — 长文本可展开，提升内容可读性 */
 const EPISODE_CONTENT_TRUNCATE = 200;
 
@@ -458,25 +432,25 @@ export function ContextVisualDetail({ response }: { response: ChatResponse }) {
           />
         </div>
       </div>
-      {/* Stat pills */}
+      {/* Stat badges */}
       <div className="flex flex-wrap gap-gm-1_5">
-        <StatPill label="策略" value={m.strategy} />
-        <StatPill
+        <StatBadge label="策略" value={m.strategy} />
+        <StatBadge
           label="记忆"
           value={`${m.memories_before} → ${m.memories_after}`}
         />
-        <StatPill
+        <StatBadge
           label="溢出"
           value={
             m.overflow_applied ? `丢弃 ${m.dropped_count} 条` : "未触发"
           }
           warn={m.overflow_applied}
         />
-        <StatPill
+        <StatBadge
           label="基础 Token"
           value={m.base_tokens.toLocaleString()}
         />
-        <StatPill
+        <StatBadge
           label="用户消息"
           value={m.user_message_tokens.toLocaleString()}
         />
@@ -533,25 +507,25 @@ export function TokenVisualDetail({ response }: { response: ChatResponse }) {
           </span>
         </div>
       </div>
-      {/* Stat pills */}
+      {/* Stat badges */}
       <div className="flex flex-wrap gap-gm-1_5">
-        <StatPill label="模型" value={t.model} />
-        <StatPill label="耗时" value={`${t.elapsed_ms}ms`} />
-        <StatPill label="合计" value={total.toLocaleString()} />
+        <StatBadge label="模型" value={t.model} />
+        <StatBadge label="耗时" value={`${t.elapsed_ms}ms`} />
+        <StatBadge label="合计" value={total.toLocaleString()} />
         {tokenBreakdown?.chat && (
-          <StatPill
+          <StatBadge
             label="Chat"
             value={(tokenBreakdown.chat.prompt_tokens + tokenBreakdown.chat.completion_tokens).toLocaleString()}
           />
         )}
         {tokenBreakdown?.intent && (
-          <StatPill
+          <StatBadge
             label="Intent"
             value={(tokenBreakdown.intent.prompt_tokens + tokenBreakdown.intent.completion_tokens).toLocaleString()}
           />
         )}
         {tokenBreakdown?.fact_extraction && (
-          <StatPill
+          <StatBadge
             label="FactExtract"
             value={(tokenBreakdown.fact_extraction.prompt_tokens + tokenBreakdown.fact_extraction.completion_tokens).toLocaleString()}
           />

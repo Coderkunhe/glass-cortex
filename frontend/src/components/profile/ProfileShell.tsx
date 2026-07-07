@@ -8,7 +8,7 @@ import {
   RiCheckLine,
 } from "@remixicon/react";
 import { api } from "@/lib/api/client";
-import { fmtNum } from "@/lib/formatNum";
+import { StatBadge } from "@/components/ui/StatBadge";
 import { getConfidenceTier } from "@/lib/confidence";
 import type { ConfidenceTier } from "@/lib/confidence";
 import type {
@@ -185,19 +185,23 @@ export default function ProfileShell() {
             {/* 统计条 */}
             {currentInfo && (
               <div className="flex flex-wrap gap-gm-4">
-                <StatChip
+                <StatBadge
+                  variant="hero"
                   label="对话片段"
                   value={currentInfo.episode_count}
                 />
-                <StatChip
+                <StatBadge
+                  variant="hero"
                   label="知识碎片"
                   value={currentInfo.fact_count}
                 />
-                <StatChip
+                <StatBadge
+                  variant="hero"
                   label="索引向量"
                   value={currentInfo.index_vectors}
                 />
-                <StatChip
+                <StatBadge
+                  variant="hero"
                   label="数据库"
                   value={formatBytes(currentInfo.db_size_bytes)}
                 />
@@ -418,20 +422,6 @@ export default function ProfileShell() {
           <p className="text-gm-xs text-text whitespace-nowrap">{deleteTooltip.text}</p>
         </div>
       )}
-    </div>
-  );
-}
-
-// ── 子组件 ──
-
-/** 内联统计 chip — 标签+数值水平排列，替代原来的 StatCard 网格。 */
-function StatChip({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="flex items-baseline gap-gm-1_5">
-      <span className="text-gm-2xl font-bold text-text tabular-nums">
-        {typeof value === "number" ? fmtNum(value) : value}
-      </span>
-      <span className="text-gm-xs text-text-muted">{label}</span>
     </div>
   );
 }
