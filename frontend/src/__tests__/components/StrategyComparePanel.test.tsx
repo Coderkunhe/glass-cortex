@@ -146,7 +146,7 @@ describe("StrategyComparePanel", () => {
     render(<StrategyComparePanel />);
 
     // Header
-    expect(screen.getByText("策略对比")).toBeInTheDocument();
+    expect(screen.getByText("上下文策略对比")).toBeInTheDocument();
     expect(
       screen.getByText("同一输入 → 三种策略并排对比"),
     ).toBeInTheDocument();

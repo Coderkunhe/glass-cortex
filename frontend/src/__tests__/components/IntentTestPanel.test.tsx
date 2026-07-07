@@ -49,7 +49,7 @@ describe("IntentTestPanel", () => {
   it("renders textarea and button in idle state", () => {
     render(<IntentTestPanel />);
 
-    expect(screen.getByText("意图测试")).toBeInTheDocument();
+    expect(screen.getByText("意图分类测试")).toBeInTheDocument();
     expect(screen.getByText("测试分类")).toBeInTheDocument();
     expect(
       screen.getByPlaceholderText(/输入待分类的文本/),

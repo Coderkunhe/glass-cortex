@@ -60,7 +60,7 @@ describe("OverflowSimPanel", () => {
   it("renders form controls and idle state", () => {
     render(<OverflowSimPanel />);
 
-    expect(screen.getByText("溢出模拟")).toBeInTheDocument();
+    expect(screen.getByText("上下文溢出模拟")).toBeInTheDocument();
     expect(screen.getByText("运行模拟")).toBeInTheDocument();
     // Strategy select
     expect(screen.getByRole("combobox")).toBeInTheDocument();

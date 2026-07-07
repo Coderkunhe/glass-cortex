@@ -90,7 +90,7 @@ export default function StrategyComparePanel() {
       {/* Header */}
       <div className="flex items-center gap-gm-2 mb-gm-4">
         <RiScalesLine className="w-5 h-5 text-accent" />
-        <h3 className="text-gm-sm font-semibold text-text">策略对比</h3>
+        <h3 className="text-gm-sm font-semibold text-text">上下文策略对比</h3>
         <span className="text-gm-xs text-text-muted">
           同一输入 → 三种策略并排对比
         </span>

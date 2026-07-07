@@ -56,7 +56,7 @@ export default function OverflowSimPanel() {
       {/* Header */}
       <div className="flex items-center gap-gm-2 mb-gm-4">
         <RiFlaskLine className="w-5 h-5 text-brand" />
-        <h3 className="text-gm-sm font-semibold text-text">溢出模拟</h3>
+        <h3 className="text-gm-sm font-semibold text-text">上下文溢出模拟</h3>
         <span className="text-gm-xs text-text-muted">
           模拟上下文窗口溢出，观察各策略效果
         </span>

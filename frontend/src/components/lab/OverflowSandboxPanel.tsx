@@ -212,7 +212,7 @@ export default function OverflowSandboxPanel() {
       {/* ── Header ── */}
       <div className="flex items-center gap-gm-2 mb-gm-4">
         <RiFlaskLine className="w-5 h-5 text-brand" />
-        <h3 className="text-gm-sm font-semibold text-text">溢出策略沙箱</h3>
+        <h3 className="text-gm-sm font-semibold text-text">上下文溢出沙箱</h3>
         <span className="text-gm-xs text-text-muted">
           自定义记忆数据 → 三种策略如何处理？
         </span>

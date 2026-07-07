@@ -50,7 +50,7 @@ export default function IntentTestPanel() {
       {/* Header */}
       <div className="flex items-center gap-gm-2 mb-gm-4">
         <RiFocus3Line className="w-5 h-5 text-brand" />
-        <h3 className="text-gm-sm font-semibold text-text">意图测试</h3>
+        <h3 className="text-gm-sm font-semibold text-text">意图分类测试</h3>
         <span className="text-gm-xs text-text-muted">
           独立测试意图分类，无需完整聊天管线
         </span>

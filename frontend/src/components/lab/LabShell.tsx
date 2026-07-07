@@ -35,7 +35,7 @@ const TABS = [
     key: "context",
     label: "上下文",
     icon: RiGitBranchLine,
-    desc: "溢出模拟 + 策略对比 + 意图测试",
+    desc: "溢出模拟与沙箱 + 策略/重规划对比 + 意图分类 + 召回竞赛",
     batch: 169,
   },
   {
@@ -99,12 +99,12 @@ export default function LabShell() {
       <div className="flex-1 overflow-y-auto p-gm-5">
         {activeTab === "context" && (
           <div className="space-y-gm-6">
-            <RecallRacePanel />
-            <OverflowSandboxPanel />
             <OverflowSimPanel />
+            <OverflowSandboxPanel />
             <StrategyComparePanel />
             <ReplanComparePanel />
             <IntentTestPanel />
+            <RecallRacePanel />
           </div>
         )}
         {activeTab === "pipeline" && (

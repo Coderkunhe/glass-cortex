@@ -114,7 +114,7 @@ describe("OverflowSandboxPanel", () => {
   it("renders header and preset selector", () => {
     render(<OverflowSandboxPanel />);
 
-    expect(screen.getByText("溢出策略沙箱")).toBeInTheDocument();
+    expect(screen.getByText("上下文溢出沙箱")).toBeInTheDocument();
     expect(screen.getByText("日常对话")).toBeInTheDocument();
     expect(screen.getByText("事实密集")).toBeInTheDocument();
     expect(screen.getByText("长尾低分")).toBeInTheDocument();

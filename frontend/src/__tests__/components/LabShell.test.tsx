@@ -46,9 +46,9 @@ describe("LabShell", () => {
     expect(contextTab).toHaveAttribute("aria-selected", "true");
 
     // Context tab shows real panels (Batch 169)
-    expect(screen.getByText("溢出模拟")).toBeInTheDocument();
-    expect(screen.getByText("策略对比")).toBeInTheDocument();
-    expect(screen.getByText("意图测试")).toBeInTheDocument();
+    expect(screen.getByText("上下文溢出模拟")).toBeInTheDocument();
+    expect(screen.getByText("上下文策略对比")).toBeInTheDocument();
+    expect(screen.getByText("意图分类测试")).toBeInTheDocument();
   });
 
   it("switches tabs and shows correct content", () => {
@@ -96,7 +96,7 @@ describe("LabShell", () => {
     expect(screen.getByText("衰减分布")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: /上下文/ }));
-    expect(screen.getByText("溢出模拟")).toBeInTheDocument();
+    expect(screen.getByText("上下文溢出模拟")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: /管线/ }));
     expect(screen.getByText("Token 用量仪表盘")).toBeInTheDocument();
@@ -126,7 +126,7 @@ describe("LabShell", () => {
     fireEvent.click(contextTab);
     fireEvent.click(contextTab);
     expect(contextTab).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByText("溢出模拟")).toBeInTheDocument();
+    expect(screen.getByText("上下文溢出模拟")).toBeInTheDocument();
   });
 
   // ── Tab 图标 ──
@@ -146,7 +146,7 @@ describe("LabShell", () => {
   it("content area has overflow-y-auto for scrolling", () => {
     render(<LabShell />);
     // 内容是 TabBar 之后的 div，有 flex-1 overflow-y-auto p-gm-5
-    const panel = screen.getByText("溢出模拟");
+    const panel = screen.getByText("上下文溢出模拟");
     const scrollArea = panel.closest(".overflow-y-auto");
     expect(scrollArea).toBeInTheDocument();
   });
@@ -170,13 +170,13 @@ describe("LabShell", () => {
   it("switching away and back preserves original tab content", () => {
     render(<LabShell />);
     // 默认在上下文 tab
-    expect(screen.getByText("溢出模拟")).toBeInTheDocument();
+    expect(screen.getByText("上下文溢出模拟")).toBeInTheDocument();
     // 切换到图谱
     fireEvent.click(screen.getByRole("tab", { name: /图谱/ }));
     expect(screen.getByText("知识图谱")).toBeInTheDocument();
     // 切回上下文 — 内容完好
     fireEvent.click(screen.getByRole("tab", { name: /上下文/ }));
-    expect(screen.getByText("溢出模拟")).toBeInTheDocument();
+    expect(screen.getByText("上下文溢出模拟")).toBeInTheDocument();
   });
 
   // ── Tab key → 面板映射 ──
@@ -208,6 +208,6 @@ describe("LabShell", () => {
       "aria-selected",
       "true",
     );
-    expect(screen.getByText("溢出模拟")).toBeInTheDocument();
+    expect(screen.getByText("上下文溢出模拟")).toBeInTheDocument();
   });
 });
