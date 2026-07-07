@@ -35,7 +35,11 @@ export default function OnionPanel({ response, onCollapse }: OnionPanelProps) {
 
   const recallCount = recall_items.length;
 
+  // Phase 66 B102 — 即时 tooltip 替代原生 title (C8: rationale 截断)
+  const [rationaleTooltip, setRationaleTooltip] = useState<{ x: number; y: number } | null>(null);
+
   return (
+    <>
     <div className="animate-gm-onion-in mt-gm-3 space-y-gm-3">
       {/* ── 顶部收起行（点击收起，避免长内容需滚到底部）── */}
       {onCollapse && (
@@ -58,7 +62,14 @@ export default function OnionPanel({ response, onCollapse }: OnionPanelProps) {
           {intent ? (
             <>
               <IntentPill category={intent.category} confidence={intent.confidence} rationale={intent.rationale} complexity={response.routing?.complexity} />
-              <span className="text-text-muted truncate" title={intent.rationale}>{intent.rationale}</span>
+              <span
+                className="text-text-muted truncate"
+                onMouseEnter={(e) => setRationaleTooltip({ x: e.clientX, y: e.clientY })}
+                onMouseMove={(e) => setRationaleTooltip((prev) => (prev ? { x: e.clientX, y: e.clientY } : null))}
+                onMouseLeave={() => setRationaleTooltip(null)}
+              >
+                {intent.rationale}
+              </span>
             </>
           ) : (
             <span className="text-text-muted">未识别</span>
@@ -223,6 +234,18 @@ export default function OnionPanel({ response, onCollapse }: OnionPanelProps) {
       {/* ── L4/L5：模型推理面板 — 实际 API 调用详情 ── */}
       <ModelInferencePanel apiTrace={api_trace} />
     </div>
+    {/* Phase 66 B102 — 即时 tooltip 替代原生 title (C8) */}
+    {rationaleTooltip && intent?.rationale && (
+      <div
+        className="fixed z-50 rounded-gm-sm border border-border-strong
+                   bg-surface-elevated px-gm-2.5 py-gm-1.5
+                   shadow-gm-md pointer-events-none max-w-[320px]"
+        style={{ left: rationaleTooltip.x + 12, top: rationaleTooltip.y - 8 }}
+      >
+        <p className="text-gm-xs text-text whitespace-normal">{intent.rationale}</p>
+      </div>
+    )}
+    </>
   );
 }
 

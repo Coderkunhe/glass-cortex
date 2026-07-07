@@ -176,7 +176,11 @@ function PillarCard({
   isExpanded: boolean;
   onClick: () => void;
 }) {
+  // Phase 66 B102 — 即时 tooltip 替代原生 title (C9)
+  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
+
   return (
+    <>
     <div
       className={
         "gm-card-lift animate-gm-slide-in rounded-gm-md border bg-surface-elevated " +
@@ -190,7 +194,9 @@ function PillarCard({
       tabIndex={0}
       aria-expanded={isExpanded}
       aria-label={`${data.title} — ${data.description}`}
-      title={data.description}
+      onMouseEnter={(e) => setTooltip({ x: e.clientX, y: e.clientY })}
+      onMouseMove={(e) => setTooltip((prev) => (prev ? { x: e.clientX, y: e.clientY } : null))}
+      onMouseLeave={() => setTooltip(null)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -219,6 +225,18 @@ function PillarCard({
         </span>
       </div>
     </div>
+    {/* Phase 66 B102 — 即时 tooltip 替代原生 title (C9) */}
+    {tooltip && (
+      <div
+        className="fixed z-50 rounded-gm-sm border border-border-strong
+                   bg-surface-elevated px-gm-2.5 py-gm-1.5
+                   shadow-gm-md pointer-events-none max-w-[260px]"
+        style={{ left: tooltip.x + 12, top: tooltip.y - 8 }}
+      >
+        <p className="text-gm-xs text-text whitespace-normal">{data.description}</p>
+      </div>
+    )}
+    </>
   );
 }
 

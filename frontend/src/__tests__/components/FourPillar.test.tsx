@@ -168,15 +168,16 @@ describe("FourPillar", () => {
     expect(elems.length).toBe(0);
   });
 
-  it("cards have title attribute with description", () => {
+  it("cards use aria-label for description, no native title (B102: instant tooltip replaces native title)", () => {
     const { container } = render(<FourPillar response={buildResponse()} />);
     const cards = container.querySelectorAll('[role="button"]');
     expect(cards.length).toBe(4);
     cards.forEach((card) => {
-      const title = card.getAttribute("title");
-      expect(title).toBeTruthy();
-      expect(typeof title).toBe("string");
-      expect(title!.length).toBeGreaterThan(5);
+      // B102: native title replaced with instant tooltip; description preserved in aria-label
+      expect(card.getAttribute("title")).toBeNull();
+      const ariaLabel = card.getAttribute("aria-label");
+      expect(ariaLabel).toBeTruthy();
+      expect(ariaLabel!.length).toBeGreaterThan(10);
     });
   });
 

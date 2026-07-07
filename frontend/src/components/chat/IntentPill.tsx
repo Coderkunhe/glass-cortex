@@ -59,6 +59,9 @@ export default function IntentPill({ category, confidence, rationale, complexity
   const [popoverOpen, setPopoverOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
+  // Phase 66 B102 — 即时 tooltip 替代原生 title (C7)
+  const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
+
   const { refs: fRefs, floatingStyles } = useFloating({
     placement: "top",
     middleware: [
@@ -91,10 +94,10 @@ export default function IntentPill({ category, confidence, rationale, complexity
   }, [popoverOpen]);
 
   return (
+    <>
     <Tag
       type={onClick ? "button" : undefined}
       onClick={onClick}
-      title={!rationale ? category : undefined}
       className={`inline-flex items-center rounded-full font-semibold transition-all
         ${colors.bg} ${colors.text} ${colors.border}
         ${large
@@ -104,7 +107,14 @@ export default function IntentPill({ category, confidence, rationale, complexity
         ${onClick ? "cursor-pointer hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none" : ""}
       `}
     >
-      <span className="truncate max-w-[72px]" title={category}>{category}</span>
+      <span
+        className="truncate max-w-[72px]"
+        onMouseEnter={(e) => setTooltip({ x: e.clientX, y: e.clientY })}
+        onMouseMove={(e) => setTooltip((prev) => (prev ? { x: e.clientX, y: e.clientY } : null))}
+        onMouseLeave={() => setTooltip(null)}
+      >
+        {category}
+      </span>
       <span className="opacity-75">·</span>
       <span className="tabular-nums">{(confidence * 100).toFixed(0)}%</span>
       {/* Phase 66 B43 — complexity badge from routing decision */}
@@ -158,5 +168,17 @@ export default function IntentPill({ category, confidence, rationale, complexity
         </>
       )}
     </Tag>
+    {/* Phase 66 B102 — 即时 tooltip 替代原生 title (C7) */}
+    {tooltip && (
+      <div
+        className="fixed z-50 rounded-gm-sm border border-border-strong
+                   bg-surface-elevated px-gm-2.5 py-gm-1.5
+                   shadow-gm-md pointer-events-none"
+        style={{ left: tooltip.x + 12, top: tooltip.y - 8 }}
+      >
+        <p className="text-gm-xs text-text whitespace-nowrap">{category}</p>
+      </div>
+    )}
+    </>
   );
 }

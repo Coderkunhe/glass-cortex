@@ -14,15 +14,22 @@ describe("IntentPill", () => {
     expect(screen.getByText("92%")).toBeInTheDocument();
   });
 
-  it("does not set title attribute when no rationale (clean pill)", () => {
-    const { container } = render(<IntentPill category="提问" confidence={0.92} />);
-    expect((container.firstChild as HTMLElement).title).toBe("提问");
+  it("shows category text without native title attribute (B102: instant tooltip replaces native title)", () => {
+    render(<IntentPill category="提问" confidence={0.92} />);
+    // category text is always visible (no title fallback needed)
+    const categoryEl = screen.getByText("提问");
+    expect(categoryEl).toBeInTheDocument();
+    // B102: no native title attribute on the category span
+    expect(categoryEl).not.toHaveAttribute("title");
   });
 
-  it("does not set title attribute when rationale is provided (replaced by popover)", () => {
-    const { container } = render(<IntentPill category="指令" confidence={0.85} rationale="用户要求执行命令" />);
-    // title removed in B23 — rationale now shown via click popover
-    expect((container.firstChild as HTMLElement).title).toBe("");
+  it("shows rationale via popover, not native title (B23 + B102: no native title on root)", () => {
+    render(<IntentPill category="指令" confidence={0.85} rationale="用户要求执行命令" />);
+    // rationale is available via info icon popover, not native title
+    const infoBtn = screen.getByRole("button", { name: /推理说明/ });
+    expect(infoBtn).toBeInTheDocument();
+    // B102: category span has no native title attribute
+    expect(screen.getByText("指令")).not.toHaveAttribute("title");
   });
 
   // ── 各种意图类别 ──

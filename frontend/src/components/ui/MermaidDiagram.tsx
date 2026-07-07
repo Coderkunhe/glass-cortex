@@ -84,6 +84,9 @@ export default function MermaidDiagram({
   // ── Lightbox state ──
   const [isLightboxOpen, setLightboxOpen] = useState(false);
 
+  // Phase 66 B102 — 即时 tooltip 替代原生 title "点击查看大图" (C10)
+  const [zoomTooltip, setZoomTooltip] = useState<{ x: number; y: number } | null>(null);
+
   // ── Theme MutationObserver ──
   useEffect(() => {
     const htmlEl = document.documentElement;
@@ -291,7 +294,9 @@ export default function MermaidDiagram({
         aria-label={title}
         role="img"
         tabIndex={0}
-        title="点击查看大图"
+        onMouseEnter={(e) => setZoomTooltip({ x: e.clientX, y: e.clientY })}
+        onMouseMove={(e) => setZoomTooltip((prev) => (prev ? { x: e.clientX, y: e.clientY } : null))}
+        onMouseLeave={() => setZoomTooltip(null)}
         onClick={() => setLightboxOpen(true)}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -318,6 +323,18 @@ export default function MermaidDiagram({
           isOpen={true}
           onClose={() => setLightboxOpen(false)}
         />
+      )}
+
+      {/* Phase 66 B102 — 即时 tooltip 替代原生 title "点击查看大图" (C10) */}
+      {zoomTooltip && (
+        <div
+          className="fixed z-50 rounded-gm-sm border border-border-strong
+                     bg-surface-elevated px-gm-2.5 py-gm-1.5
+                     shadow-gm-md pointer-events-none"
+          style={{ left: zoomTooltip.x + 12, top: zoomTooltip.y - 8 }}
+        >
+          <p className="text-gm-xs text-text whitespace-nowrap">点击查看大图</p>
+        </div>
       )}
     </div>
   );
