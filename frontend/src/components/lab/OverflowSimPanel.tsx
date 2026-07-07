@@ -73,8 +73,7 @@ export default function OverflowSimPanel() {
             onChange={(e) => setStrategy(e.target.value as OverflowStrategy)}
             className="w-full rounded-gm-xs border border-border bg-surface-elevated
                        px-gm-2 py-gm-1.5 text-gm-sm text-text
-                       focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30
-                       appearance-none"
+                       focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30"
           >
             {(Object.keys(OVERFLOW_LABELS) as OverflowStrategy[]).map((s) => (
               <option key={s} value={s}>

@@ -378,7 +378,7 @@ export default function OverflowSandboxPanel() {
               </h4>
               <div className="rounded-gm-xs border border-border overflow-x-auto">
                 {/* Table header */}
-                <div className="grid grid-cols-[1fr_repeat(3,minmax(5rem,1fr))] gap-0 bg-surface-alt border-b border-border text-gm-xs font-medium">
+                <div className="grid grid-cols-[minmax(0,1fr)_repeat(3,minmax(4.5rem,1fr))] gap-0 bg-surface-alt border-b border-border text-gm-xs font-medium">
                   <div className="px-gm-2 py-gm-1.5 text-text-muted">
                     记忆内容
                   </div>
@@ -396,12 +396,12 @@ export default function OverflowSandboxPanel() {
                   return (
                     <div
                       key={item.id}
-                      className="grid grid-cols-[1fr_repeat(3,minmax(5rem,1fr))] gap-0 border-b border-border last:border-b-0 text-gm-xs"
+                      className="grid grid-cols-[minmax(0,1fr)_repeat(3,minmax(4.5rem,1fr))] gap-0 border-b border-border last:border-b-0 text-gm-xs"
                     >
                       {/* Item content */}
                       <div className="px-gm-2 py-gm-1 flex items-center gap-gm-1.5">
                         <span
-                          className={`inline-block w-6 text-center text-gm-xs font-medium tabular-nums rounded-gm-xs px-gm-0.5 ${
+                          className={`inline-block min-w-[2rem] text-center text-gm-xs font-medium tabular-nums rounded-gm-xs px-gm-0.5 ${
                             item.score >= 0.7
                               ? "text-success"
                               : item.score >= 0.4
