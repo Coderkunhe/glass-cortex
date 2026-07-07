@@ -208,7 +208,10 @@ export default function TagDetailDrawer({
             onClick={onClose}
             className="p-gm-1 rounded-gm-sm text-text-muted
                        hover:text-text hover:bg-surface-lowered
-                       transition-colors shrink-0"
+                       transition-colors shrink-0
+                       focus-visible:ring-2 focus-visible:ring-brand/50
+                       focus-visible:outline-none
+                       active:scale-[0.98]"
             aria-label="关闭"
             onMouseEnter={(e) => setCloseTooltip({ x: e.clientX, y: e.clientY })}
             onMouseMove={(e) => setCloseTooltip((prev) => prev ? { x: e.clientX, y: e.clientY } : null)}
@@ -246,6 +249,9 @@ export default function TagDetailDrawer({
                 className="rounded-gm-sm bg-surface-elevated border border-border
                            px-gm-4 py-gm-2 text-gm-sm text-text-secondary
                            hover:text-text hover:bg-surface transition-colors
+                           focus-visible:ring-2 focus-visible:ring-brand/50
+                           focus-visible:outline-none
+                           active:scale-[0.98]
                            flex items-center gap-gm-1_5"
               >
                 <RiRefreshLine className="w-4 h-4" />
@@ -338,7 +344,10 @@ export default function TagDetailDrawer({
                                 onMouseLeave={() => setActionTooltip(null)}
                                 className="p-gm-0_5 rounded-gm-xs text-text-muted
                                            hover:text-danger hover:bg-danger/10
-                                           transition-colors"
+                                           transition-colors
+                                           focus-visible:ring-2 focus-visible:ring-brand/50
+                                           focus-visible:outline-none
+                                           active:scale-[0.98]"
                               >
                                 <RiThumbDownLine className="w-3_5 h-3_5" />
                               </button>
@@ -353,7 +362,10 @@ export default function TagDetailDrawer({
                                 onMouseLeave={() => setActionTooltip(null)}
                                 className="p-gm-0_5 rounded-gm-xs text-text-muted
                                            hover:text-success hover:bg-success/10
-                                           transition-colors"
+                                           transition-colors
+                                           focus-visible:ring-2 focus-visible:ring-brand/50
+                                           focus-visible:outline-none
+                                           active:scale-[0.98]"
                               >
                                 <RiThumbUpLine className="w-3_5 h-3_5" />
                               </button>
@@ -375,7 +387,9 @@ export default function TagDetailDrawer({
                         className="flex items-center gap-gm-1_5 w-full
                                    text-gm-xs text-text-muted
                                    hover:text-text-secondary
-                                   transition-colors py-gm-1"
+                                   transition-colors py-gm-1
+                                   focus-visible:ring-2 focus-visible:ring-brand/50
+                                   focus-visible:outline-none rounded-gm-xs"
                       >
                         <RiChat3Line className="w-3_5 h-3_5 shrink-0" />
                         <span className="flex-1 text-left">来源对话</span>
@@ -413,7 +427,9 @@ export default function TagDetailDrawer({
                         className="flex items-center gap-gm-1_5 w-full
                                    text-gm-xs text-text-muted
                                    hover:text-text-secondary
-                                   transition-colors py-gm-1"
+                                   transition-colors py-gm-1
+                                   focus-visible:ring-2 focus-visible:ring-brand/50
+                                   focus-visible:outline-none rounded-gm-xs"
                       >
                         <RiHistoryLine className="w-3_5 h-3_5 shrink-0" />
                         <span className="flex-1 text-left">

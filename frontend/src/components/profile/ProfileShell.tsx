@@ -145,7 +145,10 @@ export default function ProfileShell() {
           <div className="text-right mt-gm-1">
             <button
               onClick={() => setActionError(null)}
-              className="text-gm-xs text-text-muted underline hover:no-underline"
+              className="text-gm-xs text-text-muted underline hover:no-underline
+                         focus-visible:ring-2 focus-visible:ring-brand/50
+                         focus-visible:outline-none rounded-gm-xs
+                         active:scale-[0.98] transition-transform"
             >
               关闭
             </button>
@@ -246,7 +249,10 @@ export default function ProfileShell() {
                          border border-border hover:border-brand/40
                          px-gm-2_5 py-gm-1 text-gm-xs
                          text-text-secondary hover:text-brand
-                         transition-colors"
+                         transition-colors
+                         focus-visible:ring-2 focus-visible:ring-brand/50
+                         focus-visible:outline-none
+                         active:scale-[0.98]"
             >
               <RiAddLine className="w-3_5 h-3_5" />
               新建
@@ -273,11 +279,23 @@ export default function ProfileShell() {
                     key={p.name}
                     className={`group flex items-center gap-gm-2 rounded-gm-sm
                               px-gm-3 py-gm-2 transition-colors cursor-pointer
+                              focus-visible:ring-2 focus-visible:ring-brand/50
+                              focus-visible:outline-none
+                              active:scale-[0.98]
                               ${isCurrent
                                 ? "bg-success/5 ring-1 ring-success/15"
                                 : "hover:bg-surface"
                               }`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`切换到 profile ${p.name}`}
                     onClick={() => handleSwitch(p.name)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleSwitch(p.name);
+                      }
+                    }}
                   >
                     {/* 头像 */}
                     <div
@@ -324,7 +342,10 @@ export default function ProfileShell() {
                           }}
                           className="p-gm-1 rounded-gm-xs text-text-muted
                                      hover:text-danger hover:bg-danger/10
-                                     transition-colors"
+                                     transition-colors
+                                     focus-visible:ring-2 focus-visible:ring-brand/50
+                                     focus-visible:outline-none
+                                     active:scale-[0.98]"
                           aria-label={`删除 ${p.name}`}
                           onMouseEnter={(e) => setDeleteTooltip({ x: e.clientX, y: e.clientY, text: `删除 ${p.name}` })}
                           onMouseMove={(e) => setDeleteTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
@@ -508,6 +529,9 @@ function TagCloud({
             onMouseLeave={() => setTooltipState(null)}
             className={`${sizeClass} font-semibold cursor-pointer
                         transition-all duration-200 hover:scale-110
+                        focus-visible:ring-2 focus-visible:ring-brand/50
+                        focus-visible:outline-none rounded-gm-xs
+                        active:scale-[0.98]
                         ${colorClass}`}
           >
             {t.relation}
