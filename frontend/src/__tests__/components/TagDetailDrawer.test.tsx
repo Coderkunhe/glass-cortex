@@ -627,8 +627,8 @@ describe("TagDetailDrawer", () => {
     });
 
     // 每个事实应有两个按钮（纠正 + 加星）
-    const correctBtns = screen.getAllByTitle("纠正 — AI 识别有误");
-    const starBtns = screen.getAllByTitle("加星 — AI 识别准确");
+    const correctBtns = screen.getAllByRole("button", { name: "纠正 — AI 识别有误" });
+    const starBtns = screen.getAllByRole("button", { name: "加星 — AI 识别准确" });
     expect(correctBtns.length).toBe(3);
     expect(starBtns.length).toBe(3);
   });
@@ -667,7 +667,7 @@ describe("TagDetailDrawer", () => {
         json: () => Promise.resolve(buildTagDetailResponse()),
       });
 
-    const correctBtns = screen.getAllByTitle("纠正 — AI 识别有误");
+    const correctBtns = screen.getAllByRole("button", { name: "纠正 — AI 识别有误" });
     fireEvent.click(correctBtns[0]);
 
     await waitFor(() => {
@@ -721,7 +721,7 @@ describe("TagDetailDrawer", () => {
         json: () => Promise.resolve(buildTagDetailResponse()),
       });
 
-    const starBtns = screen.getAllByTitle("加星 — AI 识别准确");
+    const starBtns = screen.getAllByRole("button", { name: "加星 — AI 识别准确" });
     fireEvent.click(starBtns[0]);
 
     await waitFor(() => {
@@ -758,7 +758,7 @@ describe("TagDetailDrawer", () => {
     mockFetch.mockReset();
     mockFetch.mockReturnValue(new Promise(() => {}));
 
-    const correctBtns = screen.getAllByTitle("纠正 — AI 识别有误");
+    const correctBtns = screen.getAllByRole("button", { name: "纠正 — AI 识别有误" });
     fireEvent.click(correctBtns[0]);
 
     // 按钮应消失，取而代之的是 spinner
@@ -787,7 +787,7 @@ describe("TagDetailDrawer", () => {
     mockFetch.mockReset();
     mockFetch.mockRejectedValueOnce(new Error("纠正失败"));
 
-    const correctBtns = screen.getAllByTitle("纠正 — AI 识别有误");
+    const correctBtns = screen.getAllByRole("button", { name: "纠正 — AI 识别有误" });
     fireEvent.click(correctBtns[0]);
 
     await waitFor(() => {

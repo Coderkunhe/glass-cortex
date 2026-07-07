@@ -219,6 +219,9 @@ export default function LearnClientShell({
   const [immersive, setImmersive] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
 
+  // Phase 66 B106 — 即时 tooltip 替代原生 title (T16-T22: 侧栏/导航/字号/沉浸按钮)
+  const [learnTooltip, setLearnTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+
   /** 全量问题列表（按章节顺序展平） */
   const allQuestions = useMemo(() => {
     return chapters.flatMap((ch) => questionsByChapter[ch.id] || []);
@@ -467,6 +470,7 @@ export default function LearnClientShell({
     ) : false;
 
   return (
+    <>
     <AppShell sidebar={sidebarSlot}>
       {/* 内容播报（aria-live，屏幕阅读器专用） */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
@@ -481,7 +485,9 @@ export default function LearnClientShell({
               <button
                 onClick={toggleSidebar}
                 className="sidebar-toggle-btn"
-                title={sidebarOpen ? "收起目录" : "展开目录"}
+                onMouseEnter={(e) => setLearnTooltip({ x: e.clientX, y: e.clientY, text: sidebarOpen ? "收起目录" : "展开目录" })}
+                onMouseMove={(e) => setLearnTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                onMouseLeave={() => setLearnTooltip(null)}
                 aria-label={sidebarOpen ? "收起目录" : "展开目录"}
               >
                 {sidebarOpen ? (
@@ -519,7 +525,9 @@ export default function LearnClientShell({
                   onClick={handlePrev}
                   disabled={isFirst}
                   className="learn-nav-btn"
-                  title={isFirst ? "已是第一节" : "上一节"}
+                  onMouseEnter={(e) => setLearnTooltip({ x: e.clientX, y: e.clientY, text: isFirst ? "已是第一节" : "上一节" })}
+                  onMouseMove={(e) => setLearnTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                  onMouseLeave={() => setLearnTooltip(null)}
                   aria-label="上一节"
                 >
                   <RiArrowUpSLine className="w-gm-icon-md h-gm-icon-md" />
@@ -529,7 +537,9 @@ export default function LearnClientShell({
                   <button
                     onClick={handleScrollToTop}
                     className="learn-nav-btn"
-                    title="回到顶部"
+                    onMouseEnter={(e) => setLearnTooltip({ x: e.clientX, y: e.clientY, text: "回到顶部" })}
+                    onMouseMove={(e) => setLearnTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                    onMouseLeave={() => setLearnTooltip(null)}
                     aria-label="回到顶部"
                   >
                     <RiArrowDownSLine className="w-gm-icon-md h-gm-icon-md" />
@@ -538,7 +548,9 @@ export default function LearnClientShell({
                   <button
                     onClick={handleNext}
                     className="learn-nav-btn"
-                    title="下一节"
+                    onMouseEnter={(e) => setLearnTooltip({ x: e.clientX, y: e.clientY, text: "下一节" })}
+                    onMouseMove={(e) => setLearnTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                    onMouseLeave={() => setLearnTooltip(null)}
                     aria-label="下一节"
                   >
                     <RiArrowDownSLine className="w-gm-icon-md h-gm-icon-md" />
@@ -553,9 +565,9 @@ export default function LearnClientShell({
                       )
                     }
                     className="learn-nav-btn"
-                    title={`字号：${
-                      fontSize === "sm" ? "小" : fontSize === "lg" ? "大" : "中"
-                    }`}
+                    onMouseEnter={(e) => setLearnTooltip({ x: e.clientX, y: e.clientY, text: `字号：${fontSize === "sm" ? "小" : fontSize === "lg" ? "大" : "中"}` })}
+                    onMouseMove={(e) => setLearnTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                    onMouseLeave={() => setLearnTooltip(null)}
                     aria-label={`字号：${fontSize === "sm" ? "小" : fontSize === "lg" ? "大" : "中"}`}
                   >
                     <RiFontSize className="w-gm-icon-md h-gm-icon-md" />
@@ -566,7 +578,9 @@ export default function LearnClientShell({
                   <button
                     onClick={toggleImmersive}
                     className="learn-nav-btn"
-                    title="沉浸阅读"
+                    onMouseEnter={(e) => setLearnTooltip({ x: e.clientX, y: e.clientY, text: "沉浸阅读" })}
+                    onMouseMove={(e) => setLearnTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                    onMouseLeave={() => setLearnTooltip(null)}
                     aria-label="沉浸阅读"
                   >
                     <RiFullscreenLine className="w-gm-icon-md h-gm-icon-md" />
@@ -679,7 +693,9 @@ export default function LearnClientShell({
                 onClick={toggleImmersive}
                 className="immersive-exit-btn"
                 aria-label="退出沉浸模式"
-                title="退出沉浸模式 (Esc)"
+                onMouseEnter={(e) => setLearnTooltip({ x: e.clientX, y: e.clientY, text: "退出沉浸模式 (Esc)" })}
+                onMouseMove={(e) => setLearnTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                onMouseLeave={() => setLearnTooltip(null)}
               >
                 <RiFullscreenExitLine className="w-4 h-4" />
                 <span>退出</span>
@@ -724,6 +740,16 @@ export default function LearnClientShell({
         </div>
       </div>
     </AppShell>
+    {/* Phase 66 B106 — T16-T22: 即时 tooltip 替代原生 title (7 处按钮) */}
+    {learnTooltip && (
+      <div
+        className="fixed z-50 rounded-gm-sm border border-border-strong bg-surface-elevated px-gm-2.5 py-gm-1.5 shadow-gm-md pointer-events-none"
+        style={{ left: learnTooltip.x + 12, top: learnTooltip.y - 8 }}
+      >
+        <p className="text-gm-xs text-text whitespace-nowrap">{learnTooltip.text}</p>
+      </div>
+    )}
+    </>
   );
 }
 

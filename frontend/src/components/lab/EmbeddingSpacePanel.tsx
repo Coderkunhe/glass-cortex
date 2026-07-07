@@ -170,6 +170,9 @@ export default function EmbeddingSpacePanel() {
   // Lightbox
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
+  // Phase 66 B106 — 即时 tooltip 替代原生 title (T15: 操作提示)
+  const [canvasTooltip, setCanvasTooltip] = useState<{ x: number; y: number } | null>(null);
+
   // ── 数据拉取 ──
   const fetchCoords = useCallback(async () => {
     setState("loading");
@@ -476,6 +479,7 @@ export default function EmbeddingSpacePanel() {
   }, []);
 
   return (
+    <>
     <section className="rounded-gm-sm border border-border bg-surface-elevated p-gm-5">
       {/* Header */}
       <div className="flex items-center gap-gm-2 mb-gm-3">
@@ -580,7 +584,9 @@ export default function EmbeddingSpacePanel() {
               style={{ height: "420px", cursor: "grab" }}
               role="img"
               aria-label="嵌入空间 3D 可视化 — 拖拽旋转 · 滚轮缩放 · 右键平移"
-              title="拖拽旋转 · 滚轮缩放 · 右键平移 · 点击截图"
+              onMouseEnter={(e) => setCanvasTooltip({ x: e.clientX, y: e.clientY })}
+              onMouseMove={(e) => setCanvasTooltip((prev) => prev ? { x: e.clientX, y: e.clientY } : null)}
+              onMouseLeave={() => setCanvasTooltip(null)}
               onClick={handleCanvasClick}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -666,5 +672,15 @@ export default function EmbeddingSpacePanel() {
         />
       )}
     </section>
+    {/* Phase 66 B106 — T15: 即时 tooltip 替代原生 title "拖拽旋转..." */}
+    {canvasTooltip && (
+      <div
+        className="fixed z-50 rounded-gm-sm border border-border-strong bg-surface-elevated px-gm-2.5 py-gm-1.5 shadow-gm-md pointer-events-none"
+        style={{ left: canvasTooltip.x + 12, top: canvasTooltip.y - 8 }}
+      >
+        <p className="text-gm-xs text-text whitespace-nowrap">拖拽旋转 · 滚轮缩放 · 右键平移 · 点击截图</p>
+      </div>
+    )}
+    </>
   );
 }

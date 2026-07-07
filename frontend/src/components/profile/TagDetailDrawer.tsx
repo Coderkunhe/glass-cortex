@@ -61,6 +61,9 @@ export default function TagDetailDrawer({
   // Phase 66 B105 — 即时 tooltip 替代原生 title (T8: 关闭按钮)
   const [closeTooltip, setCloseTooltip] = useState<{ x: number; y: number } | null>(null);
 
+  // Phase 66 B106 — 即时 tooltip (T13+T14: 纠正/加星按钮, 共享 state text 区分)
+  const [actionTooltip, setActionTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+
   /** 调用 API 加载标签详情。subject / relation 任一为空则跳过。 */
   const fetchDetail = useCallback(async () => {
     if (!subject || !relation) return;
@@ -356,7 +359,10 @@ export default function TagDetailDrawer({
                                   e.stopPropagation();
                                   handleCorrect(fact.id);
                                 }}
-                                title="纠正 — AI 识别有误"
+                                aria-label="纠正 — AI 识别有误"
+                                onMouseEnter={(e) => setActionTooltip({ x: e.clientX, y: e.clientY, text: "纠正 — AI 识别有误" })}
+                                onMouseMove={(e) => setActionTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                                onMouseLeave={() => setActionTooltip(null)}
                                 className="p-gm-0_5 rounded-gm-xs text-text-muted
                                            hover:text-danger hover:bg-danger/10
                                            transition-colors"
@@ -368,7 +374,10 @@ export default function TagDetailDrawer({
                                   e.stopPropagation();
                                   handleStar(fact.id);
                                 }}
-                                title="加星 — AI 识别准确"
+                                aria-label="加星 — AI 识别准确"
+                                onMouseEnter={(e) => setActionTooltip({ x: e.clientX, y: e.clientY, text: "加星 — AI 识别准确" })}
+                                onMouseMove={(e) => setActionTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                                onMouseLeave={() => setActionTooltip(null)}
                                 className="p-gm-0_5 rounded-gm-xs text-text-muted
                                            hover:text-success hover:bg-success/10
                                            transition-colors"
@@ -519,6 +528,15 @@ export default function TagDetailDrawer({
         style={{ left: closeTooltip.x + 12, top: closeTooltip.y - 8 }}
       >
         <p className="text-gm-xs text-text whitespace-nowrap">关闭 (Esc)</p>
+      </div>
+    )}
+    {/* Phase 66 B106 — T13+T14: 即时 tooltip 替代原生 title "纠正"/"加星" */}
+    {actionTooltip && (
+      <div
+        className="fixed z-50 rounded-gm-sm border border-border-strong bg-surface-elevated px-gm-2.5 py-gm-1.5 shadow-gm-md pointer-events-none"
+        style={{ left: actionTooltip.x + 12, top: actionTooltip.y - 8 }}
+      >
+        <p className="text-gm-xs text-text whitespace-nowrap">{actionTooltip.text}</p>
       </div>
     )}
     </>
