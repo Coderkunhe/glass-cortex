@@ -17,6 +17,7 @@ import {
 } from "@remixicon/react";
 import { api } from "@/lib/api/client";
 import type { TagDetailResponse } from "@/lib/api/types";
+import { fmtTimestamp } from "@/lib/formatTime";
 
 /** 抽屉滑入动画参数。duration=600ms 与 ProcessDrawer 对齐（--gm-duration-drawer-slow）。 */
 
@@ -193,12 +194,6 @@ export default function TagDetailDrawer({
     if (c > 0.7) return "text-success bg-success/10 border-success/20";
     if (c > 0.4) return "text-warning bg-warning/10 border-warning/20";
     return "text-text-muted bg-surface-lowered border-border";
-  };
-
-  /** Unix 时间戳 → 中文 locale 字符串。null 时返回占位符。 */
-  const formatTime = (ts: number | null) => {
-    if (ts == null) return "—";
-    return new Date(ts * 1000).toLocaleString("zh-CN");
   };
 
   const showData = !loading && !error && data && data.facts.length > 0;
@@ -423,7 +418,7 @@ export default function TagDetailDrawer({
                                 {fact.episode_content}
                               </p>
                               <p className="text-gm-xs text-text-muted">
-                                {formatTime(fact.episode_timestamp)}
+                                {fmtTimestamp(fact.episode_timestamp)}
                               </p>
                             </>
                           ) : (
@@ -505,7 +500,7 @@ export default function TagDetailDrawer({
                                     </span>
                                   )}
                                   <span className="text-text-muted/60 ml-gm-1_5">
-                                    {formatTime(entry.logged_at)}
+                                    {fmtTimestamp(entry.logged_at)}
                                   </span>
                                 </div>
                               );
