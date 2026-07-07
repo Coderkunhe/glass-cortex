@@ -125,17 +125,6 @@ describe("CompressionLogPanel", () => {
     expect(refreshBtn).toBeInTheDocument();
   });
 
-  it("shows event log placeholder", async () => {
-    mockFetch.mockResolvedValueOnce(mockCompressionResponse());
-    renderPanel();
-
-    await waitFor(() => {
-      expect(
-        screen.getByText("压缩事件日志即将上线"),
-      ).toBeInTheDocument();
-    });
-  });
-
   it("renders all-zero stats gracefully", async () => {
     mockFetch.mockResolvedValueOnce(
       mockCompressionResponse({

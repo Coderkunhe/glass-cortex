@@ -12,6 +12,7 @@ import DataState from "@/components/ui/DataState";
 import { api } from "@/lib/api/client";
 import type { LogResponse, LogQueryParams, LogEntry, FetchState } from "@/lib/api/types";
 import { formatBytes } from "@/lib/formatBytes";
+import { levelColor } from "./_utils";
 import LogDetailModal from "./LogDetailModal";
 
 /* ── 常量 ─────────────────────────────────────────── */
@@ -27,22 +28,6 @@ const LEVEL_LABELS: Record<string, string> = {
 const TAIL_OPTIONS = [50, 100, 200, 500, 1000];
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
 
-/** 日志级别 → 文字颜色（用于行渲染） */
-function levelColor(level: string): string {
-  switch (level) {
-    case "DEBUG":
-      return "text-text-muted";
-    case "INFO":
-      return "text-info";
-    case "WARNING":
-      return "text-warning";
-    case "ERROR":
-    case "PARSE_ERROR":
-      return "text-danger";
-    default:
-      return "text-text-secondary";
-  }
-}
 
 /* ── 组件 ─────────────────────────────────────────── */
 

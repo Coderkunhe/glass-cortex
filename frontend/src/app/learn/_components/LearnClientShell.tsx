@@ -57,6 +57,9 @@ const CHAPTER_ICON_MAP: Record<string, React.ComponentType<{ className?: string 
   RiMentalHealthLine,
 };
 
+/** 沉浸模式控件自动隐藏延迟（ms）。Phase 1000 B109 从内联魔数 2000 提取。 */
+const IMMERSIVE_IDLE_TIMEOUT_MS = 2000;
+
 // ── Props ─────────────────────────────────────────────────────
 
 export interface LearnClientShellProps {
@@ -421,7 +424,7 @@ export default function LearnClientShell({
           track?.classList.add("immersive-controls--idle");
           pct?.classList.add("immersive-controls--idle");
           btn?.classList.add("immersive-controls--idle");
-        }, 2000);
+        }, IMMERSIVE_IDLE_TIMEOUT_MS);
       };
       main?.addEventListener("mousemove", resetIdle, { passive: true });
       main?.addEventListener("scroll", resetIdle, { passive: true });

@@ -1,6 +1,7 @@
 "use client";
 
 import type { HealthComponent } from "@/lib/api/types";
+import { latencyColor } from "./_utils";
 
 /** 状态 → 中文标签映射 */
 const STATUS_LABELS: Record<string, string> = {
@@ -35,13 +36,6 @@ function statusPillClass(status: string): string {
     default:
       return "bg-surface-lowered text-text-muted";
   }
-}
-
-/** 延迟着色：<50ms 绿, 50-200ms 橙, >200ms 红 */
-function latencyColor(latencyMs: number): string {
-  if (latencyMs < 50) return "text-success";
-  if (latencyMs <= 200) return "text-warning";
-  return "text-danger";
 }
 
 export interface HealthCardProps {

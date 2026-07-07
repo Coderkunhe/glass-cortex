@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { RiFileReduceLine } from "@remixicon/react";
 import DataState from "@/components/ui/DataState";
 import { RefreshButton } from "@/components/ui/RefreshButton";
 import { api } from "@/lib/api/client";
@@ -105,14 +104,6 @@ export default function CompressionLogPanel() {
           </div>
         )}
       </DataState>
-
-      {/* 事件列表占位 — 后续批次补齐 */}
-      <div className="border-t border-border pt-gm-4 mt-gm-2">
-        <div className="flex flex-col items-center justify-center py-gm-8 text-text-muted/50 gap-gm-2">
-          <RiFileReduceLine className="w-8 h-8" />
-          <p className="text-gm-xs">压缩事件日志即将上线</p>
-        </div>
-      </div>
     </div>
   );
 }

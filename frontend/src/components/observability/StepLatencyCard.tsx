@@ -8,13 +8,7 @@ import { api } from "@/lib/api/client";
 import type { StepSummary, FetchState } from "@/lib/api/types";
 import { STEP_LABELS } from "@/lib/labels";
 import { fmtMs } from "@/lib/formatTime";
-
-/** 延迟着色：<50ms 绿, 50-200ms 橙, >200ms 红 */
-function latencyColor(ms: number): string {
-  if (ms < 50) return "text-success";
-  if (ms <= 200) return "text-warning";
-  return "text-danger";
-}
+import { latencyColor } from "./_utils";
 
 /**
  * 步骤延迟指标卡片。

@@ -11,23 +11,7 @@ import Drawer from "@/components/ui/Drawer";
 import { api } from "@/lib/api/client";
 import type { LogDetailResponse } from "@/lib/api/types";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
-
-/** 日志级别 → 文字颜色 */
-function levelColor(level: string): string {
-  switch (level) {
-    case "DEBUG":
-      return "text-text-muted";
-    case "INFO":
-      return "text-info";
-    case "WARNING":
-      return "text-warning";
-    case "ERROR":
-    case "PARSE_ERROR":
-      return "text-danger";
-    default:
-      return "text-text-secondary";
-  }
-}
+import { levelColor } from "./_utils";
 
 /** 日志级别 → 背景色 */
 function levelBg(level: string): string {
