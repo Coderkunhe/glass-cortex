@@ -260,13 +260,23 @@ describe("OverflowSandboxPanel", () => {
     });
   });
 
-  it("updates window size via slider", () => {
+  it("updates window size via number input", () => {
     render(<OverflowSandboxPanel />);
 
-    const slider = screen.getByRole("slider") as HTMLInputElement;
-    fireEvent.change(slider, { target: { value: "2048" } });
+    const input = screen.getByRole("spinbutton") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "2048" } });
 
-    expect(screen.getByText(/2048 tokens/)).toBeInTheDocument();
+    expect(input.value).toBe("2048");
+  });
+
+  it("updates window size via preset button", () => {
+    render(<OverflowSandboxPanel />);
+
+    const presetBtn = screen.getByText("2K");
+    fireEvent.click(presetBtn);
+
+    const input = screen.getByRole("spinbutton") as HTMLInputElement;
+    expect(input.value).toBe("2048");
   });
 
   it("allows user input via textarea", () => {

@@ -49,7 +49,7 @@ export default function IntentTestPanel() {
     <section className="rounded-gm-sm border border-border bg-surface-elevated p-gm-5">
       {/* Header */}
       <div className="flex items-center gap-gm-2 mb-gm-4">
-        <RiFocus3Line className="w-5 h-5 text-warning" />
+        <RiFocus3Line className="w-5 h-5 text-brand" />
         <h3 className="text-gm-sm font-semibold text-text">意图测试</h3>
         <span className="text-gm-xs text-text-muted">
           独立测试意图分类，无需完整聊天管线
@@ -62,12 +62,12 @@ export default function IntentTestPanel() {
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           placeholder="输入待分类的文本，例如：『帮我写一段 Python 代码来解析 JSON』…"
-          rows={3}
+          rows={4}
           className="w-full rounded-gm-xs border border-border bg-surface-alt
                      px-gm-2 py-gm-1.5 text-gm-sm text-text
                      placeholder:text-text-muted/50
                      focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30
-                     resize-none"
+                     resize-y min-h-[80px]"
           aria-keyshortcuts={isMac ? "Meta+Enter" : "Ctrl+Enter"}
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -80,8 +80,8 @@ export default function IntentTestPanel() {
           <button
             onClick={fetchClassify}
             disabled={state === "loading" || !userInput.trim()}
-            className="rounded-gm-sm bg-warning px-gm-4 py-gm-1.5 text-gm-sm
-                       font-medium text-white hover:opacity-90 transition-opacity
+            className="rounded-gm-sm bg-brand px-gm-4 py-gm-1.5 text-gm-sm
+                       font-medium text-white hover:bg-brand-600 transition-colors
                        disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
             {state === "loading" ? (
@@ -95,7 +95,7 @@ export default function IntentTestPanel() {
           </button>
         </div>
       </div>
-      <p className="text-gm-xs text-text-muted/60 -mt-gm-2 mb-gm-4">
+      <p className="text-gm-xs text-text-muted/60 mt-gm-1 mb-gm-4">
         {isMac ? "⌘" : "Ctrl"}+Enter 快速提交
       </p>
 
@@ -104,7 +104,7 @@ export default function IntentTestPanel() {
         error={error}
         onRetry={fetchClassify}
         loadingMessage="正在分类…"
-        loadingIconClassName="text-warning"
+        loadingIconClassName="text-brand"
         emptyIcon={RiFocus3Line}
         emptyMessage="输入文本后点击「测试分类」查看意图识别结果"
         isEmpty={

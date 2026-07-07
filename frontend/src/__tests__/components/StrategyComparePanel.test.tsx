@@ -154,8 +154,8 @@ describe("StrategyComparePanel", () => {
     // Run button
     expect(screen.getByText("运行对比")).toBeInTheDocument();
 
-    // Window size slider
-    expect(screen.getByRole("slider")).toBeInTheDocument();
+    // Window size number input (replaced range slider)
+    expect(screen.getByRole("spinbutton")).toBeInTheDocument();
 
     // Textarea
     expect(
@@ -331,7 +331,7 @@ describe("StrategyComparePanel", () => {
     expect(screen.queryByText("运行对比")).not.toBeInTheDocument();
   });
 
-  it("updates window size via slider", async () => {
+  it("updates window size via number input", async () => {
     mockFetch.mockResolvedValueOnce(mockPersonasResponse());
     render(<StrategyComparePanel />);
 
@@ -342,12 +342,26 @@ describe("StrategyComparePanel", () => {
       ).toBeInTheDocument();
     });
 
-    const slider = screen.getByRole("slider") as HTMLInputElement;
-    fireEvent.change(slider, { target: { value: "2048" } });
+    const input = screen.getByRole("spinbutton") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "2048" } });
 
-    // Label should update
-    expect(screen.getByText(/2048 tokens/)).toBeInTheDocument();
-    expect(screen.queryByText(/4096 tokens/)).not.toBeInTheDocument();
+    expect(input.value).toBe("2048");
+  });
+
+  it("updates window size via preset button", async () => {
+    mockFetch.mockResolvedValueOnce(mockPersonasResponse());
+    render(<StrategyComparePanel />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("调整参数后点击「运行对比」查看三种策略效果"),
+      ).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("2K"));
+
+    const input = screen.getByRole("spinbutton") as HTMLInputElement;
+    expect(input.value).toBe("2048");
   });
 
   it("allows user input via textarea", async () => {

@@ -10,6 +10,7 @@ import {
 } from "@remixicon/react";
 import { api } from "@/lib/api/client";
 import DataState from "@/components/ui/DataState";
+import { WindowSizeInput } from "@/components/ui/WindowSizeInput";
 import type { OverflowSimResponse, FetchState } from "@/lib/api/types";
 
 /** 溢出策略 → 标签映射（与 ParamSliders OVERFLOW_LABELS 一致） */
@@ -61,10 +62,14 @@ export default function OverflowSimPanel() {
         </span>
       </div>
 
-      {/* 表单区 */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-gm-3 mb-gm-4">
-        {/* 策略选择 */}
-        <div>
+      {/* ── 实验参数卡 ── */}
+      <div className="rounded-gm-sm border border-border bg-surface-alt/50 p-gm-4 mb-gm-4">
+        <h4 className="text-gm-xs font-semibold text-text-secondary mb-gm-3 uppercase tracking-wider">
+          实验参数
+        </h4>
+
+        {/* 溢出策略 */}
+        <div className="mb-gm-3">
           <label className="text-gm-xs font-medium text-text-secondary block mb-gm-1">
             溢出策略
           </label>
@@ -83,64 +88,46 @@ export default function OverflowSimPanel() {
           </select>
         </div>
 
-        {/* 窗口大小 */}
-        <div>
+        {/* 窗口大小 — combo box */}
+        <div className="mb-gm-3">
+          <WindowSizeInput value={windowSize} onChange={setWindowSize} />
+        </div>
+
+        {/* 用户输入 — 大文本域 */}
+        <div className="mb-gm-3">
           <label className="text-gm-xs font-medium text-text-secondary block mb-gm-1">
-            窗口大小: {windowSize} tokens
+            用户输入（可选，用于 token 估算）
           </label>
-          <input
-            type="range"
-            min={256}
-            max={8192}
-            step={256}
-            value={windowSize}
-            onChange={(e) => setWindowSize(Number(e.target.value))}
-            className="gm-slider w-full"
-            aria-valuetext={`${windowSize} tokens`}
+          <textarea
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            placeholder="输入一段文本模拟用户消息…"
+            rows={5}
+            className="w-full rounded-gm-xs border border-border bg-surface-alt
+                       px-gm-2 py-gm-1.5 text-gm-sm text-text
+                       placeholder:text-text-muted/50
+                       focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30
+                       resize-y min-h-[80px]"
           />
-          <div className="flex justify-between text-gm-xs text-text-muted mt-gm-0.5">
-            <span>256</span>
-            <span>8192</span>
-          </div>
         </div>
 
-        {/* 模拟按钮 */}
-        <div className="flex items-end">
-          <button
-            onClick={fetchSimulation}
-            disabled={state === "loading"}
-            className="w-full rounded-gm-sm bg-brand px-gm-4 py-gm-1.5 text-gm-sm
-                       font-medium text-white hover:bg-brand-600 transition-colors
-                       disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {state === "loading" ? (
-              <span className="flex items-center justify-center gap-gm-1">
-                <RiLoader4Line className="w-4 h-4 animate-spin" />
-                模拟中…
-              </span>
-            ) : (
-              "运行模拟"
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* 用户输入 */}
-      <div className="mb-gm-4">
-        <label className="text-gm-xs font-medium text-text-secondary block mb-gm-1">
-          用户输入（可选，用于 token 估算）
-        </label>
-        <textarea
-          value={userInput}
-          onChange={(e) => setUserInput(e.target.value)}
-          placeholder="输入一段文本模拟用户消息…"
-          rows={2}
-          className="w-full rounded-gm-xs border border-border bg-surface-alt
-                     px-gm-2 py-gm-1.5 text-gm-sm text-text
-                     placeholder:text-text-muted/50
-                     focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand/30
-                     resize-none"
-        />
+        {/* 运行按钮 — 全宽 */}
+        <button
+          onClick={fetchSimulation}
+          disabled={state === "loading"}
+          className="w-full rounded-gm-sm bg-brand px-gm-4 py-gm-2 text-gm-sm
+                     font-medium text-white hover:bg-brand-600 transition-colors
+                     disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {state === "loading" ? (
+            <span className="flex items-center justify-center gap-gm-1">
+              <RiLoader4Line className="w-4 h-4 animate-spin" />
+              模拟中…
+            </span>
+          ) : (
+            "运行模拟"
+          )}
+        </button>
       </div>
 
       <DataState

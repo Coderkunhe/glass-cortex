@@ -64,8 +64,8 @@ describe("OverflowSimPanel", () => {
     expect(screen.getByText("运行模拟")).toBeInTheDocument();
     // Strategy select
     expect(screen.getByRole("combobox")).toBeInTheDocument();
-    // Window size slider hint
-    expect(screen.getByRole("slider")).toBeInTheDocument();
+    // Window size number input (replaced range slider)
+    expect(screen.getByRole("spinbutton")).toBeInTheDocument();
     // Idle prompt
     expect(
       screen.getByText(/调整参数后点击/),

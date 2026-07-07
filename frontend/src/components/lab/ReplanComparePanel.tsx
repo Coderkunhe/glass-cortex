@@ -184,27 +184,27 @@ function PlanColumn({
                     onClick={(e) => { e.stopPropagation(); onIntervene(t.id, "accept"); }}
                     disabled={intervening}
                     title="接受此步骤"
-                    className="p-0.5 rounded-gm-xs text-success hover:bg-success/10 disabled:opacity-40"
+                    className="p-gm-1 rounded-gm-xs text-success hover:bg-success/10 disabled:opacity-40"
                   >
-                    <RiCheckLine className="w-3 h-3" />
+                    <RiCheckLine className="w-4 h-4" />
                   </button>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onIntervene(t.id, "reject"); }}
                     disabled={intervening}
                     title="拒绝此步骤"
-                    className="p-0.5 rounded-gm-xs text-danger hover:bg-danger/10 disabled:opacity-40"
+                    className="p-gm-1 rounded-gm-xs text-danger hover:bg-danger/10 disabled:opacity-40"
                   >
-                    <RiCloseLine className="w-3 h-3" />
+                    <RiCloseLine className="w-4 h-4" />
                   </button>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onIntervene(t.id, "skip"); }}
                     disabled={intervening}
                     title="跳过此步骤"
-                    className="p-0.5 rounded-gm-xs text-text-muted hover:bg-surface-alt disabled:opacity-40"
+                    className="p-gm-1 rounded-gm-xs text-text-muted hover:bg-surface-alt disabled:opacity-40"
                   >
-                    <RiSkipForwardLine className="w-3 h-3" />
+                    <RiSkipForwardLine className="w-4 h-4" />
                   </button>
                 </span>
               )}
