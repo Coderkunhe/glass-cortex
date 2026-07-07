@@ -4,6 +4,7 @@ import {
   screen,
   cleanup,
   waitFor,
+  fireEvent,
 } from "@testing-library/react";
 import CostWaterfallPanel from "@/components/lab/CostWaterfallPanel";
 
@@ -64,6 +65,25 @@ function mockWaterfallError() {
     ok: false,
     status: 500,
     json: () => Promise.resolve({ error: "internal", detail: "获取成本瀑布数据失败" }),
+  };
+}
+
+/** B95 E3: mock call_point response */
+function mockCallPointSuccess() {
+  return {
+    ok: true,
+    json: () =>
+      Promise.resolve({
+        steps: [
+          { label: "聊天 LLM", tokens: 5000, kind: "call_point", color: "#6366f1" },
+          { label: "事实抽取", tokens: 1200, kind: "call_point", color: "#22c55e" },
+          { label: "净消耗", tokens: 4200, kind: "net", color: "#0f172a" },
+        ],
+        gross_tokens: 6200,
+        cache_savings: 1200,
+        compression_savings: 800,
+        net_tokens: 4200,
+      }),
   };
 }
 
@@ -192,6 +212,66 @@ describe("CostWaterfallPanel", () => {
       // Net at the end
       const netLabels = screen.getAllByText("净消耗");
       expect(netLabels.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  // ── B95 E3: call point view toggle ────────────────────────────────
+
+  it("renders view mode pill toggle when data loaded", async () => {
+    mockFetch.mockResolvedValueOnce(mockWaterfallSuccess(500, 0, 0));
+    render(<CostWaterfallPanel />);
+    await waitFor(() => {
+      expect(screen.getByText("瀑布流")).toBeInTheDocument();
+      expect(screen.getByText("按调用点")).toBeInTheDocument();
+    });
+  });
+
+  it("fetches call_point data when toggling to call_point view", async () => {
+    // 1st: default waterfall load → 2nd: call_point toggle re-fetch
+    mockFetch
+      .mockResolvedValueOnce(mockWaterfallSuccess(500, 0, 0))
+      .mockResolvedValueOnce(mockCallPointSuccess());
+
+    render(<CostWaterfallPanel />);
+    await waitFor(() => {
+      expect(screen.getByText("LLM 调用总额")).toBeInTheDocument();
+    });
+
+    // Click "按调用点" pill
+    fireEvent.click(screen.getByText("按调用点"));
+
+    // Verify fetch was called with ?by=call_point
+    await waitFor(() => {
+      const calls = mockFetch.mock.calls;
+      const callPointCall = calls.find((call: string[]) =>
+        String(call[0]).includes("by=call_point"),
+      );
+      expect(callPointCall).toBeDefined();
+    });
+  });
+
+  it("renders call_point steps correctly", async () => {
+    mockFetch.mockResolvedValueOnce(mockCallPointSuccess());
+    // Render with call_point view pre-selected
+    // We can't pre-select, so we render normally then toggle
+    mockFetch
+      .mockReset()
+      .mockResolvedValueOnce(mockWaterfallSuccess(500, 0, 0))
+      .mockResolvedValueOnce(mockCallPointSuccess());
+
+    render(<CostWaterfallPanel />);
+    await waitFor(() => {
+      expect(screen.getByText("LLM 调用总额")).toBeInTheDocument();
+    });
+
+    // Toggle to call_point
+    fireEvent.click(screen.getByText("按调用点"));
+
+    await waitFor(() => {
+      expect(screen.getByText("聊天 LLM")).toBeInTheDocument();
+      expect(screen.getByText("事实抽取")).toBeInTheDocument();
+      // Subtitle changes
+      expect(screen.getByText("按调用点分组 → 净消耗")).toBeInTheDocument();
     });
   });
 });

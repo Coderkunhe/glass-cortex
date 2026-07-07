@@ -41,6 +41,111 @@ from api.schemas import (
 router = APIRouter(prefix="/lab", tags=["lab"])
 
 
+# ── Helpers ───────────────────────────────────────────────────────────────
+
+
+def _call_point_label(cp: str) -> str:
+    """Map internal call_point names to Chinese display labels (B95 E3)."""
+    labels: dict[str, str] = {
+        "chat": "聊天 LLM",
+        "fact_extraction": "事实抽取",
+        "compression": "消息压缩",
+        "cache_hit": "缓存命中",
+        "compression_savings": "压缩节省",
+        "reflection": "反思",
+        "classify": "意图分类",
+    }
+    return labels.get(cp, cp)
+
+
+def _compute_summary(records: list[object]) -> dict[str, dict[str, int]]:
+    """Build a summary dict from a list of TokenUsage records (B95 E4 prep).
+
+    Extracted from TokenLedger.summary() so time-filtered records
+    can reuse the same grouping logic without touching private state.
+    """
+    groups: dict[str, dict[str, int]] = {}
+    for r in records:
+        cp: str = getattr(r, "call_point", "unknown")
+        pt: int = getattr(r, "prompt_tokens", 0)
+        ct: int = getattr(r, "completion_tokens", 0)
+        if cp not in groups:
+            groups[cp] = {
+                "count": 0,
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+            }
+        g = groups[cp]
+        g["count"] += 1
+        g["prompt_tokens"] += pt
+        g["completion_tokens"] += ct
+        g["total_tokens"] += pt + ct
+
+    total = {
+        "count": sum(g["count"] for g in groups.values()),
+        "prompt_tokens": sum(g["prompt_tokens"] for g in groups.values()),
+        "completion_tokens": sum(g["completion_tokens"] for g in groups.values()),
+        "total_tokens": sum(g["total_tokens"] for g in groups.values()),
+    }
+    groups["total"] = total
+    return groups
+
+
+def _build_call_point_response(
+    raw: dict[str, dict[str, int]],
+    gross_llm: int,
+    cache_savings: int,
+    compression_savings: int,
+    net: int,
+) -> CostWaterfallResponse:
+    """Build per-call_point waterfall response (B95 E3)."""
+    color_palette = [
+        "#6366f1",  # indigo-500
+        "#22c55e",  # green-500
+        "#f59e0b",  # amber-500
+        "#ef4444",  # red-500
+        "#8b5cf6",  # violet-500
+        "#06b6d4",  # cyan-500
+        "#ec4899",  # pink-500
+    ]
+
+    steps: list[CostWaterfallStep] = []
+    color_idx = 0
+    for cp_name, group in raw.items():
+        if cp_name in ("total",):
+            continue
+        if group["total_tokens"] == 0:
+            continue
+        steps.append(
+            CostWaterfallStep(
+                label=_call_point_label(cp_name),
+                tokens=group["total_tokens"],
+                kind="call_point",
+                color=color_palette[color_idx % len(color_palette)],
+            )
+        )
+        color_idx += 1
+
+    # Net total at bottom
+    steps.append(
+        CostWaterfallStep(
+            label="净消耗",
+            tokens=net,
+            kind="net",
+            color="#0f172a",
+        )
+    )
+
+    return CostWaterfallResponse(
+        steps=steps,
+        gross_tokens=gross_llm,
+        cache_savings=cache_savings,
+        compression_savings=compression_savings,
+        net_tokens=net,
+    )
+
+
 # ── 辅助函数 ──────────────────────────────────────────────────────────
 
 
@@ -530,24 +635,47 @@ def strategy_personas() -> StrategyPersonasResponse:
 
 
 @router.get("/cost-waterfall", response_model=CostWaterfallResponse)
-def cost_waterfall(engines: Any = EnginesDep) -> CostWaterfallResponse:
+def cost_waterfall(
+    engines: Any = EnginesDep,
+    by: str | None = None,
+    since: float | None = None,
+    until: float | None = None,
+) -> CostWaterfallResponse:
     """返回 Token 消耗瀑布流——从原始 LLM 调用总额到净消耗的逐步拆解。
 
     数据来源于内存中的 TokenLedger（会话级别），服务器重启后清空。
     瀑布结构：LLM 调用总额 → 扣除缓存节省 → 扣除压缩节省 → 净消耗。
+
+    Query params:
+    - by: "call_point" 切换为按调用点分组视图（B95 E3）
+    - since / until: epoch 秒时间范围过滤（B96 E4 prep，后端已就绪）
     """
     _store, _idx, _recall, _forget, _chat, ledger, _planner = engines
-    raw = ledger.summary()
+
+    # E4 prep: 时间范围过滤（前端尚未接入，后端先就绪）
+    if since is not None or until is not None:
+        filtered = [
+            r
+            for r in ledger._records
+            if (since is None or r.timestamp >= since) and (until is None or r.timestamp <= until)
+        ]
+        raw = _compute_summary(filtered)
+    else:
+        raw = ledger.summary()
+
     total = raw.get("total", {})
     gross_llm = total.get("total_tokens", 0)
     cache_savings = raw.get("cache_hit", {}).get("prompt_tokens", 0)
     compression_savings = raw.get("compression_savings", {}).get("prompt_tokens", 0)
     net = gross_llm - cache_savings - compression_savings
 
-    # 构造瀑布步骤，按递减顺序展示
+    # E3: 按调用点分组视图
+    if by == "call_point":
+        return _build_call_point_response(raw, gross_llm, cache_savings, compression_savings, net)
+
+    # 默认：瀑布流视图
     steps: list[CostWaterfallStep] = []
 
-    # 第 1 步：LLM 调用总额
     steps.append(
         CostWaterfallStep(
             label="LLM 调用总额",
@@ -557,7 +685,6 @@ def cost_waterfall(engines: Any = EnginesDep) -> CostWaterfallResponse:
         )
     )
 
-    # 第 2 步：缓存节省（仅在有节省时显示为独立台阶）
     if cache_savings > 0:
         steps.append(
             CostWaterfallStep(
@@ -568,7 +695,6 @@ def cost_waterfall(engines: Any = EnginesDep) -> CostWaterfallResponse:
             )
         )
 
-    # 第 3 步：压缩节省（仅在有节省时显示为独立台阶）
     if compression_savings > 0:
         steps.append(
             CostWaterfallStep(
@@ -579,7 +705,6 @@ def cost_waterfall(engines: Any = EnginesDep) -> CostWaterfallResponse:
             )
         )
 
-    # 第 4 步：净消耗（汇总行）
     steps.append(
         CostWaterfallStep(
             label="净消耗",

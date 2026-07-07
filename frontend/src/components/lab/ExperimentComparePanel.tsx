@@ -24,6 +24,23 @@ import { fmtTokens } from "@/lib/formatNum";
 
 type RunState = "idle" | "running" | "done" | "error";
 
+/** B95 E2: compute differing keys between A/B settings for inline display */
+function computePresetDiff(
+  preset: ExperimentPreset,
+): { key: string; valueA: unknown; valueB: unknown }[] {
+  const allKeys = new Set([
+    ...Object.keys(preset.settings_a),
+    ...Object.keys(preset.settings_b),
+  ]);
+  return Array.from(allKeys)
+    .filter((key) => preset.settings_a[key] !== preset.settings_b[key])
+    .map((key) => ({
+      key,
+      valueA: preset.settings_a[key],
+      valueB: preset.settings_b[key],
+    }));
+}
+
 /** 方向标签映射。 */
 const DIRECTION_LABELS: Record<string, { text: string; cls: string }> = {
   a_better: { text: "A 更优", cls: "text-info" },
@@ -262,6 +279,26 @@ export default function ExperimentComparePanel() {
                   <div className="text-gm-xs text-text-muted mt-gm-1">
                     {preset.description}
                   </div>
+                  {/* B95 E2: inline A/B parameter diff */}
+                  {(() => {
+                    const diffs = computePresetDiff(preset);
+                    if (diffs.length === 0) return null;
+                    return (
+                      <div className="text-gm-xs text-text-muted/60 mt-gm-1.5 space-y-gm-0.5">
+                        {diffs.map((d) => (
+                          <div key={d.key} className="flex items-center gap-gm-1">
+                            <code className="bg-surface-alt px-gm-1 rounded-gm-xs text-gm-xs">
+                              {d.key}
+                            </code>
+                            <span>:</span>
+                            <span>{String(d.valueA)}</span>
+                            <span className="text-text-muted/40">→</span>
+                            <span>{String(d.valueB)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </button>
               );
             })}

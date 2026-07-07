@@ -175,6 +175,25 @@ describe("ExperimentComparePanel", () => {
     expect(screen.getByTestId("experiment-run-btn")).toBeDisabled();
   });
 
+  // B95 E2: preset parameter diff
+  it("shows A/B parameter diff on preset cards", async () => {
+    mockFetch.mockResolvedValueOnce(mockPresetsSuccess());
+    render(<ExperimentComparePanel />);
+    await waitFor(() => {
+      expect(screen.getByTestId("presets-loaded")).toBeInTheDocument();
+    });
+    // recall_top_k preset should show the diff "3 → 7"
+    const presetCard = screen.getByTestId("preset-recall_top_k_3_vs_7");
+    expect(presetCard.textContent).toMatch(/recall_top_k/);
+    expect(presetCard.textContent).toMatch(/3/);
+    expect(presetCard.textContent).toMatch(/7/);
+    // boost preset shows strengthen_boost diff
+    const boostCard = screen.getByTestId("preset-boost_0.1_vs_0.5");
+    expect(boostCard.textContent).toMatch(/strengthen_boost/);
+    expect(boostCard.textContent).toMatch(/0\.1/);
+    expect(boostCard.textContent).toMatch(/0\.5/);
+  });
+
   it("shows presets error with retry", async () => {
     mockFetch.mockResolvedValueOnce(mockPresetsError());
     render(<ExperimentComparePanel />);

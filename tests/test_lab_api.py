@@ -535,3 +535,83 @@ class TestLabCostWaterfall:
                     assert key in step, f"Missing step key: {key}"
                 assert isinstance(step["tokens"], int)
                 assert step["kind"] in ("gross", "savings", "net")
+
+    # ── B95 E3: ?by=call_point query param ────────────────────────────
+
+    def test_cost_waterfall_by_call_point(self) -> None:
+        """?by=call_point 返回按调用点分组的步骤。"""
+        ledger = MagicMock()
+        ledger.summary.return_value = {
+            "chat": {
+                "count": 3,
+                "prompt_tokens": 800,
+                "completion_tokens": 200,
+                "total_tokens": 1000,
+            },
+            "fact_extraction": {
+                "count": 3,
+                "prompt_tokens": 400,
+                "completion_tokens": 100,
+                "total_tokens": 500,
+            },
+            "cache_hit": {
+                "count": 1,
+                "prompt_tokens": 200,
+                "completion_tokens": 0,
+                "total_tokens": 200,
+            },
+            "compression_savings": {
+                "count": 1,
+                "prompt_tokens": 100,
+                "completion_tokens": 0,
+                "total_tokens": 100,
+            },
+            "total": {
+                "count": 8,
+                "prompt_tokens": 1500,
+                "completion_tokens": 300,
+                "total_tokens": 1800,
+            },
+        }
+        engines = build_mock_engines(ledger=ledger)
+        with make_client(engines) as client:
+            resp = client.get("/lab/cost-waterfall?by=call_point")
+            assert resp.status_code == 200
+            data = resp.json()
+            # 顶层字段齐全
+            top_keys = (
+                "steps",
+                "gross_tokens",
+                "cache_savings",
+                "compression_savings",
+                "net_tokens",
+            )
+            for key in top_keys:
+                assert key in data, f"Missing top-level key: {key}"
+            # 步骤包含 per-call_point 条目
+            kinds = [s["kind"] for s in data["steps"]]
+            assert "call_point" in kinds, f"Expected call_point kind in steps, got: {kinds}"
+            # 净消耗在最后
+            assert data["steps"][-1]["kind"] == "net"
+            # net_tokens = gross - savings
+            expected_net = (
+                data["gross_tokens"] - data["cache_savings"] - data["compression_savings"]
+            )
+            assert data["net_tokens"] == expected_net
+
+    def test_cost_waterfall_by_call_point_empty_summary(self) -> None:
+        """?by=call_point 在无记录时仍返回有效结构（至少净消耗步骤）。"""
+        ledger = MagicMock()
+        ledger.summary.return_value = {
+            "total": {"count": 0, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+        }
+        engines = build_mock_engines(ledger=ledger)
+        with make_client(engines) as client:
+            resp = client.get("/lab/cost-waterfall?by=call_point")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["gross_tokens"] == 0
+            assert data["net_tokens"] == 0
+            # 至少会有净消耗步骤
+            assert len(data["steps"]) >= 1
+            assert data["steps"][-1]["kind"] == "net"

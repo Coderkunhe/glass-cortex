@@ -14,12 +14,15 @@ export default function CostWaterfallPanel() {
   const [state, setState] = useState<FetchState>("idle");
   const [data, setData] = useState<CostWaterfallResponse | null>(null);
   const [error, setError] = useState<Error | string | null>(null);
+  const [viewMode, setViewMode] = useState<"waterfall" | "call_point">("waterfall");
 
   const fetchWaterfall = useCallback(async () => {
     setState("loading");
     setError(null);
     try {
-      const result = await api.getCostWaterfall();
+      const params: { by?: string } = {};
+      if (viewMode === "call_point") params.by = "call_point";
+      const result = await api.getCostWaterfall(params);
       setData(result);
       // If there are any token records at all, show success; otherwise idle
       setState(result.gross_tokens > 0 ? "success" : "idle");
@@ -27,7 +30,7 @@ export default function CostWaterfallPanel() {
       setError(err instanceof Error ? err : new Error("获取成本瀑布数据失败"));
       setState("error");
     }
-  }, []);
+  }, [viewMode]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -46,12 +49,41 @@ export default function CostWaterfallPanel() {
         <RiFundsLine className="w-5 h-5 text-accent shrink-0" />
         <h3 className="text-gm-sm font-semibold text-text">Token 消耗瀑布</h3>
         <span className="text-gm-xs text-text-muted">
-          原始调用 → 节省扣除 → 净消耗
+          {viewMode === "waterfall"
+            ? "原始调用 → 节省扣除 → 净消耗"
+            : "按调用点分组 → 净消耗"}
         </span>
         {state === "success" && (
           <RefreshButton onClick={fetchWaterfall} className="ml-auto" />
         )}
       </div>
+
+      {/* B95 E3: view mode pill toggle */}
+      {(state === "success" || data) && (
+        <div className="flex items-center gap-gm-1.5 mb-gm-3" role="radiogroup" aria-label="视图切换">
+          {([
+            { key: "waterfall" as const, label: "瀑布流" },
+            { key: "call_point" as const, label: "按调用点" },
+          ]).map((opt) => {
+            const isActive = viewMode === opt.key;
+            return (
+              <button
+                key={opt.key}
+                role="radio"
+                aria-checked={isActive}
+                onClick={() => setViewMode(opt.key)}
+                className={`text-gm-xs px-gm-2 py-gm-0.5 rounded-gm-sm border transition-colors ${
+                  isActive
+                    ? "border-accent bg-accent/10 text-accent ring-1 ring-accent/50"
+                    : "border-text-muted/30 text-text-muted opacity-60 hover:opacity-80"
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
 
 

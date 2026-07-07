@@ -153,6 +153,16 @@ export interface ExperimentRunResponse {
   elapsed_ms: number;
 }
 
+/** Client-side run history entry (B95 E1 prep — B96 will use this) */
+export interface ExperimentHistoryEntry {
+  id: number;
+  timestamp: number;
+  presetId: string;
+  presetLabel: string;
+  userInput: string;
+  result: ExperimentRunResponse;
+}
+
 // ── Lab: Strategy Personas ───────────────────────────────────────────
 
 /** GET /lab/strategy-personas — 单条策略人格 */
@@ -176,7 +186,7 @@ export interface StrategyPersonasResponse {
 export interface CostWaterfallStep {
   label: string;
   tokens: number;
-  kind: "gross" | "savings" | "net";
+  kind: "gross" | "savings" | "net" | "call_point";
   color: string;
 }
 

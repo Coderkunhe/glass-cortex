@@ -386,7 +386,21 @@ export const api = {
   getStrategyPersonas: () =>
     request<StrategyPersonasResponse>("/lab/strategy-personas"),
 
-  /** Token cost waterfall — gross → savings → net breakdown */
-  getCostWaterfall: () =>
-    request<CostWaterfallResponse>("/lab/cost-waterfall"),
+  /** Token cost waterfall — gross → savings → net breakdown
+   *  @param params.by — "call_point" for per-call_point grouping (B95 E3)
+   *  @param params.since / params.until — epoch seconds time filter (B96 E4 prep) */
+  getCostWaterfall: (params?: {
+    by?: string;
+    since?: number;
+    until?: number;
+  }) => {
+    const qs = params
+      ? buildQuery({
+          by: params.by,
+          since: params.since,
+          until: params.until,
+        })
+      : "";
+    return request<CostWaterfallResponse>(`/lab/cost-waterfall${qs}`);
+  },
 };
