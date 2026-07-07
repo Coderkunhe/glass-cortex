@@ -441,10 +441,8 @@ export default function LearnClientShell({
       };
     } else {
       document.body.classList.remove("gm-immersive");
-      const id = setTimeout(() => setReadingProgress(0), 0);
-      return () => {
-        clearTimeout(id);
-      };
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 对标 B89 消除模式，退出沉浸模式同步复位进度
+      setReadingProgress(0);
     }
   }, [immersive]);
 

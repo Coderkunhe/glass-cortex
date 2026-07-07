@@ -37,8 +37,8 @@ export default function TokenMetricsCard() {
   }, []);
 
   useEffect(() => {
-    const id = setTimeout(() => fetchTokens(), 0);
-    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 对标 B89 消除模式，setState 在 useCallback 内部执行
+    fetchTokens();
   }, [fetchTokens]);
 
   const sortedCallPoints =

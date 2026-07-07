@@ -11,6 +11,7 @@ import {
 import DataState from "@/components/ui/DataState";
 import { api } from "@/lib/api/client";
 import type { LogResponse, LogQueryParams, LogEntry, FetchState } from "@/lib/api/types";
+import { formatBytes } from "@/lib/formatBytes";
 import LogDetailModal from "./LogDetailModal";
 
 /* ── 常量 ─────────────────────────────────────────── */
@@ -41,13 +42,6 @@ function levelColor(level: string): string {
     default:
       return "text-text-secondary";
   }
-}
-
-/** 文件大小格式化 */
-function formatBytes(bytes: number): string {
-  if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)} MB`;
-  if (bytes >= 1_024) return `${(bytes / 1_024).toFixed(1)} KB`;
-  return `${bytes} B`;
 }
 
 /* ── 组件 ─────────────────────────────────────────── */

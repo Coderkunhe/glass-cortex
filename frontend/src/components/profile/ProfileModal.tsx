@@ -29,7 +29,9 @@ export default function ProfileModal({
   const [name, setName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 打开时自动聚焦 + 清空（通过 setTimeout 避免同步 setState 触发 React 19 警告）
+  // 打开时自动聚焦 + 清空。setTimeout(…, 0) 在此处是合法的聚焦时序管理——
+  // 不是取数反模式（对标 B89 / B108 消除模式），而是避免 React 同步 setState 警告 +
+  // 等一帧让 DOM 就位后再聚焦 input。
   useEffect(() => {
     if (isOpen) {
       const id = setTimeout(() => {

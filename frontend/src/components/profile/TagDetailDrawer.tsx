@@ -158,10 +158,8 @@ export default function TagDetailDrawer({
 
   // 打开时加载标签详情（通过 setTimeout 避免同步 setState 触发 React 19 警告）
   useEffect(() => {
-    if (isOpen) {
-      const id = setTimeout(() => fetchDetail(), 0);
-      return () => clearTimeout(id);
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 对标 B89 消除模式，抽屉打开时同步触发加载
+    if (isOpen) fetchDetail();
   }, [isOpen, fetchDetail]);
 
   // ── 工具函数 ──
