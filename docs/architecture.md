@@ -1,6 +1,6 @@
 # 架构文档
 
-> 最后更新: 2026-07-05 (Phase 1000 B104 — 🎉 治理段收官 · 结构性风险 12/12 清零 · 违纪闭环落地)
+> 最后更新: 2026-07-07 (Phase 66 B89 — 共享模块 Risk Assessment 缺口补齐 · 9 模块清零 🟠🟡)
 
 ## 实现现状
 
@@ -231,6 +231,7 @@
 | KnowledgeGraphScene (ECharts) | ✅ 完成 | 2026-07-02 | `frontend/src/components/lab/KnowledgeGraphScene.tsx` — ECharts 2D 力导向图（~270 行），GraphColors 独立色板（getGraphColors(isDark)），零 3D 依赖，双主题感知 + 置信度筛选 + force layout 拖拽/缩放/邻接高亮 — Phase 1000 Batch 49-53 |
 | Shared Module Governance 框架 | ✅ 完成 | 2026-07-03 | `tools/check_shared_modules.py` — 61 共享模块自动扫描 · 三级风险分类 (🔴Critical/🟠High/🟡Medium) · Feature Flag 消费者影响矩阵 · Risk Assessment 交叉检查 · `make check-docs` L2f 集成 — Phase 1000 B56 |
 | Risk Assessment ×3 (schemas/config/store) | ✅ 完成 | 2026-07-03 | `api/schemas.py` (14C·5L) · `src/config.py` (28C·5L) · `src/memory/store.py` (22C·5L) — Consumer Impact Analysis + 5-Layer Abstraction Enumeration + Key Findings — Phase 1000 B57-B59 |
+| Risk Assessment ×9 🟠🟡 缺口补齐 | ✅ 完成 | 2026-07-07 | 🟠 `formatTime.ts` (9C·3L — fmtRelativeTime/fmtMs/fmtTimestamp) · `labels.ts` (5C·3L — STEP_LABELS/CALL_POINT_LABELS/CALL_POINT_COLORS) · `ErrorBoundary.tsx` (5C·2L — class boundary + ErrorDisplay fallback). 🟡 `useCodeHighlight.tsx` (4C·2L — Prism + CopyButton DOM) · `useLocalStorage.ts` (3C·3L — SSR-safe JSON persist) · `formatChapter.ts` (3C·2L — toChineseNumeral/formatChapterTitle) · `formatNum.ts` (3C·1L — toLocaleString) · `estimateReadingTime.ts` (3C·2L — 中英混合估算/格式化) · `WindowSizeInput.tsx` (3C·2L — 数字输入+preset 组合). 全 9 模块 Risk Assessment 写入 `docs/archive/architecture-ra-b89.md` — Phase 66 B89 |
 | 治理工具链增强 (Feature Flag/Settings/Backlog) | ✅ 完成 | 2026-07-03 | 13 flags 审计矩阵 · `Settings.__post_init__` 验证 · master-backlog v2 (366→93 行) · CLAUDE.md 瘦身 (190→175) + 文件健康诊断 · 发现即待办规则 19 — Phase 1000 B61-B65 |
 
 ## 架构决策记录
