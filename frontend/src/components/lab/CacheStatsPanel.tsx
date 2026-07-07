@@ -3,6 +3,9 @@
 import { useState, useCallback, useEffect } from "react";
 import {
   RiHardDrive2Line,
+  RiCheckboxCircleLine,
+  RiErrorWarningLine,
+  RiCloseCircleLine,
 } from "@remixicon/react";
 import { RefreshButton } from "@/components/ui/RefreshButton";
 import { api } from "@/lib/api/client";
@@ -10,11 +13,29 @@ import DataState from "@/components/ui/DataState";
 import type { CacheStatsResponse, CacheStats, FetchState } from "@/lib/api/types";
 import { fmtNum } from "@/lib/formatNum";
 
-/** 命中率 → 健康评估标签 */
-function getHealthLabel(hitRatePct: number): { label: string; tone: string } {
-  if (hitRatePct >= 80) return { label: "✅ 健康 — 缓存命中率处于理想区间", tone: "text-success" };
-  if (hitRatePct >= 40) return { label: "🟡 偏低 — 建议复查缓存策略或增大容量", tone: "text-warning" };
-  return { label: "🔴 异常 — 缓存几乎未命中，检查 key 匹配或预热逻辑", tone: "text-danger" };
+/** 命中率 → 健康评估标签（图标 + 文案） */
+function getHealthLabel(hitRatePct: number): {
+  icon: React.ReactNode;
+  label: string;
+  tone: string;
+} {
+  if (hitRatePct >= 80)
+    return {
+      icon: <RiCheckboxCircleLine className="w-4 h-4 shrink-0" />,
+      label: "健康 — 缓存命中率处于理想区间",
+      tone: "text-success",
+    };
+  if (hitRatePct >= 40)
+    return {
+      icon: <RiErrorWarningLine className="w-4 h-4 shrink-0" />,
+      label: "偏低 — 建议复查缓存策略或增大容量",
+      tone: "text-warning",
+    };
+  return {
+    icon: <RiCloseCircleLine className="w-4 h-4 shrink-0" />,
+    label: "异常 — 缓存几乎未命中，检查 key 匹配或预热逻辑",
+    tone: "text-danger",
+  };
 }
 
 /** 单个缓存统计条 */
@@ -51,13 +72,17 @@ function CacheBar({
         <span>容量 {fmtNum(stats.size)}</span>
         <span>请求 {fmtNum(stats.total_requests)}</span>
       </div>
-      {stats.total_requests > 0 && (
-        <p
-          className={`text-gm-xs italic mt-gm-0.5 ${getHealthLabel(stats.hit_rate_pct).tone}`}
-        >
-          {getHealthLabel(stats.hit_rate_pct).label}
-        </p>
-      )}
+      {stats.total_requests > 0 && (() => {
+        const health = getHealthLabel(stats.hit_rate_pct);
+        return (
+          <p
+            className={`flex items-center gap-gm-1 text-gm-xs mt-gm-0.5 ${health.tone}`}
+          >
+            {health.icon}
+            <span>{health.label}</span>
+          </p>
+        );
+      })()}
     </div>
   );
 }

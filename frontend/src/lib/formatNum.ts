@@ -11,3 +11,9 @@
 export function fmtNum(n: number): string {
   return n.toLocaleString("en-US");
 }
+
+/** 格式化 token 数，>=1000 显示 k 后缀（如 1500 → "1.5k"） */
+export function fmtTokens(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  return String(n);
+}

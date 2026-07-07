@@ -20,14 +20,9 @@ import type {
   FetchState,
 } from "@/lib/api/types";
 import { fmtMs } from "@/lib/formatTime";
+import { fmtTokens } from "@/lib/formatNum";
 
 type RunState = "idle" | "running" | "done" | "error";
-
-/** 格式化 token 数。 */
-function fmtTokens(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-  return String(n);
-}
 
 /** 方向标签映射。 */
 const DIRECTION_LABELS: Record<string, { text: string; cls: string }> = {

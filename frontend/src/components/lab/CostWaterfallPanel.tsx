@@ -8,13 +8,7 @@ import { RefreshButton } from "@/components/ui/RefreshButton";
 import { api } from "@/lib/api/client";
 import DataState from "@/components/ui/DataState";
 import type { CostWaterfallResponse, FetchState } from "@/lib/api/types";
-
-
-/** 格式化 token 数，>=1000 显示 k 后缀。 */
-function fmtTokens(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-  return String(n);
-}
+import { fmtTokens } from "@/lib/formatNum";
 
 export default function CostWaterfallPanel() {
   const [state, setState] = useState<FetchState>("idle");
