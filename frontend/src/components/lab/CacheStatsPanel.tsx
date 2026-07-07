@@ -8,12 +8,7 @@ import { RefreshButton } from "@/components/ui/RefreshButton";
 import { api } from "@/lib/api/client";
 import DataState from "@/components/ui/DataState";
 import type { CacheStatsResponse, CacheStats, FetchState } from "@/lib/api/types";
-
-
-/** 格式化数字 */
-function fmtNum(n: number): string {
-  return n.toLocaleString("en-US");
-}
+import { fmtNum } from "@/lib/formatNum";
 
 /** 命中率 → 健康评估标签 */
 function getHealthLabel(hitRatePct: number): { label: string; tone: string } {

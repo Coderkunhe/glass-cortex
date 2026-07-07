@@ -9,30 +9,12 @@ import { RefreshButton } from "@/components/ui/RefreshButton";
 import { api } from "@/lib/api/client";
 import DataState from "@/components/ui/DataState";
 import type { TokenSummary, FetchState } from "@/lib/api/types";
-
-/** 调用点 → 显示名映射。未在映射中的 key 直接用原始值。 */
-const CALL_POINT_LABELS: Record<string, string> = {
-  chat: "聊天引擎",
-  intent_classify: "意图分类",
-  fact_extraction: "事实抽取",
-  planner: "Planner",
-  chat_engine: "聊天引擎",
-};
-
-/** 调用点 → 颜色映射（prompt 段 / completion 段） */
-const CALL_POINT_COLORS: Record<
-  string,
-  { prompt: string; completion: string }
-> = {
-  chat: { prompt: "bg-brand", completion: "bg-brand/60" },
-  chat_engine: { prompt: "bg-brand", completion: "bg-brand/60" },
-  intent_classify: { prompt: "bg-accent", completion: "bg-accent/60" },
-  planner: { prompt: "bg-accent", completion: "bg-accent/60" },
-  fact_extraction: { prompt: "bg-warning", completion: "bg-warning/60" },
-};
-
-/** 默认颜色（未识别的调用点） */
-const DEFAULT_COLORS = { prompt: "bg-info", completion: "bg-info/60" };
+import {
+  CALL_POINT_LABELS,
+  CALL_POINT_COLORS,
+  DEFAULT_CALL_POINT_COLORS,
+} from "@/lib/labels";
+import { fmtNum } from "@/lib/formatNum";
 
 /** 找到 Token 消耗最高的调用点，返回其 label 和占比 */
 function getDominantCallPoint(
@@ -48,11 +30,6 @@ function getDominantCallPoint(
     label: CALL_POINT_LABELS[topKey] || topKey,
     pct: Math.round((topUsage.total_tokens / totalTokens) * 100),
   };
-}
-
-/** 格式化数字为千分位字符串 */
-function fmtNum(n: number): string {
-  return n.toLocaleString("en-US");
 }
 
 /**
@@ -151,7 +128,7 @@ export default function TokenDashboardPanel() {
 
           {/* Per-call-point bars */}
           {sortedCallPoints.map(([callPoint, usage]) => {
-            const colors = CALL_POINT_COLORS[callPoint] || DEFAULT_COLORS;
+            const colors = CALL_POINT_COLORS[callPoint] || DEFAULT_CALL_POINT_COLORS;
             const promptPct =
               maxTokens > 0 ? (usage.prompt_tokens / maxTokens) * 100 : 0;
             const completionPct =

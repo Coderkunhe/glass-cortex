@@ -17,18 +17,13 @@ import type {
   FetchState,
   TierDistributionResponse,
 } from "@/lib/api/types";
+import { fmtTimestamp as fmtTime } from "@/lib/formatTime";
 type SubTab = "episodes" | "facts";
 
 const SUB_TABS = [
   { key: "episodes", label: "记忆流" },
   { key: "facts", label: "知识碎片" },
 ] as const;
-
-/** 格式化 Unix 时间戳 */
-function fmtTime(ts: number | null): string {
-  if (!ts || ts <= 0) return "N/A";
-  return new Date(ts * 1000).toLocaleString("zh-CN");
-}
 
 /** 记忆分级 → 颜色类名映射 */
 const TIER_STYLES: Record<string, string> = {

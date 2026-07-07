@@ -6,29 +6,14 @@ import { RefreshButton } from "@/components/ui/RefreshButton";
 import DataState from "@/components/ui/DataState";
 import { api } from "@/lib/api/client";
 import type { StepSummary, FetchState } from "@/lib/api/types";
-
-/** 步骤名 → 显示名映射 */
-const STEP_LABELS: Record<string, string> = {
-  chat: "聊天引擎",
-  chat_engine: "聊天引擎",
-  intent_classify: "意图分类",
-  fact_extraction: "事实抽取",
-  recall: "语义召回",
-  store: "记忆存储",
-  planner: "Planner",
-};
+import { STEP_LABELS } from "@/lib/labels";
+import { fmtMs } from "@/lib/formatTime";
 
 /** 延迟着色：<50ms 绿, 50-200ms 橙, >200ms 红 */
 function latencyColor(ms: number): string {
   if (ms < 50) return "text-success";
   if (ms <= 200) return "text-warning";
   return "text-danger";
-}
-
-/** 格式化毫秒 */
-function fmtMs(ms: number): string {
-  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
-  return `${Math.round(ms)}ms`;
 }
 
 /**

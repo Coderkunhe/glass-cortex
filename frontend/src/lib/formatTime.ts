@@ -36,3 +36,25 @@ export function formatRelativeTime(timestamp: number): string {
   const day = d.getDate();
   return `${month}月${day}日`;
 }
+
+/**
+ * 格式化毫秒数为人类可读字符串。
+ *
+ * ≥1000ms → "1.2s"；<1000ms → "500ms"。
+ * 用于 PipelineTracePanel、StepLatencyPanel、ExperimentComparePanel 等面板。
+ */
+export function fmtMs(ms: number): string {
+  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
+  return `${Math.round(ms)}ms`;
+}
+
+/**
+ * 格式化 Unix 时间戳（秒）为中文可读日期。
+ *
+ * 返回 `toLocaleString("zh-CN")` 格式，null/0/负数返回 "N/A"。
+ * 用于 PipelineTracePanel、JourneyHistoryBrowser、MemoryBrowserPanel 等面板。
+ */
+export function fmtTimestamp(ts: number | null): string {
+  if (!ts || ts <= 0) return "N/A";
+  return new Date(ts * 1000).toLocaleString("zh-CN");
+}

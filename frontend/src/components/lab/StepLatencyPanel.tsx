@@ -8,24 +8,9 @@ import { RefreshButton } from "@/components/ui/RefreshButton";
 import { api } from "@/lib/api/client";
 import DataState from "@/components/ui/DataState";
 import type { StepSummary, FetchState } from "@/lib/api/types";
+import { STEP_LABELS } from "@/lib/labels";
+import { fmtMs } from "@/lib/formatTime";
 
-
-/** 步骤名 → 显示名映射 */
-const STEP_LABELS: Record<string, string> = {
-  chat: "聊天引擎",
-  chat_engine: "聊天引擎",
-  intent_classify: "意图分类",
-  fact_extraction: "事实抽取",
-  recall: "语义召回",
-  store: "记忆存储",
-  planner: "Planner",
-};
-
-/** 格式化毫秒数 */
-function fmtMs(ms: number): string {
-  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
-  return `${Math.round(ms)}ms`;
-}
 
 /**
  * 管线步骤延迟分析面板。

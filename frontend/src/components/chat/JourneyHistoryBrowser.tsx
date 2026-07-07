@@ -12,12 +12,7 @@ import DataState from "@/components/ui/DataState";
 import { RefreshButton } from "@/components/ui/RefreshButton";
 import { api } from "@/lib/api/client";
 import type { EpisodeOut, FetchState } from "@/lib/api/types";
-
-/** 格式化 Unix 时间戳为 zh-CN 本地时间 */
-function fmtTime(ts: number | null): string {
-  if (!ts || ts <= 0) return "N/A";
-  return new Date(ts * 1000).toLocaleString("zh-CN");
-}
+import { fmtTimestamp as fmtTime } from "@/lib/formatTime";
 
 /** 截断内容预览 */
 function contentPreview(content: string, maxLen = 80): string {

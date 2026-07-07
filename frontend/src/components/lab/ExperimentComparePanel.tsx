@@ -19,6 +19,7 @@ import type {
   ExperimentDiffSchema,
   FetchState,
 } from "@/lib/api/types";
+import { fmtMs } from "@/lib/formatTime";
 
 type RunState = "idle" | "running" | "done" | "error";
 
@@ -26,12 +27,6 @@ type RunState = "idle" | "running" | "done" | "error";
 function fmtTokens(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
   return String(n);
-}
-
-/** 格式化毫秒。 */
-function fmtMs(ms: number): string {
-  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
-  return `${Math.round(ms)}ms`;
 }
 
 /** 方向标签映射。 */
