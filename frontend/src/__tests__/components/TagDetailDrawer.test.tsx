@@ -495,8 +495,8 @@ describe("TagDetailDrawer", () => {
       expect(screen.getByText("likes")).toBeDefined();
     });
 
-    // 抽屉 header 的关闭按钮，title 为 "关闭 (Esc)"
-    const closeBtn = screen.getByTitle("关闭 (Esc)");
+    // Phase 66 B105 — title 已替换为即时 tooltip，改用 aria-label 选择器
+    const closeBtn = screen.getByRole("button", { name: "关闭" });
     fireEvent.click(closeBtn);
 
     expect(onClose).toHaveBeenCalledTimes(1);

@@ -58,6 +58,9 @@ export default function TagDetailDrawer({
     new Map(),
   );
 
+  // Phase 66 B105 — 即时 tooltip 替代原生 title (T8: 关闭按钮)
+  const [closeTooltip, setCloseTooltip] = useState<{ x: number; y: number } | null>(null);
+
   /** 调用 API 加载标签详情。subject / relation 任一为空则跳过。 */
   const fetchDetail = useCallback(async () => {
     if (!subject || !relation) return;
@@ -199,6 +202,7 @@ export default function TagDetailDrawer({
   const showEmpty = !loading && !error && data && data.facts.length === 0;
 
   return (
+    <>
     <Drawer isOpen={isOpen} onClose={onClose} maxWidth={480} duration={600} ariaLabel={`标签详情: ${relation}`}>
         {/* ═══ Header ═══ */}
         <div
@@ -229,8 +233,10 @@ export default function TagDetailDrawer({
             className="p-gm-1 rounded-gm-sm text-text-muted
                        hover:text-text hover:bg-surface-lowered
                        transition-colors shrink-0"
-            title="关闭 (Esc)"
             aria-label="关闭"
+            onMouseEnter={(e) => setCloseTooltip({ x: e.clientX, y: e.clientY })}
+            onMouseMove={(e) => setCloseTooltip((prev) => prev ? { x: e.clientX, y: e.clientY } : null)}
+            onMouseLeave={() => setCloseTooltip(null)}
           >
             <RiCloseLine className="w-5 h-5" />
           </button>
@@ -506,5 +512,15 @@ export default function TagDetailDrawer({
           )}
         </div>
     </Drawer>
+    {/* Phase 66 B105 — T8: 即时 tooltip 替代原生 title "关闭 (Esc)" */}
+    {closeTooltip && (
+      <div
+        className="fixed z-50 rounded-gm-sm border border-border-strong bg-surface-elevated px-gm-2.5 py-gm-1.5 shadow-gm-md pointer-events-none"
+        style={{ left: closeTooltip.x + 12, top: closeTooltip.y - 8 }}
+      >
+        <p className="text-gm-xs text-text whitespace-nowrap">关闭 (Esc)</p>
+      </div>
+    )}
+    </>
   );
 }

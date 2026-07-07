@@ -51,6 +51,9 @@ export default function LogViewer() {
   /* ── 详情弹窗 ─────────────────────── */
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
 
+  // Phase 66 B105 — 即时 tooltip 替代原生 title (T11: 点击查看详情)
+  const [rowTooltip, setRowTooltip] = useState<{ x: number; y: number } | null>(null);
+
   /* ── 防抖 ─────────────────────────── */
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
@@ -131,7 +134,9 @@ export default function LogViewer() {
             setSelectedLogId(entry.id);
           }
         }}
-        title="点击查看详情"
+        onMouseEnter={(e) => setRowTooltip({ x: e.clientX, y: e.clientY })}
+        onMouseMove={(e) => setRowTooltip((prev) => prev ? { x: e.clientX, y: e.clientY } : null)}
+        onMouseLeave={() => setRowTooltip(null)}
       >
         {/* 时间戳 — truncate 防溢出 */}
         <span className="shrink-0 truncate text-text-muted" style={{ width: 155 }}>
@@ -376,6 +381,15 @@ export default function LogViewer() {
         onClose={() => setSelectedLogId(null)}
         onNavigate={(id) => setSelectedLogId(id)}
       />
+      {/* Phase 66 B105 — T11: 即时 tooltip 替代原生 title "点击查看详情" */}
+      {rowTooltip && (
+        <div
+          className="fixed z-50 rounded-gm-sm border border-border-strong bg-surface-elevated px-gm-2.5 py-gm-1.5 shadow-gm-md pointer-events-none"
+          style={{ left: rowTooltip.x + 12, top: rowTooltip.y - 8 }}
+        >
+          <p className="text-gm-xs text-text whitespace-nowrap">点击查看详情</p>
+        </div>
+      )}
     </>
   );
 }

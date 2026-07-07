@@ -49,6 +49,9 @@ export default function DecayDistributionPanel() {
     avgStrength: number;
   } | null>(null);
 
+  // Phase 66 B105 — 即时 tooltip 替代原生 title (T12: 点击查看大图)
+  const [zoomTooltip, setZoomTooltip] = useState<{ x: number; y: number } | null>(null);
+
   const fetchDistribution = useCallback(async () => {
     setState("loading");
     setError(null);
@@ -110,6 +113,7 @@ export default function DecayDistributionPanel() {
   const scales = data && data.bins.length > 0 ? computeBarScales(data.bins) : null;
 
   return (
+    <>
     <section className="rounded-gm-sm border border-border bg-surface-elevated p-gm-5">
       {/* Header */}
       <div className="flex items-center gap-gm-2 mb-gm-4">
@@ -146,7 +150,9 @@ export default function DecayDistributionPanel() {
           role="img"
           aria-label="衰减分布 SVG 可视化"
           tabIndex={0}
-          title="点击查看大图"
+          onMouseEnter={(e) => setZoomTooltip({ x: e.clientX, y: e.clientY })}
+          onMouseMove={(e) => setZoomTooltip((prev) => prev ? { x: e.clientX, y: e.clientY } : null)}
+          onMouseLeave={() => setZoomTooltip(null)}
           onClick={() => {
             if (svgRef.current) {
               setLightboxSvg(svgRef.current.outerHTML);
@@ -322,5 +328,15 @@ export default function DecayDistributionPanel() {
       )}
       </DataState>
     </section>
+    {/* Phase 66 B105 — T12: 即时 tooltip 替代原生 title "点击查看大图" */}
+    {zoomTooltip && (
+      <div
+        className="fixed z-50 rounded-gm-sm border border-border-strong bg-surface-elevated px-gm-2.5 py-gm-1.5 shadow-gm-md pointer-events-none"
+        style={{ left: zoomTooltip.x + 12, top: zoomTooltip.y - 8 }}
+      >
+        <p className="text-gm-xs text-text whitespace-nowrap">点击查看大图</p>
+      </div>
+    )}
+    </>
   );
 }

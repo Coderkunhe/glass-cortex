@@ -56,6 +56,9 @@ export default function LogDetailModal({
   const [error, setError] = useState<string | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
+  // Phase 66 B105 — 即时 tooltip 替代原生 title (T9+T10: 上一条/下一条)
+  const [navTooltip, setNavTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+
   const fetchDetail = useCallback(async () => {
     if (!isOpen) return;
     setLoading(true);
@@ -90,6 +93,7 @@ export default function LogDetailModal({
   })();
 
   return (
+    <>
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
@@ -108,7 +112,9 @@ export default function LogDetailModal({
             onClick={() => data?.prev_id && onNavigate(data.prev_id)}
             disabled={!data?.prev_id}
             className="inline-flex items-center gap-gm-0_5 rounded-gm-sm border border-border bg-surface px-gm-2 py-gm-0.5 text-gm-xs text-text-secondary hover:text-text hover:bg-surface-alt disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            title="上一条"
+            onMouseEnter={(e) => setNavTooltip({ x: e.clientX, y: e.clientY, text: "上一条" })}
+            onMouseMove={(e) => setNavTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+            onMouseLeave={() => setNavTooltip(null)}
           >
             <RiArrowLeftSLine className="w-4 h-4" />
             上一条
@@ -118,7 +124,9 @@ export default function LogDetailModal({
             onClick={() => data?.next_id && onNavigate(data.next_id)}
             disabled={!data?.next_id}
             className="inline-flex items-center gap-gm-0_5 rounded-gm-sm border border-border bg-surface px-gm-2 py-gm-0.5 text-gm-xs text-text-secondary hover:text-text hover:bg-surface-alt disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            title="下一条"
+            onMouseEnter={(e) => setNavTooltip({ x: e.clientX, y: e.clientY, text: "下一条" })}
+            onMouseMove={(e) => setNavTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+            onMouseLeave={() => setNavTooltip(null)}
           >
             下一条
             <RiArrowRightSLine className="w-4 h-4" />
@@ -216,5 +224,15 @@ export default function LogDetailModal({
         )}
       </div>
     </Drawer>
+    {/* Phase 66 B105 — T9+T10: 即时 tooltip 替代原生 title "上一条"/"下一条" */}
+    {navTooltip && (
+      <div
+        className="fixed z-50 rounded-gm-sm border border-border-strong bg-surface-elevated px-gm-2.5 py-gm-1.5 shadow-gm-md pointer-events-none"
+        style={{ left: navTooltip.x + 12, top: navTooltip.y - 8 }}
+      >
+        <p className="text-gm-xs text-text whitespace-nowrap">{navTooltip.text}</p>
+      </div>
+    )}
+    </>
   );
 }
