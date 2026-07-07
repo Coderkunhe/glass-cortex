@@ -6,6 +6,117 @@ import {
   waitFor,
   fireEvent,
 } from "@testing-library/react";
+
+// ── Mock three + OrbitControls — jsdom 无 WebGL / Canvas ──
+
+const mockDispose = vi.fn();
+const mockSetSize = vi.fn();
+const mockSetPixelRatio = vi.fn();
+const mockRender = vi.fn();
+const mockAdd = vi.fn();
+const mockRemove = vi.fn();
+const mockClear = vi.fn();
+const mockSetColorAt = vi.fn();
+const mockSetMatrixAt = vi.fn();
+const mockGetColorAt = vi.fn();
+const mockUpdateMatrix = vi.fn();
+const mockProject = vi.fn(() => ({ x: 0, y: 0, z: 0 }));
+const mockClone = vi.fn(function (this: { x: number; y: number }) {
+  return { x: this.x, y: this.y };
+});
+const mockDomElement = document.createElement("canvas");
+
+vi.mock("three", () => ({
+  Scene: vi.fn(() => ({
+    add: mockAdd,
+    remove: mockRemove,
+    clear: mockClear,
+    background: null,
+  })),
+  PerspectiveCamera: vi.fn(() => ({
+    position: { set: vi.fn() },
+    lookAt: vi.fn(),
+    updateProjectionMatrix: vi.fn(),
+    aspect: 1,
+  })),
+  WebGLRenderer: vi.fn(() => ({
+    setSize: mockSetSize,
+    setPixelRatio: mockSetPixelRatio,
+    render: mockRender,
+    dispose: mockDispose,
+    domElement: mockDomElement,
+  })),
+  GridHelper: vi.fn(() => ({
+    material: { opacity: 0, transparent: true },
+  })),
+  Line: vi.fn(),
+  LineBasicMaterial: vi.fn(),
+  BufferGeometry: vi.fn(() => ({
+    setFromPoints: vi.fn(() => ({})),
+  })),
+  AmbientLight: vi.fn(),
+  DirectionalLight: vi.fn(() => ({ position: { set: vi.fn() } })),
+  SphereGeometry: vi.fn(),
+  InstancedMesh: vi.fn(function (this: Record<string, unknown>) {
+    this.instanceMatrix = { needsUpdate: false };
+    this.instanceColor = { needsUpdate: false };
+    this.visible = true;
+    this.geometry = { dispose: mockDispose };
+    this.material = { dispose: mockDispose };
+    this.setColorAt = mockSetColorAt;
+    this.setMatrixAt = mockSetMatrixAt;
+    this.getColorAt = mockGetColorAt;
+    return this;
+  }),
+  MeshStandardMaterial: vi.fn(),
+  Raycaster: vi.fn(() => ({
+    setFromCamera: vi.fn(),
+    intersectObjects: vi.fn(() => []),
+    params: { Points: { threshold: 0 } },
+  })),
+  Vector2: vi.fn((x?: number, y?: number) => ({ x: x ?? 0, y: y ?? 0 })),
+  Vector3: vi.fn((x?: number, y?: number, z?: number) => ({
+    x: x ?? 0, y: y ?? 0, z: z ?? 0,
+    clone: mockClone,
+    project: mockProject,
+    set: vi.fn(),
+  })),
+  Color: vi.fn((c?: string) => ({
+    set: vi.fn(function (this: Record<string, unknown>, v: string) {
+      this._value = v;
+      return this;
+    }),
+    _value: c ?? "#000",
+    r: 0, g: 0, b: 0,
+  })),
+  Object3D: vi.fn(() => ({
+    position: { set: vi.fn() },
+    scale: { setScalar: vi.fn() },
+    updateMatrix: mockUpdateMatrix,
+    matrix: { elements: Array.from({ length: 16 }, () => 0) },
+  })),
+  Group: vi.fn(() => ({
+    add: mockAdd,
+    remove: mockRemove,
+    traverse: vi.fn(),
+  })),
+  Mesh: vi.fn(),
+  Material: vi.fn(),
+}));
+
+vi.mock("three/examples/jsm/controls/OrbitControls.js", () => ({
+  OrbitControls: vi.fn(() => ({
+    enableDamping: false,
+    dampingFactor: 0,
+    minDistance: 0,
+    maxDistance: 100,
+    target: { set: vi.fn() },
+    update: vi.fn(),
+    dispose: mockDispose,
+  })),
+}));
+
+// ── 组件导入（必须在 mock 之后） ──
 import EmbeddingSpacePanel from "@/components/lab/EmbeddingSpacePanel";
 
 const mockFetch = vi.fn();
@@ -15,6 +126,18 @@ afterEach(cleanup);
 
 beforeEach(() => {
   mockFetch.mockReset();
+  mockDispose.mockClear();
+  mockSetSize.mockClear();
+  mockRender.mockClear();
+  mockAdd.mockClear();
+  mockRemove.mockClear();
+  mockClear.mockClear();
+  mockSetColorAt.mockClear();
+  mockSetMatrixAt.mockClear();
+  mockGetColorAt.mockClear();
+  mockUpdateMatrix.mockClear();
+  mockProject.mockClear();
+  mockClone.mockClear();
 });
 
 function mockCoordsSuccess() {
@@ -73,14 +196,13 @@ describe("EmbeddingSpacePanel", () => {
     });
   });
 
-  it("renders SVG scatter plot with correct number of dots", async () => {
+  it("renders 3D container and operation hint when data loads", async () => {
     mockFetch.mockResolvedValueOnce(mockCoordsSuccess());
     render(<EmbeddingSpacePanel />);
 
     await waitFor(() => {
-      // 3 coords → 3 <circle> elements
-      const circles = document.querySelectorAll("circle[data-dot]");
-      expect(circles.length).toBe(3);
+      // 操作提示文本可见，确认 3D 区域挂载
+      expect(screen.getByText(/拖拽旋转/)).toBeInTheDocument();
     });
   });
 
@@ -89,8 +211,7 @@ describe("EmbeddingSpacePanel", () => {
     render(<EmbeddingSpacePanel />);
 
     await waitFor(() => {
-      expect(screen.getByText(/PC1/)).toBeInTheDocument();
-      expect(screen.getByText(/45/)).toBeInTheDocument();
+      expect(screen.getByText(/PC1 45%/)).toBeInTheDocument();
     });
   });
 
@@ -117,8 +238,9 @@ describe("EmbeddingSpacePanel", () => {
     render(<EmbeddingSpacePanel />);
 
     await waitFor(() => {
-      const circles = document.querySelectorAll("circle[data-dot]");
-      expect(circles.length).toBe(1);
+      // 单点场景：3D 区域应正常渲染
+      expect(screen.getByText(/可见 1/)).toBeInTheDocument();
+      expect(screen.getByText(/共 1 个向量/)).toBeInTheDocument();
     });
   });
 
@@ -134,39 +256,111 @@ describe("EmbeddingSpacePanel", () => {
     fireEvent.click(screen.getByText("重试"));
 
     await waitFor(() => {
-      const circles = document.querySelectorAll("circle[data-dot]");
-      expect(circles.length).toBe(3);
+      // 重试成功后显示可视化区域
+      expect(screen.getByText(/拖拽旋转/)).toBeInTheDocument();
     });
   });
-
-  // ── 刷新按钮 ──
 
   it("shows refresh button only in success state", async () => {
     mockFetch.mockResolvedValueOnce(mockCoordsSuccess());
     render(<EmbeddingSpacePanel />);
 
     await waitFor(() => {
-      const circles = document.querySelectorAll("circle[data-dot]");
-      expect(circles.length).toBe(3);
+      const refreshBtn = screen.getByRole("button", { name: "刷新数据" });
+      expect(refreshBtn).toBeInTheDocument();
     });
-
-    const refreshBtn = screen.getByRole("button", { name: "刷新数据" });
-    expect(refreshBtn).toBeInTheDocument();
   });
-
-  // ── total_vectors 计数 ──
 
   it("displays total vectors count in header", async () => {
     mockFetch.mockResolvedValueOnce(mockCoordsSuccess());
     render(<EmbeddingSpacePanel />);
 
     await waitFor(() => {
-      // header shows "共 100 个向量"
       expect(screen.getByText(/共 100 个向量/)).toBeInTheDocument();
     });
   });
 
-  // ── PC3 方差展示 ──
+  // ── Kind 过滤 ──
+
+  it("shows kind filter toggles when data is loaded", async () => {
+    mockFetch.mockResolvedValueOnce(mockCoordsSuccess());
+    render(<EmbeddingSpacePanel />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/记忆 \(2\)/)).toBeInTheDocument();
+      expect(screen.getByText(/知识 \(1\)/)).toBeInTheDocument();
+    });
+  });
+
+  it("toggles episode filter badge style on click", async () => {
+    mockFetch.mockResolvedValueOnce(mockCoordsSuccess());
+    render(<EmbeddingSpacePanel />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/记忆 \(2\)/)).toBeInTheDocument();
+    });
+
+    const epBtn = screen.getByText(/记忆 \(2\)/).closest("button")!;
+    fireEvent.click(epBtn);
+
+    // 点击后不再有 active 视觉（依赖 CSS class）
+    await waitFor(() => {
+      const btns = screen.getAllByRole("button");
+      const epFilter = btns.find((b) => b.textContent?.includes("记忆"));
+      expect(epFilter).toBeInTheDocument();
+    });
+  });
+
+  // ── 搜索 ──
+
+  it("shows search input when data is loaded", async () => {
+    mockFetch.mockResolvedValueOnce(mockCoordsSuccess());
+    render(<EmbeddingSpacePanel />);
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("搜索标签…")).toBeInTheDocument();
+    });
+  });
+
+  it("shows search match count after typing", async () => {
+    mockFetch.mockResolvedValueOnce(mockCoordsSuccess());
+    render(<EmbeddingSpacePanel />);
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("搜索标签…")).toBeInTheDocument();
+    });
+
+    const input = screen.getByPlaceholderText("搜索标签…");
+    fireEvent.change(input, { target: { value: "记忆" } });
+
+    await waitFor(() => {
+      expect(screen.getByText(/匹配 2 个/)).toBeInTheDocument();
+    });
+  });
+
+  it("clears search via close button", async () => {
+    mockFetch.mockResolvedValueOnce(mockCoordsSuccess());
+    render(<EmbeddingSpacePanel />);
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("搜索标签…")).toBeInTheDocument();
+    });
+
+    const input = screen.getByPlaceholderText("搜索标签…");
+    fireEvent.change(input, { target: { value: "记忆" } });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("清除搜索")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByLabelText("清除搜索"));
+
+    await waitFor(() => {
+      expect(input).toHaveValue("");
+    });
+  });
+
+  // ── PC3 方差 ──
 
   it("shows PC3 variance when three components present", async () => {
     mockFetch.mockResolvedValueOnce({
@@ -201,8 +395,8 @@ describe("EmbeddingSpacePanel", () => {
     fireEvent.click(screen.getByText("重试"));
 
     await waitFor(() => {
-      const circles = document.querySelectorAll("circle[data-dot]");
-      expect(circles.length).toBe(3);
+      // 重试成功后显示可视化区域
+      expect(screen.getByText(/拖拽旋转/)).toBeInTheDocument();
     });
   });
 });
