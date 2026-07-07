@@ -42,6 +42,7 @@ import type {
   PlanOverrideRequest,
   PlanOverrideResponse,
   CacheStatsResponse,
+  CacheEntriesResponse,
   EmbeddingCoordsResponse,
   DecayDistributionResponse,
   KnowledgeGraphResponse,
@@ -348,6 +349,13 @@ export const api = {
 
   /** Cache hit-rate stats for embedding + fact extraction caches */
   getCacheStats: () => request<CacheStatsResponse>("/lab/cache-stats"),
+
+  /** Cache entry contents for a specific cache type */
+  getCacheEntries: (cacheType: string, limit?: number) => {
+    const params = new URLSearchParams({ cache_type: cacheType });
+    if (limit !== undefined) params.set("limit", String(limit));
+    return request<CacheEntriesResponse>(`/lab/cache-entries?${params}`);
+  },
 
   /** PCA-reduced 3D embedding coordinates for visualization */
   getEmbeddingCoords: (maxVectors?: number) =>

@@ -172,6 +172,24 @@ class SemanticResponseCache:
     def size(self) -> int:
         return len(self._store)
 
+    def list_entries(self, limit: int = 50) -> list[dict[str, object]]:
+        """返回缓存条目摘要列表，供可观测性面板展示。
+
+        每个条目包含查询文本和响应预览。
+        """
+        entries: list[dict[str, object]] = []
+        items = list(self._store.items())
+        for _query_text, entry in reversed(items[-limit:]):
+            entries.append(
+                {
+                    "key": entry.query_text[:120],
+                    "preview": entry.response_text[:120],
+                    "tokens_est": self._PIPELINE_TOKENS_SAVED,
+                    "kind": "response",
+                }
+            )
+        return entries
+
 
 # ── 模块级单例 ──
 

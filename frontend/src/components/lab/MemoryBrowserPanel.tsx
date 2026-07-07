@@ -306,11 +306,16 @@ export default function MemoryBrowserPanel() {
                       {fmtTime(ep.timestamp)}
                     </span>
                   </div>
-                  {isExpanded && (
-                    <div className="border-t border-border/30 px-gm-4 py-gm-3 bg-surface-alt/30">
-                      <div className="grid grid-cols-2 gap-gm-2 text-gm-xs">
-                        <div>
-                          <span className="text-text-muted">ID：</span>
+                  <div
+                    className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+                      isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    }`}
+                  >
+                    <div className="overflow-hidden min-h-0">
+                      <div className="border-t border-border/30 px-gm-4 py-gm-3 bg-surface-alt/30">
+                        <div className="grid grid-cols-2 gap-gm-2 text-gm-xs">
+                          <div>
+                            <span className="text-text-muted">ID：</span>
                           <span className="text-text-secondary tabular-nums">
                             {ep.id}
                           </span>
@@ -375,7 +380,8 @@ export default function MemoryBrowserPanel() {
                         </div>
                       </div>
                     </div>
-                  )}
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -445,11 +451,16 @@ export default function MemoryBrowserPanel() {
                       {(f.confidence * 100).toFixed(0)}%
                     </span>
                   </div>
-                  {isExpanded && (
-                    <div className="border-t border-border/30 px-gm-4 py-gm-3 bg-surface-alt/30">
-                      <div className="grid grid-cols-2 gap-gm-2 text-gm-xs">
-                        <div>
-                          <span className="text-text-muted">ID：</span>
+                  <div
+                    className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+                      isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    }`}
+                  >
+                    <div className="overflow-hidden min-h-0">
+                      <div className="border-t border-border/30 px-gm-4 py-gm-3 bg-surface-alt/30">
+                        <div className="grid grid-cols-2 gap-gm-2 text-gm-xs">
+                          <div>
+                            <span className="text-text-muted">ID：</span>
                           <span className="text-text-secondary tabular-nums">
                             {f.id}
                           </span>
@@ -500,7 +511,8 @@ export default function MemoryBrowserPanel() {
                         </div>
                       </div>
                     </div>
-                  )}
+                    </div>
+                  </div>
                 </div>
               );
             })}

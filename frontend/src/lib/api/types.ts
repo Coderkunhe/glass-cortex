@@ -63,6 +63,8 @@ export type {
 export type {
   CacheStats,
   CacheStatsResponse,
+  CacheEntryItem,
+  CacheEntriesResponse,
   EmbeddingCoord,
   EmbeddingCoordsResponse,
   DecayBin,

@@ -15,6 +15,8 @@ from fastapi import APIRouter, HTTPException
 
 from api.dependencies import EnginesDep
 from api.schemas import (
+    CacheEntriesResponse,
+    CacheEntryItem,
     CacheStats,
     CacheStatsResponse,
     CostWaterfallResponse,
@@ -75,6 +77,70 @@ def cache_stats(engines: Any = EnginesDep) -> CacheStatsResponse:
         fact_stats = _cache_stats(fc.hits, fc.misses, fc.size)
 
     return CacheStatsResponse(embedding=embedding_stats, fact=fact_stats)
+
+
+_VALID_CACHE_TYPES = {"embedding", "fact", "response"}
+
+
+@router.get("/cache-entries", response_model=CacheEntriesResponse)
+def cache_entries(
+    engines: Any = EnginesDep,
+    cache_type: str = "embedding",
+    limit: int = 50,
+) -> CacheEntriesResponse:
+    """返回指定缓存的实际条目内容。
+
+    ``cache_type`` 可选 ``embedding`` / ``fact`` / ``response``。
+    ``limit`` 控制最大返回条数（1-200），默认 50。
+    """
+    from src.cache.semantic_cache import get_response_cache
+    from src.embed import get_embedding_cache
+
+    if cache_type not in _VALID_CACHE_TYPES:
+        valid = sorted(_VALID_CACHE_TYPES)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid cache_type: {cache_type!r}. Must be one of {valid}",
+        )
+
+    limit = max(1, min(limit, 200))
+    _store, _idx, _recall, _forget, chat, _ledger, _planner = engines
+
+    if cache_type == "embedding":
+        emb = get_embedding_cache()
+        entries_raw = emb.list_entries(limit)
+        stats = _cache_stats(emb.hits, emb.misses, emb.size)
+    elif cache_type == "fact":
+        fact_extractor = chat.fact_extractor
+        if fact_extractor is None:
+            msg = "FactExtractor not loaded — no fact cache available"
+            raise HTTPException(status_code=404, detail=msg)
+        fc = fact_extractor.cache
+        entries_raw = fc.list_entries(limit)
+        stats = _cache_stats(fc.hits, fc.misses, fc.size)
+    else:  # response
+        resp_cache = get_response_cache()
+        entries_raw = resp_cache.list_entries(limit)
+        stats = _cache_stats(resp_cache.hits, resp_cache.misses, resp_cache.size)
+
+    entries = [
+        CacheEntryItem(
+            key=str(e.get("key", "")),
+            preview=str(e.get("preview", "")),
+            tokens_est=int(e.get("tokens_est", 0)),  # type: ignore[call-overload]
+            kind=str(e.get("kind", cache_type)),
+        )
+        for e in entries_raw
+    ]
+
+    return CacheEntriesResponse(
+        cache_type=cache_type,
+        entries=entries,
+        total_entries=stats.size,
+        hits=stats.hits,
+        misses=stats.misses,
+        hit_rate_pct=stats.hit_rate_pct,
+    )
 
 
 @router.get("/embedding-coords", response_model=EmbeddingCoordsResponse)

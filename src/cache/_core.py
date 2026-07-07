@@ -63,6 +63,27 @@ class EmbeddingCache:
     def size(self) -> int:
         return len(self._store)
 
+    def list_entries(self, limit: int = 50) -> list[dict[str, object]]:
+        """返回缓存条目摘要列表（不含 numpy 数组），供可观测性面板展示。
+
+        Args:
+            limit: 最多返回条数（取最近存入的 limit 条）。
+        """
+        entries: list[dict[str, object]] = []
+        from src.context.overflow_sim import estimate_tokens as _est
+
+        keys = list(self._store.keys())
+        for text in reversed(keys[-limit:]):
+            entries.append(
+                {
+                    "key": text[:120],
+                    "preview": text[:120],
+                    "tokens_est": _est(text),
+                    "kind": "embedding",
+                }
+            )
+        return entries
+
 
 class FactCache:
     """Fact 抽取 LLM 响应缓存，FIFO 淘汰。
@@ -120,6 +141,31 @@ class FactCache:
     @property
     def size(self) -> int:
         return len(self._store)
+
+    def list_entries(self, limit: int = 50) -> list[dict[str, object]]:
+        """返回缓存条目摘要列表，供可观测性面板展示。
+
+        FactCache 的值是 fact 抽取结果的 dict，从中提取可读字段。
+        """
+        entries: list[dict[str, object]] = []
+        items = list(self._store.items())
+        for key, value in reversed(items[-limit:]):
+            preview = ""
+            for field in ("user_msg", "assistant_msg", "response_text", "content"):
+                if field in value:
+                    preview = str(value[field])[:120]
+                    break
+            if not preview:
+                preview = "(binary/legacy entry)"
+            entries.append(
+                {
+                    "key": key[:16] + "...",
+                    "preview": preview,
+                    "tokens_est": 0,
+                    "kind": "fact",
+                }
+            )
+        return entries
 
     @staticmethod
     def compute_fact_state_hash(facts: list[dict[str, object]]) -> str:

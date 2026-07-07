@@ -845,6 +845,26 @@ class CacheStatsResponse(BaseModel):
     fact: CacheStats | None  # None = FactExtractor 未加载
 
 
+class CacheEntryItem(BaseModel):
+    """单个缓存条目的可读摘要——供缓存内容面板展示。"""
+
+    key: str  # 缓存键（文本或 hash 前缀）
+    preview: str = ""  # 人类可读摘要
+    tokens_est: int = 0  # 该条目的预估 token 节省量
+    kind: str = ""  # "embedding" | "fact" | "response"
+
+
+class CacheEntriesResponse(BaseModel):
+    """GET /lab/cache-entries 响应——指定缓存的实际条目内容。"""
+
+    cache_type: str
+    entries: list[CacheEntryItem]
+    total_entries: int
+    hits: int
+    misses: int
+    hit_rate_pct: float
+
+
 class EmbeddingCoord(BaseModel):
     """单个向量的 PCA 坐标 + 标签。"""
 

@@ -15,6 +15,24 @@ export interface CacheStatsResponse {
   fact: CacheStats | null;
 }
 
+/** GET /lab/cache-entries — 单个缓存条目摘要 */
+export interface CacheEntryItem {
+  key: string;
+  preview: string;
+  tokens_est: number;
+  kind: string;
+}
+
+/** GET /lab/cache-entries 响应 — 指定缓存的实际条目内容 */
+export interface CacheEntriesResponse {
+  cache_type: string;
+  entries: CacheEntryItem[];
+  total_entries: number;
+  hits: number;
+  misses: number;
+  hit_rate_pct: number;
+}
+
 /** GET /lab/embedding-coords — 单个向量的 PCA 坐标 + 元数据 */
 export interface EmbeddingCoord {
   id: number;
