@@ -47,8 +47,8 @@ export default function KnowledgeGraphPanel() {
   }, []);
 
   useEffect(() => {
-    const id = setTimeout(() => fetchGraph(), 0);
-    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchGraph();
   }, [fetchGraph]);
 
   // 置信度筛选：过滤边 → 保留有边的节点

@@ -30,8 +30,8 @@ export default function CostWaterfallPanel() {
   }, []);
 
   useEffect(() => {
-    const id = setTimeout(() => fetchWaterfall(), 0);
-    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchWaterfall();
   }, [fetchWaterfall]);
 
   const hasData = data && data.gross_tokens > 0;

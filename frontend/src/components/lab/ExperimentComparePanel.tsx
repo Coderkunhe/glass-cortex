@@ -72,8 +72,8 @@ export default function ExperimentComparePanel() {
   }, []);
 
   useEffect(() => {
-    const id = setTimeout(() => fetchPresets(), 0);
-    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchPresets();
   }, [fetchPresets]);
 
   const handleRun = useCallback(async () => {

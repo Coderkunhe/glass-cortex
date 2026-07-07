@@ -77,14 +77,14 @@ export default function PipelineTracePanel() {
 
   // auto-fetch on mount + when filter/limit changes
   useEffect(() => {
-    const id = setTimeout(() => fetchTraces(), 0);
-    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchTraces();
   }, [fetchTraces]);
 
   // auto-fetch count on mount + when filter changes
   useEffect(() => {
-    const id = setTimeout(() => fetchCount(), 0);
-    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchCount();
   }, [fetchCount]);
 
 

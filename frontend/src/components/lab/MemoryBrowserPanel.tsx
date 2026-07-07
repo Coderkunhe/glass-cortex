@@ -96,15 +96,15 @@ export default function MemoryBrowserPanel() {
 
   // Auto-fetch episodes on mount
   useEffect(() => {
-    const id = setTimeout(() => fetchEpisodes(), 0);
-    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchEpisodes();
   }, [fetchEpisodes]);
 
   // Lazy-fetch facts on first sub-tab switch
   useEffect(() => {
     if (subTab === "facts" && fctState === "idle") {
-      const id = setTimeout(() => fetchFacts(), 0);
-      return () => clearTimeout(id);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchFacts();
     }
   }, [subTab, fctState, fetchFacts]);
 
@@ -118,8 +118,7 @@ export default function MemoryBrowserPanel() {
         // Silently ignore — tier filter just won't show
       }
     };
-    const id = setTimeout(() => fetchTiers(), 0);
-    return () => clearTimeout(id);
+    fetchTiers();
   }, []);
 
   // ── Client-side search + tier filter ──
@@ -141,21 +140,12 @@ export default function MemoryBrowserPanel() {
       )
     : fctData;
 
-  // ── Toggle helpers ──
-  const toggleEpExpand = (id: number) => {
-    setExpandedEpIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
-
-  const toggleFctExpand = (id: number) => {
-    setExpandedFctIds((prev) => {
+  // ── Toggle helper ──
+  const toggleSetItem = (
+    setter: React.Dispatch<React.SetStateAction<Set<number>>>,
+    id: number,
+  ) => {
+    setter((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -277,7 +267,7 @@ export default function MemoryBrowserPanel() {
                 >
                   <div className="flex items-center gap-gm-2 p-gm-3">
                     <button
-                      onClick={() => toggleEpExpand(ep.id)}
+                      onClick={() => toggleSetItem(setExpandedEpIds, ep.id)}
                       title="展开详情"
                       className="text-text-muted hover:text-text transition-colors shrink-0"
                     >
@@ -403,7 +393,7 @@ export default function MemoryBrowserPanel() {
                 >
                   <div className="flex items-center gap-gm-2 p-gm-3">
                     <button
-                      onClick={() => toggleFctExpand(f.id)}
+                      onClick={() => toggleSetItem(setExpandedFctIds, f.id)}
                       title="展开详情"
                       className="text-text-muted hover:text-text transition-colors shrink-0"
                     >

@@ -45,8 +45,8 @@ export default function EmbeddingSpacePanel() {
   }, []);
 
   useEffect(() => {
-    const id = setTimeout(() => fetchCoords(), 0);
-    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchCoords();
   }, [fetchCoords]);
 
 

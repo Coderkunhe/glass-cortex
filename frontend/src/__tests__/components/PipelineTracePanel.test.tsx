@@ -87,16 +87,16 @@ function mockErrorResponse() {
   };
 }
 
-/** 辅助：设置三 fetch mock（steps + traces + count，匹配 useEffect 调用顺序） */
+/** 辅助：设置三 fetch mock（traces + count + steps，匹配 useEffect 代码顺序） */
 function setupTripleMock(
   tracesResp: object,
   countResp: object = mockCountSuccess(),
   stepsResp: object = mockStepsSuccess(),
 ) {
   mockFetch
-    .mockResolvedValueOnce(stepsResp)   // getTraceSteps 无 setTimeout，先执行
-    .mockResolvedValueOnce(tracesResp)  // fetchTraces 有 setTimeout(0)
-    .mockResolvedValueOnce(countResp);  // fetchCount 有 setTimeout(0)
+    .mockResolvedValueOnce(tracesResp)  // fetchTraces (第一个 useEffect)
+    .mockResolvedValueOnce(countResp)   // fetchCount (第二个 useEffect)
+    .mockResolvedValueOnce(stepsResp);  // getTraceSteps (第三个 useEffect)
 }
 
 describe("PipelineTracePanel", () => {
@@ -112,10 +112,11 @@ describe("PipelineTracePanel", () => {
   });
 
   it("auto-fetches on mount and shows loading", async () => {
-    // getTraceSteps 先执行（无 setTimeout），然后 fetchTraces 进入 pending
+    // fetchTraces 先执行（第一个 useEffect），返回 pending Promise 展示 loading
     mockFetch
-      .mockResolvedValueOnce(mockStepsSuccess())
-      .mockImplementationOnce(() => new Promise(() => {}));
+      .mockImplementationOnce(() => new Promise(() => {}))
+      .mockResolvedValueOnce(mockCountSuccess())
+      .mockResolvedValueOnce(mockStepsSuccess());
     render(<PipelineTracePanel />);
     await waitFor(() => {
       expect(screen.getByText("加载追踪记录…")).toBeInTheDocument();
@@ -159,10 +160,11 @@ describe("PipelineTracePanel", () => {
   });
 
   it("shows error and retry button on fetch failure", async () => {
-    // getTraceSteps succeeds silently, traces fail
+    // fetchTraces 先执行 → 失败，剩余 fetch 正常完成
     mockFetch
-      .mockResolvedValueOnce(mockStepsSuccess())
-      .mockResolvedValueOnce(mockErrorResponse());
+      .mockResolvedValueOnce(mockErrorResponse())
+      .mockResolvedValueOnce(mockCountSuccess())
+      .mockResolvedValueOnce(mockStepsSuccess());
     render(<PipelineTracePanel />);
 
     await waitFor(() => {

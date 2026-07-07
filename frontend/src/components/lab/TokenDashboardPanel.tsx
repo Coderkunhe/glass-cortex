@@ -56,8 +56,8 @@ export default function TokenDashboardPanel() {
 
   // auto-fetch on mount
   useEffect(() => {
-    const id = setTimeout(() => fetchTokens(), 0);
-    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchTokens();
   }, [fetchTokens]);
 
   // 按 total_tokens 降序排列调用点

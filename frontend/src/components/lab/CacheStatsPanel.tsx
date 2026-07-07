@@ -113,8 +113,8 @@ export default function CacheStatsPanel() {
   }, []);
 
   useEffect(() => {
-    const id = setTimeout(() => fetchStats(), 0);
-    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchStats();
   }, [fetchStats]);
 
 
