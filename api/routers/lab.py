@@ -113,8 +113,16 @@ def cache_entries(
     elif cache_type == "fact":
         fact_extractor = chat.fact_extractor
         if fact_extractor is None:
-            msg = "FactExtractor not loaded — no fact cache available"
-            raise HTTPException(status_code=404, detail=msg)
+            # 语义修正：FactExtractor 未加载 → 空缓存，不是 404。
+            # 前端 DataState 的 empty state 会展示"该缓存当前为空"提示。
+            return CacheEntriesResponse(
+                cache_type="fact",
+                entries=[],
+                total_entries=0,
+                hits=0,
+                misses=0,
+                hit_rate_pct=0.0,
+            )
         fc = fact_extractor.cache
         entries_raw = fc.list_entries(limit)
         stats = _cache_stats(fc.hits, fc.misses, fc.size)

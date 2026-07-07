@@ -17,46 +17,45 @@ beforeEach(() => {
   mockFetch.mockReset();
 });
 
-function mockCacheSuccess(overrides?: {
-  embHits?: number;
-  embMisses?: number;
-  factHits?: number;
-  factMisses?: number;
-  factSize?: number;
-  factNull?: boolean;
+/** Mock GET /lab/cache-entries?cache_type=...&limit=50 — returns CacheEntriesResponse shape */
+function mockCacheEntries(overrides?: {
+  cacheType?: string;
+  entries?: Array<{ key: string; preview: string; tokens_est: number; kind: string }>;
+  totalEntries?: number;
+  hits?: number;
+  misses?: number;
+  hitRatePct?: number;
 }) {
+  const hits = overrides?.hits ?? 100;
+  const misses = overrides?.misses ?? 20;
   return {
     ok: true,
     json: () =>
       Promise.resolve({
-        embedding: {
-          hits: overrides?.embHits ?? 100,
-          misses: overrides?.embMisses ?? 20,
-          size: 1000,
-          total_requests: (overrides?.embHits ?? 100) + (overrides?.embMisses ?? 20),
-          hit_rate_pct: 83.3,
-        },
-        fact: overrides?.factNull
-          ? null
-          : {
-              hits: overrides?.factHits ?? 50,
-              misses: overrides?.factMisses ?? 10,
-              size: overrides?.factSize ?? 64,
-              total_requests:
-                (overrides?.factHits ?? 50) + (overrides?.factMisses ?? 10),
-              hit_rate_pct: 83.3,
-            },
+        cache_type: overrides?.cacheType ?? "embedding",
+        entries: overrides?.entries ?? [
+          { key: "emb:hello-world", preview: "embedding cache entry", tokens_est: 1200, kind: "embedding" },
+          { key: "emb:foo-bar", preview: "another entry", tokens_est: 800, kind: "embedding" },
+        ],
+        total_entries: overrides?.totalEntries ?? 1000,
+        hits,
+        misses,
+        hit_rate_pct: overrides?.hitRatePct ?? 83.3,
       }),
   };
 }
 
-function mockEmptyCache() {
+function mockEmptyCache(cacheType = "embedding") {
   return {
     ok: true,
     json: () =>
       Promise.resolve({
-        embedding: { hits: 0, misses: 0, size: 1000, total_requests: 0, hit_rate_pct: 0 },
-        fact: { hits: 0, misses: 0, size: 64, total_requests: 0, hit_rate_pct: 0 },
+        cache_type: cacheType,
+        entries: [],
+        total_entries: 0,
+        hits: 0,
+        misses: 0,
+        hit_rate_pct: 0,
       }),
   };
 }
@@ -70,49 +69,101 @@ function mockErrorResponse() {
 }
 
 describe("CacheStatsPanel", () => {
-  it("renders header and idle hint", () => {
+  it("renders header and cache type tabs", () => {
     render(<CacheStatsPanel />);
     expect(screen.getByText("缓存命中率")).toBeInTheDocument();
+    expect(screen.getByText("嵌入缓存")).toBeInTheDocument();
+    expect(screen.getByText("事实缓存")).toBeInTheDocument();
+    expect(screen.getByText("响应缓存")).toBeInTheDocument();
   });
 
   it("shows loading on mount", async () => {
     mockFetch.mockImplementationOnce(() => new Promise(() => {}));
     render(<CacheStatsPanel />);
     await waitFor(() => {
-      expect(screen.getByText("加载缓存统计…")).toBeInTheDocument();
+      expect(screen.getByText("加载缓存数据…")).toBeInTheDocument();
     });
   });
 
-  it("displays embedding cache bar with stats", async () => {
-    mockFetch.mockResolvedValueOnce(mockCacheSuccess());
+  it("displays embedding cache bar with stats and entries", async () => {
+    mockFetch.mockResolvedValueOnce(mockCacheEntries());
     render(<CacheStatsPanel />);
 
     await waitFor(() => {
+      // CacheBar label
       expect(screen.getByText("嵌入缓存")).toBeInTheDocument();
     });
 
-    // 数值 — 嵌入和事实缓存都有 83.3，用 getAllByText
-    expect(screen.getAllByText(/83\.3/).length).toBe(2);
     expect(screen.getByText(/命中 100/)).toBeInTheDocument();
     expect(screen.getByText(/未命中 20/)).toBeInTheDocument();
+    expect(screen.getByText("83.3% 命中率")).toBeInTheDocument();
+
+    // entries list
+    expect(screen.getByText("embedding cache entry")).toBeInTheDocument();
+    expect(screen.getByText("another entry")).toBeInTheDocument();
+    expect(screen.getByText("~1,200 tokens")).toBeInTheDocument();
+
+    // entry count header
+    expect(screen.getByText(/缓存内容（共/)).toBeInTheDocument();
+    expect(screen.getByText("1000")).toBeInTheDocument();
   });
 
-  it("displays fact cache bar when fact is not null", async () => {
-    mockFetch.mockResolvedValueOnce(mockCacheSuccess());
+  it("displays entries with 0 tokens hidden", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockCacheEntries({
+        entries: [
+          { key: "k", preview: "no token entry", tokens_est: 0, kind: "embedding" },
+        ],
+      }),
+    );
     render(<CacheStatsPanel />);
-
     await waitFor(() => {
-      expect(screen.getByText("事实提取缓存")).toBeInTheDocument();
+      expect(screen.getByText("no token entry")).toBeInTheDocument();
+    });
+    // 0 tokens should not render the token badge
+    expect(screen.queryByText(/tokens/)).toBeNull();
+  });
+
+  it("shows fallback to key when preview is empty", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockCacheEntries({
+        entries: [
+          { key: "raw-key-123", preview: "", tokens_est: 0, kind: "embedding" },
+        ],
+      }),
+    );
+    render(<CacheStatsPanel />);
+    await waitFor(() => {
+      expect(screen.getByText("raw-key-123")).toBeInTheDocument();
     });
   });
 
-  it("shows fallback when fact cache is null", async () => {
-    mockFetch.mockResolvedValueOnce(mockCacheSuccess({ factNull: true }));
+  it("shows idle message when cache is empty", async () => {
+    mockFetch.mockResolvedValueOnce(mockEmptyCache());
     render(<CacheStatsPanel />);
+    await waitFor(() => {
+      expect(
+        screen.getByText("该缓存当前为空，运行管线后回来查看"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("shows fact-specific idle message when fact cache empty", async () => {
+    // First fetch: embedding (success with entries) — just to render tabs
+    mockFetch.mockResolvedValueOnce(mockCacheEntries());
+
+    render(<CacheStatsPanel />);
+    await waitFor(() => {
+      expect(screen.getByText("embedding cache entry")).toBeInTheDocument();
+    });
+
+    // Click on fact tab
+    mockFetch.mockResolvedValueOnce(mockEmptyCache("fact"));
+    fireEvent.click(screen.getByText("事实缓存"));
 
     await waitFor(() => {
       expect(
-        screen.getByText("FactExtractor 未加载"),
+        screen.getByText(/事实提取缓存尚未初始化/),
       ).toBeInTheDocument();
     });
   });
@@ -125,38 +176,25 @@ describe("CacheStatsPanel", () => {
       expect(screen.getByText("服务内部错误")).toBeInTheDocument();
     });
 
-    mockFetch.mockResolvedValueOnce(mockCacheSuccess());
+    mockFetch.mockResolvedValueOnce(mockCacheEntries());
     fireEvent.click(screen.getByText("重试"));
 
     await waitFor(() => {
-      expect(screen.getByText("嵌入缓存")).toBeInTheDocument();
-    });
-  });
-
-  it("shows idle message when both caches have 0 requests", async () => {
-    mockFetch.mockResolvedValueOnce(mockEmptyCache());
-    render(<CacheStatsPanel />);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText("暂无缓存数据，运行管线后回来查看"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("embedding cache entry")).toBeInTheDocument();
     });
   });
 
   it("renders 0% hit rate bar without crash", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          embedding: { hits: 0, misses: 10, size: 1000, total_requests: 10, hit_rate_pct: 0 },
-          fact: { hits: 5, misses: 5, size: 64, total_requests: 10, hit_rate_pct: 50 },
-        }),
-    });
+    mockFetch.mockResolvedValueOnce(
+      mockCacheEntries({
+        hits: 0,
+        misses: 10,
+        hitRatePct: 0,
+        totalEntries: 1000,
+      }),
+    );
     render(<CacheStatsPanel />);
     await waitFor(() => {
-      expect(screen.getByText("嵌入缓存")).toBeInTheDocument();
-      // 0% 命中率 — the tabular-nums span has "0.0% 命中率" text
       const hitRateSpan = document.querySelector(".tabular-nums");
       expect(hitRateSpan).toBeTruthy();
       expect(hitRateSpan!.textContent).toMatch(/0\.0%/);
@@ -164,41 +202,58 @@ describe("CacheStatsPanel", () => {
   });
 
   it("renders 100% hit rate with full bar", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          embedding: { hits: 100, misses: 0, size: 1000, total_requests: 100, hit_rate_pct: 100 },
-          fact: { hits: 50, misses: 10, size: 64, total_requests: 60, hit_rate_pct: 83.3 },
-        }),
-    });
+    mockFetch.mockResolvedValueOnce(
+      mockCacheEntries({
+        hits: 100,
+        misses: 0,
+        hitRatePct: 100,
+        totalEntries: 1000,
+      }),
+    );
     render(<CacheStatsPanel />);
     await waitFor(() => {
-      expect(screen.getByText("嵌入缓存")).toBeInTheDocument();
-      // 100% should display correctly — check the tabular-nums span
       const hitRateSpan = document.querySelector(".tabular-nums");
       expect(hitRateSpan!.textContent).toMatch(/100\.0%/);
     });
   });
 
-  it("shows fact cache stats with correct capacity", async () => {
-    mockFetch.mockResolvedValueOnce(mockCacheSuccess({ factSize: 256 }));
+  it("switches cache type and fetches new data", async () => {
+    mockFetch.mockResolvedValueOnce(mockCacheEntries());
     render(<CacheStatsPanel />);
     await waitFor(() => {
-      // capacity display for fact cache
-      expect(screen.getByText(/容量 256/)).toBeInTheDocument();
+      expect(screen.getByText("embedding cache entry")).toBeInTheDocument();
+    });
+
+    // Switch to response cache
+    mockFetch.mockResolvedValueOnce(
+      mockCacheEntries({
+        cacheType: "response",
+        entries: [
+          { key: "resp:test", preview: "response cache entry", tokens_est: 500, kind: "response" },
+        ],
+      }),
+    );
+    fireEvent.click(screen.getByText("响应缓存"));
+
+    await waitFor(() => {
+      expect(screen.getByText("response cache entry")).toBeInTheDocument();
+      expect(screen.getByText("~500 tokens")).toBeInTheDocument();
     });
   });
 
   it("refreshes and updates cache data", async () => {
-    mockFetch.mockResolvedValueOnce(mockCacheSuccess());
+    mockFetch.mockResolvedValueOnce(mockCacheEntries());
     render(<CacheStatsPanel />);
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "刷新数据" })).toBeInTheDocument();
     });
+
     // Second fetch: different hit count
-    mockFetch.mockResolvedValueOnce(mockCacheSuccess({ embHits: 200, embMisses: 50 }));
+    mockFetch.mockResolvedValueOnce(
+      mockCacheEntries({ hits: 200, misses: 50, hitRatePct: 80.0 }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "刷新数据" }));
+
     await waitFor(() => {
       expect(screen.getByText(/命中 200/)).toBeInTheDocument();
       expect(screen.getByText(/未命中 50/)).toBeInTheDocument();
@@ -206,20 +261,56 @@ describe("CacheStatsPanel", () => {
   });
 
   it("renders large request count with comma formatting", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          embedding: { hits: 8500, misses: 1500, size: 10000, total_requests: 10000, hit_rate_pct: 85.0 },
-          fact: { hits: 3200, misses: 800, size: 64, total_requests: 4000, hit_rate_pct: 80.0 },
-        }),
-    });
+    mockFetch.mockResolvedValueOnce(
+      mockCacheEntries({
+        hits: 8500,
+        misses: 1500,
+        totalEntries: 10000,
+        hitRatePct: 85.0,
+      }),
+    );
     render(<CacheStatsPanel />);
     await waitFor(() => {
-      // Large numbers formatted with commas
       expect(screen.getByText(/命中 8,500/)).toBeInTheDocument();
       expect(screen.getByText(/未命中 1,500/)).toBeInTheDocument();
       expect(screen.getByText(/容量 10,000/)).toBeInTheDocument();
+    });
+  });
+
+  it("shows health label for healthy cache (≥80%)", async () => {
+    mockFetch.mockResolvedValueOnce(mockCacheEntries({ hitRatePct: 85.0 }));
+    render(<CacheStatsPanel />);
+    await waitFor(() => {
+      expect(screen.getByText(/健康/)).toBeInTheDocument();
+    });
+  });
+
+  it("shows warning label for borderline cache (40-80%)", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockCacheEntries({ hits: 60, misses: 40, hitRatePct: 60.0 }),
+    );
+    render(<CacheStatsPanel />);
+    await waitFor(() => {
+      expect(screen.getByText(/偏低/)).toBeInTheDocument();
+    });
+  });
+
+  it("hides health label when total requests is 0", async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockCacheEntries({
+        hits: 0,
+        misses: 0,
+        hitRatePct: 0,
+        entries: [],
+        totalEntries: 1000,
+      }),
+    );
+    render(<CacheStatsPanel />);
+    await waitFor(() => {
+      // empty state, no health label
+      expect(screen.queryByText(/健康/)).toBeNull();
+      expect(screen.queryByText(/偏低/)).toBeNull();
+      expect(screen.queryByText(/异常/)).toBeNull();
     });
   });
 });
