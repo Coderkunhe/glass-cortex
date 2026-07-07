@@ -201,4 +201,52 @@ describe("KnowledgeGraphPanel", () => {
     });
     expect(screen.getByTestId("echarts-container")).toBeInTheDocument();
   });
+
+  // ── 搜索功能 ──
+
+  it("renders search input when data loaded", async () => {
+    mockFetch.mockResolvedValueOnce(mockGraphSuccess());
+    render(<KnowledgeGraphPanel />);
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("搜索节点名称…")).toBeInTheDocument();
+    });
+  });
+
+  it("shows clear button when search has text", async () => {
+    mockFetch.mockResolvedValueOnce(mockGraphSuccess());
+    render(<KnowledgeGraphPanel />);
+    await waitFor(() => {
+      expect(screen.getByTestId("echarts-container")).toBeInTheDocument();
+    });
+    const input = screen.getByPlaceholderText("搜索节点名称…");
+    fireEvent.change(input, { target: { value: "知识" } });
+    expect(screen.getByLabelText("清除搜索")).toBeInTheDocument();
+  });
+
+  it("clears search when clear button clicked", async () => {
+    mockFetch.mockResolvedValueOnce(mockGraphSuccess());
+    render(<KnowledgeGraphPanel />);
+    await waitFor(() => {
+      expect(screen.getByTestId("echarts-container")).toBeInTheDocument();
+    });
+    const input = screen.getByPlaceholderText("搜索节点名称…");
+    fireEvent.change(input, { target: { value: "知识" } });
+    fireEvent.click(screen.getByLabelText("清除搜索"));
+    expect((input as HTMLInputElement).value).toBe("");
+  });
+
+  it("search filters nodes by name substring", async () => {
+    mockFetch.mockResolvedValueOnce(mockGraphSuccess());
+    render(<KnowledgeGraphPanel />);
+    await waitFor(() => {
+      expect(screen.getByTestId("echarts-container")).toBeInTheDocument();
+    });
+    // "AI助手" matches node s2, also shows its neighbor o1 (知识图谱)
+    const input = screen.getByPlaceholderText("搜索节点名称…");
+    fireEvent.change(input, { target: { value: "AI助手" } });
+    // Summary should show filtered count: 2 nodes (AI助手 + 知识图谱), 1 edge
+    await waitFor(() => {
+      expect(screen.getByText(/2\/4 节点/)).toBeInTheDocument();
+    });
+  });
 });

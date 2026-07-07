@@ -39,6 +39,16 @@ export default function DecayDistributionPanel() {
   const [lightboxSvg, setLightboxSvg] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
+  // ── Instant tooltip state ──
+  const [tooltip, setTooltip] = useState<{
+    show: boolean;
+    x: number;
+    y: number;
+    label: string;
+    count: number;
+    avgStrength: number;
+  } | null>(null);
+
   const fetchDistribution = useCallback(async () => {
     setState("loading");
     setError(null);
@@ -234,12 +244,23 @@ export default function DecayDistributionPanel() {
                     fill={barColor(bin.bin_label)}
                     opacity="0.85"
                     rx="2"
-                  >
-                    <title>
-                      {bin.bin_label}: {bin.count} 条, 平均强度{" "}
-                      {bin.avg_strength.toFixed(3)}
-                    </title>
-                  </rect>
+                    onMouseEnter={(e) =>
+                      setTooltip({
+                        show: true,
+                        x: e.clientX,
+                        y: e.clientY,
+                        label: bin.bin_label,
+                        count: bin.count,
+                        avgStrength: bin.avg_strength,
+                      })
+                    }
+                    onMouseMove={(e) =>
+                      setTooltip((prev) =>
+                        prev ? { ...prev, x: e.clientX, y: e.clientY } : null,
+                      )
+                    }
+                    onMouseLeave={() => setTooltip(null)}
+                  />
                 </g>
               );
             })}
@@ -260,6 +281,24 @@ export default function DecayDistributionPanel() {
               );
             })()}
           </svg>
+
+          {/* 即时 tooltip — 替代 SVG <title> 原生延迟 */}
+          {tooltip?.show && (
+            <div
+              className="fixed z-50 rounded-gm-sm border border-border-strong bg-surface-elevated px-gm-2.5 py-gm-1.5 shadow-gm-md pointer-events-none"
+              style={{
+                left: tooltip.x + 12,
+                top: tooltip.y - 8,
+              }}
+            >
+              <p className="text-gm-xs font-semibold text-text">
+                {tooltip.label}: {tooltip.count} 条
+              </p>
+              <p className="text-gm-xs text-text-muted">
+                平均强度 {tooltip.avgStrength.toFixed(3)}
+              </p>
+            </div>
+          )}
 
           {/* 统计摘要 */}
           <p className="text-gm-xs text-text-muted/70 text-center mt-gm-2">

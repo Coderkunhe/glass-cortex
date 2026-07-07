@@ -199,4 +199,47 @@ describe("DecayDistributionPanel", () => {
       expect(summary!.textContent).toContain("共 20 条记忆");
     });
   });
+
+  // ── 即时 tooltip ──
+
+  it("shows instant tooltip on bar hover instead of native SVG title", async () => {
+    mockFetch.mockResolvedValueOnce(mockDecaySuccess());
+    const { container } = render(<DecayDistributionPanel />);
+    await waitFor(() => {
+      const bars = container.querySelectorAll("[data-bar=\"true\"]");
+      expect(bars.length).toBeGreaterThan(0);
+    });
+    // SVG <title> elements should NOT be present (replaced by custom tooltip)
+    expect(container.querySelector("title")).toBeNull();
+
+    const firstBar = container.querySelector("[data-bar=\"true\"]")!;
+    fireEvent.mouseEnter(firstBar, {
+      clientX: 200,
+      clientY: 150,
+    });
+    // Custom tooltip should appear
+    await waitFor(() => {
+      const tooltip = document.querySelector(".fixed.z-50");
+      expect(tooltip).toBeTruthy();
+    });
+  });
+
+  it("hides tooltip on mouse leave", async () => {
+    mockFetch.mockResolvedValueOnce(mockDecaySuccess());
+    const { container } = render(<DecayDistributionPanel />);
+    await waitFor(() => {
+      const bars = container.querySelectorAll("[data-bar=\"true\"]");
+      expect(bars.length).toBeGreaterThan(0);
+    });
+
+    const firstBar = container.querySelector("[data-bar=\"true\"]")!;
+    fireEvent.mouseEnter(firstBar, { clientX: 200, clientY: 150 });
+    await waitFor(() => {
+      expect(document.querySelector(".fixed.z-50")).toBeTruthy();
+    });
+    fireEvent.mouseLeave(firstBar);
+    await waitFor(() => {
+      expect(document.querySelector(".fixed.z-50")).toBeNull();
+    });
+  });
 });

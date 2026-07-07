@@ -268,7 +268,7 @@ function EChartsWrapper({ option }: { option: echarts.EChartsOption }) {
     <div
       ref={containerRef}
       data-testid="echarts-container"
-      style={{ height: 520, width: "100%" }}
+      style={{ height: "clamp(340px, 60vh, 700px)", width: "100%" }}
     />
   );
 }
@@ -297,7 +297,10 @@ export default function KnowledgeGraphScene({
 
   if (!option) {
     return (
-      <div className="flex items-center justify-center h-[520px] text-text-muted select-none">
+      <div
+        className="flex items-center justify-center text-text-muted select-none"
+        style={{ height: "clamp(340px, 60vh, 700px)" }}
+      >
         <p className="text-gm-sm">暂无图谱数据</p>
       </div>
     );
