@@ -422,12 +422,19 @@ const FONT_SIZES = [
   "text-gm-3xl",
 ] as const;
 
+/** 标签云颜色映射 — 提取为模块常量避免每次 render 重建。 */
+const TAG_CLOUD_COLORS: Record<ConfidenceTier, string> = {
+  high: "text-success hover:text-success/80",
+  medium: "text-warning hover:text-warning/80",
+  low: "text-text-muted hover:text-text-secondary",
+};
+
 /**
  * 权重驱动标签云。
  *
  * 字体大小随 max_confidence 线性缩放，颜色按置信度分三档。
  * 居中流式布局，纯文本 + 加权字号 = 真正的"云"感。
- * 每个标签附带 title tooltip 展示底层统计。
+ * 每个标签附带即时 tooltip 展示底层统计。
  */
 function TagCloud({
   tags,
@@ -459,14 +466,8 @@ function TagCloud({
         );
         const sizeClass = FONT_SIZES[Math.min(idx, FONT_SIZES.length - 1)];
 
-        const c = t.max_confidence;
-        const tier = getConfidenceTier(c);
-        const TAG_COLORS: Record<ConfidenceTier, string> = {
-          high: "text-success hover:text-success/80",
-          medium: "text-warning hover:text-warning/80",
-          low: "text-text-muted hover:text-text-secondary",
-        };
-        const colorClass = TAG_COLORS[tier];
+        const tier = getConfidenceTier(t.max_confidence);
+        const colorClass = TAG_CLOUD_COLORS[tier];
 
         const tooltipText = [
           t.subject,

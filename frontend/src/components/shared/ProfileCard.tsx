@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api/client";
+import { getConfidenceTier } from "@/lib/confidence";
+import type { ConfidenceTier } from "@/lib/confidence";
 import type { ProfileListResponse, TagSummaryItem } from "@/lib/api/types";
 import ErrorDisplay from "@/components/ui/ErrorDisplay";
 
@@ -31,8 +33,8 @@ export default function ProfileCard() {
   }, []);
 
   useEffect(() => {
-    const id = setTimeout(() => fetchData(), 0);
-    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 对标 B89 消除模式，setState 在 useCallback 内部执行
+    fetchData();
   }, [fetchData]);
 
   const currentName = profile?.current || "default";
@@ -137,22 +139,20 @@ export default function ProfileCard() {
   );
 }
 
-/** 单个标签 pill — 颜色随置信度分三档。 */
+/** 单个标签 pill — 颜色随置信度分三档，使用共享 getConfidenceTier。 */
 function TagPill({ tag }: { tag: TagSummaryItem }) {
-  const c = tag.max_confidence;
-  const variant: "high" | "mid" | "low" =
-    c > 0.7 ? "high" : c > 0.4 ? "mid" : "low";
+  const tier = getConfidenceTier(tag.max_confidence);
 
-  const colors: Record<typeof variant, string> = {
+  const colors: Record<ConfidenceTier, string> = {
     high: "bg-success/15 text-success border-success/20",
-    mid: "bg-warning/15 text-warning border-warning/20",
+    medium: "bg-warning/15 text-warning border-warning/20",
     low: "bg-surface-lowered text-text-muted border-border",
   };
 
   return (
     <span
       className={`inline-block rounded-full px-gm-2 py-gm-1
-                  text-gm-xs font-medium border ${colors[variant]}`}
+                  text-gm-xs font-medium border ${colors[tier]}`}
     >
       {tag.relation}
     </span>
