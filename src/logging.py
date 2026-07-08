@@ -158,6 +158,6 @@ def trace_step(name: str | None = None) -> Callable[[F], F]:
                 )
                 raise
 
-        return wrapper  # type: ignore[return-value]
+        return wrapper  # type: ignore[return-value]  # decorator preserves original func signature; mypy can't infer through wrapper
 
     return decorator

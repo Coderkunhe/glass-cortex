@@ -73,7 +73,7 @@ class ForgettingEngine:
              "faiss_vectors_removed": int, "session_id": str}
         """
         result = self.store.delete_episodes_by_session(session_id)
-        faiss_ids: list[int] = result.get("faiss_ids", [])  # type: ignore[assignment]
+        faiss_ids: list[int] = result.get("faiss_ids", [])  # type: ignore[assignment]  # dict.get returns object; declared list[int] for downstream int ops
 
         faiss_removed = 0
         if faiss_ids and self.index is not None:

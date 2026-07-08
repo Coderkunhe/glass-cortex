@@ -240,7 +240,7 @@ def cache_entries(
         CacheEntryItem(
             key=str(e.get("key", "")),
             preview=str(e.get("preview", "")),
-            tokens_est=int(e.get("tokens_est", 0)),  # type: ignore[call-overload]
+            tokens_est=int(e.get("tokens_est", 0)),  # type: ignore[call-overload]  # int() overload expects str|bytes|SupportsInt; dict.get default is int 0
             kind=str(e.get("kind", cache_type)),
         )
         for e in entries_raw

@@ -78,8 +78,8 @@ class RecallEngine:
             warm_eps = [ep for ep in episodes if ep.get("tier") == "warm"]
             # cold 层不做召回
 
-            hot_scored = self._score_episodes(hot_eps, dist_map, threshold)  # type: ignore[arg-type]
-            warm_scored = self._score_episodes(warm_eps, dist_map, threshold)  # type: ignore[arg-type]
+            hot_scored = self._score_episodes(hot_eps, dist_map, threshold)  # type: ignore[arg-type]  # list[dict]→Sequence[EpisodeRow]; runtime filter strips TypedDict type
+            warm_scored = self._score_episodes(warm_eps, dist_map, threshold)  # type: ignore[arg-type]  # list[dict]→Sequence[EpisodeRow]; runtime filter strips TypedDict type
 
             # 两阶段：hot 全量优先，warm 补充不足
             scored: list[tuple[dict[str, object], float]] = list(hot_scored)
@@ -87,20 +87,20 @@ class RecallEngine:
             if remaining > 0:
                 scored.extend(warm_scored[:remaining])
         else:
-            scored = self._score_episodes(episodes, dist_map, threshold)  # type: ignore[arg-type]
+            scored = self._score_episodes(episodes, dist_map, threshold)  # type: ignore[arg-type]  # list[dict]→Sequence[EpisodeRow]; runtime filter strips TypedDict type
 
         # ── facts 始终参与召回（无分层概念）──
         for fact in facts:
             fid = fact["faiss_id"]
-            similarity = dist_map.get(fid, 0.0)  # type: ignore[arg-type]
+            similarity = dist_map.get(fid, 0.0)  # type: ignore[arg-type]  # fid from fact["faiss_id"] is Any; dict.get key type mismatch
             confidence = fact["confidence"]
             if confidence < threshold:
                 continue
             score = similarity * confidence
-            fact["_row_type"] = "fact"  # type: ignore[typeddict-unknown-key]
-            fact["composite_score"] = score  # type: ignore[typeddict-unknown-key]
-            fact["similarity"] = similarity  # type: ignore[typeddict-unknown-key]
-            scored.append((fact, score))  # type: ignore[arg-type]
+            fact["_row_type"] = "fact"  # type: ignore[typeddict-unknown-key]  # runtime enrichment key for downstream routing; not in FactRow TypedDict
+            fact["composite_score"] = score  # type: ignore[typeddict-unknown-key]  # runtime enrichment key for scoring sort; not in FactRow TypedDict
+            fact["similarity"] = similarity  # type: ignore[typeddict-unknown-key]  # runtime enrichment key for distance tracking; not in FactRow TypedDict
+            scored.append((fact, score))  # type: ignore[arg-type]  # FactRow+enrichment keys→dict[str,object]; append expects tuple[dict,float]
 
         # 分层模式下热层优先顺序已由两阶段构造保证，不再全量重排；
         # 非分层模式按评分重排。
@@ -138,7 +138,7 @@ class RecallEngine:
             if row.get("_row_type") == "fact":
                 result.append(row)
             elif strengthen:
-                old_strength = self.forgetting.current_strength(row)  # type: ignore[arg-type]
+                old_strength = self.forgetting.current_strength(row)  # type: ignore[arg-type]  # dict row→EpisodeRow param; sqlite3 query returns untyped dict
                 new_strength = ForgettingEngine.strengthen(old_strength)
                 eid = cast(int, row["id"])
                 self.store.update_strength(eid, new_strength)
@@ -168,8 +168,8 @@ class RecallEngine:
         scored: list[tuple[dict[str, object], float]] = []
         for ep in episodes:
             fid = ep["faiss_id"]
-            similarity = dist_map.get(fid, 0.0)  # type: ignore[call-overload]
-            strength = self.forgetting.current_strength(ep)  # type: ignore[arg-type]
+            similarity = dist_map.get(fid, 0.0)  # type: ignore[call-overload]  # dict.get overload; fid from TypedDict key resolves to Any
+            strength = self.forgetting.current_strength(ep)  # type: ignore[arg-type]  # dict ep→EpisodeRow param; sqlite3 query returns untyped dict
             if strength < threshold:
                 continue
             score = similarity * strength * ep["importance"]

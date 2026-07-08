@@ -148,7 +148,7 @@ class SessionBoundaryDetector:
         try:
             row = self._store.get_latest_trace()
             if row is not None:
-                return float(row["created_at"]), str(row["session_id"])  # type: ignore[arg-type]
+                return float(row["created_at"]), str(row["session_id"])  # type: ignore[arg-type]  # sqlite3.Row.__getitem__ returns Any; mypy rejects Any→float/str
         except Exception:
             pass
 
@@ -156,7 +156,7 @@ class SessionBoundaryDetector:
         try:
             row = self._store.get_latest_plan_run()
             if row is not None:
-                return float(row["created_at"]), str(row["session_id"])  # type: ignore[arg-type]
+                return float(row["created_at"]), str(row["session_id"])  # type: ignore[arg-type]  # sqlite3.Row.__getitem__ returns Any; mypy rejects Any→float/str
         except Exception:
             pass
 
@@ -201,7 +201,7 @@ class SessionBoundaryDetector:
             匹配行列表，每行为完整的 episodes 字典。
         """
         try:
-            return self._store.get_episodes_with_questions_since(since)  # type: ignore[return-value]
+            return self._store.get_episodes_with_questions_since(since)  # type: ignore[return-value]  # delegate returns list[dict]; return type declared as list[dict[str,object]]
         except Exception:
             return []
 

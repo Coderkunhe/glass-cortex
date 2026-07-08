@@ -367,7 +367,7 @@ class MemoryStore:
         rows = self._db.execute(
             f"SELECT * FROM episodes WHERE id IN ({placeholders})", ids
         ).fetchall()
-        return [dict(row) for row in rows]  # type: ignore[misc]
+        return [dict(row) for row in rows]  # type: ignore[misc]  # sqlite3.Row→dict loses column type; mypy infers list[dict[str,Any]]
 
     def get_episodes_by_faiss_id(self, faiss_ids: list[int]) -> list[EpisodeRow]:
         if not faiss_ids:
@@ -377,18 +377,18 @@ class MemoryStore:
             f"SELECT * FROM episodes WHERE faiss_id IN ({placeholders})",
             faiss_ids,
         ).fetchall()
-        return [dict(row) for row in rows]  # type: ignore[misc]
+        return [dict(row) for row in rows]  # type: ignore[misc]  # sqlite3.Row→dict loses column type; mypy infers list[dict[str,Any]]
 
     def get_all_episodes(self) -> list[EpisodeRow]:
         rows = self._db.execute("SELECT * FROM episodes").fetchall()
-        return [dict(row) for row in rows]  # type: ignore[misc]
+        return [dict(row) for row in rows]  # type: ignore[misc]  # sqlite3.Row→dict loses column type; mypy infers list[dict[str,Any]]
 
     def get_episodes_since(self, timestamp: float) -> list[EpisodeRow]:
         rows = self._db.execute(
             "SELECT * FROM episodes WHERE timestamp >= ? ORDER BY timestamp ASC",
             (timestamp,),
         ).fetchall()
-        return [dict(row) for row in rows]  # type: ignore[misc]
+        return [dict(row) for row in rows]  # type: ignore[misc]  # sqlite3.Row→dict loses column type; mypy infers list[dict[str,Any]]
 
     def get_max_episode_timestamp(self) -> float | None:
         """返回 episodes 表中最大的时间戳，无数据时返回 None。
@@ -414,7 +414,7 @@ class MemoryStore:
             "ORDER BY timestamp DESC",
             (since,),
         ).fetchall()
-        return [dict(r) for r in rows]  # type: ignore[misc]
+        return [dict(r) for r in rows]  # type: ignore[misc]  # sqlite3.Row→dict loses column type; mypy infers list[dict[str,Any]]
 
     def get_episode_count_since(self, timestamp: float) -> int:
         row = self._db.execute(
@@ -437,7 +437,7 @@ class MemoryStore:
             "SELECT * FROM episodes WHERE session_id = ? ORDER BY timestamp ASC",
             (session_id,),
         ).fetchall()
-        return [dict(row) for row in rows]  # type: ignore[misc]
+        return [dict(row) for row in rows]  # type: ignore[misc]  # sqlite3.Row→dict loses column type; mypy infers list[dict[str,Any]]
 
     def delete_episodes_by_session(self, session_id: str) -> dict[str, object]:
         """级联删除 session 下所有 episodes + 关联 facts/recall_log/confidence_log。
@@ -622,7 +622,7 @@ class MemoryStore:
 
     def get_all_facts(self) -> list[FactRow]:
         rows = self._db.execute("SELECT * FROM facts ORDER BY confidence DESC").fetchall()
-        return [dict(row) for row in rows]  # type: ignore[misc]
+        return [dict(row) for row in rows]  # type: ignore[misc]  # sqlite3.Row→dict loses column type; mypy infers list[dict[str,Any]]
 
     def get_predicate_tag_summary(self, limit: int = 10) -> list[dict[str, object]]:
         """按 (subject, relation) 聚合事实标签，用于标签云预览。"""
@@ -647,7 +647,7 @@ class MemoryStore:
         rows = self._db.execute(
             f"SELECT * FROM facts WHERE faiss_id IN ({placeholders})", faiss_ids
         ).fetchall()
-        return [dict(row) for row in rows]  # type: ignore[misc]
+        return [dict(row) for row in rows]  # type: ignore[misc]  # sqlite3.Row→dict loses column type; mypy infers list[dict[str,Any]]
 
     def update_fact_confidence(self, fact_id: int, delta: float) -> tuple[float, float] | None:
         """更新事实置信度并返回变更前后的值。
@@ -687,7 +687,7 @@ class MemoryStore:
             "SELECT * FROM facts WHERE subject = ? ORDER BY confidence DESC",
             (subject,),
         ).fetchall()
-        return [dict(row) for row in rows]  # type: ignore[misc]
+        return [dict(row) for row in rows]  # type: ignore[misc]  # sqlite3.Row→dict loses column type; mypy infers list[dict[str,Any]]
 
     def get_tag_detail(self, subject: str, relation: str) -> dict[str, object]:
         """获取标签详情——关联事实 + 来源 episode + 置信度变更日志。
@@ -1152,7 +1152,7 @@ class MemoryStore:
             "SELECT * FROM episodes WHERE tier = ? ORDER BY timestamp DESC LIMIT ?",
             (tier, limit),
         ).fetchall()
-        return [dict(row) for row in rows]  # type: ignore[misc]
+        return [dict(row) for row in rows]  # type: ignore[misc]  # sqlite3.Row→dict loses column type; mypy infers list[dict[str,Any]]
 
     def get_tier_distribution(self) -> dict[str, int]:
         """获取三级分层的 episode 数量分布。

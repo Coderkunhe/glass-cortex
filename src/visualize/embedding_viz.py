@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
-import plotly.graph_objects as go  # type: ignore[import-untyped]
+import plotly.graph_objects as go  # type: ignore[import-untyped]  # plotly has no PEP 561 type stubs
 
 
 def pca_reduce(

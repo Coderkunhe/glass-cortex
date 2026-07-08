@@ -110,7 +110,7 @@ class PlannerEngine:
             from src.planner.plan import PlanResult
 
             return PlanResult(rationale="PlanGenerator 未注入"), {}
-        result: tuple[object, dict[str, object]] = self._plan_generator.generate_plan(  # type: ignore[attr-defined]
+        result: tuple[object, dict[str, object]] = self._plan_generator.generate_plan(  # type: ignore[attr-defined]  # DI-injected via bootstrap; not declared in __init__ type signature
             user_msg, intent_category, plan_history=plan_history
         )
         return result
@@ -134,7 +134,7 @@ class PlannerEngine:
                 drift_reason="ReplanDetector 未注入",
                 revised_intent=original_intent,
             ), {}
-        return self._replan_detector.detect_replan(  # type: ignore[no-any-return,attr-defined]
+        return self._replan_detector.detect_replan(  # type: ignore[no-any-return,attr-defined]  # DI-injected delegate; return type Any from untyped interface
             original_user_msg, original_intent, original_plan, revised_user_msg
         )
 
@@ -158,7 +158,7 @@ class PlannerEngine:
                 reflections=["ReflectionEngine 未注入"],
                 improvement_suggestions=[],
             ), {}
-        return self._reflection_engine.reflect(  # type: ignore[no-any-return,attr-defined]
+        return self._reflection_engine.reflect(  # type: ignore[no-any-return,attr-defined]  # DI-injected delegate; return type Any from untyped interface
             user_msg, intent_category, plan_result, conversation_summary
         )
 

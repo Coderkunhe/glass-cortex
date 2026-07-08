@@ -48,9 +48,9 @@ def forget_session(
     )
 
     return SessionForgetResponse(
-        episodes_deleted=int(result["episodes_deleted"]),  # type: ignore[call-overload]
-        facts_deleted=int(result["facts_deleted"]),  # type: ignore[call-overload]
-        faiss_vectors_removed=int(result["faiss_vectors_removed"]),  # type: ignore[call-overload]
+        episodes_deleted=int(result["episodes_deleted"]),  # type: ignore[call-overload]  # int() overload expects str|bytes|SupportsInt; dict value is Any
+        facts_deleted=int(result["facts_deleted"]),  # type: ignore[call-overload]  # int() overload expects str|bytes|SupportsInt; dict value is Any
+        faiss_vectors_removed=int(result["faiss_vectors_removed"]),  # type: ignore[call-overload]  # int() overload expects str|bytes|SupportsInt; dict value is Any
         session_id=str(result["session_id"]),
     )
 
@@ -76,7 +76,7 @@ def reset_session(
         store.close()
 
     # 清空数据文件（SQLite + FAISS）
-    wipe_profile_data(settings)  # type: ignore[arg-type]
+    wipe_profile_data(settings)  # type: ignore[arg-type]  # config.settings is Settings; mypy loses type through module-level re-export
 
     # 重建引擎（空数据库 + 空索引 + 全新 TokenLedger）
     new_engines = init_engines()

@@ -140,10 +140,10 @@ class SemanticResponseCache:
             context_meta=cast(dict[str, object], response_data.get("context_meta", {})),
             api_trace=cast(dict[str, object], response_data.get("api_trace", {})),
             recall_items=cast(list[dict[str, object]], response_data.get("recall_items", [])),
-            intent=response_data.get("intent"),  # type: ignore[arg-type]
-            system_prompt=response_data.get("system_prompt"),  # type: ignore[arg-type]
-            routing=response_data.get("routing"),  # type: ignore[arg-type]
-            cold_start_profile=response_data.get("cold_start_profile"),  # type: ignore[arg-type]
+            intent=response_data.get("intent"),  # type: ignore[arg-type]  # CachedResponse field is Optional[dict]; mypy rejects Optional→required param
+            system_prompt=response_data.get("system_prompt"),  # type: ignore[arg-type]  # CachedResponse field is Optional[str]; mypy rejects Optional→required param
+            routing=response_data.get("routing"),  # type: ignore[arg-type]  # CachedResponse field is Optional[dict]; mypy rejects Optional→required param
+            cold_start_profile=response_data.get("cold_start_profile"),  # type: ignore[arg-type]  # CachedResponse field is Optional[dict]; mypy rejects Optional→required param
         )
         self._store[query_text] = entry
 

@@ -69,14 +69,14 @@ def chat(
             return ChatResponse(
                 response_text=cached_resp.response_text,
                 episode_id=-1,  # 哨兵：缓存命中无新 episode
-                intent=IntentResult(**cached_resp.intent) if cached_resp.intent else None,  # type: ignore[arg-type]
-                context_meta=ContextMeta(**cached_resp.context_meta),  # type: ignore[arg-type]
-                api_trace=ApiTrace(**cached_resp.api_trace),  # type: ignore[arg-type]
+                intent=IntentResult(**cached_resp.intent) if cached_resp.intent else None,  # type: ignore[arg-type]  # cached JSON→Pydantic model; mypy can't verify dict keys match model fields
+                context_meta=ContextMeta(**cached_resp.context_meta),  # type: ignore[arg-type]  # cached JSON→Pydantic model; mypy can't verify dict keys match model fields
+                api_trace=ApiTrace(**cached_resp.api_trace),  # type: ignore[arg-type]  # cached JSON→Pydantic model; mypy can't verify dict keys match model fields
                 recall_items=[_route_recall_item(item) for item in cached_resp.recall_items],
                 system_prompt=cached_resp.system_prompt,
-                routing=RoutingInfo(**cached_resp.routing) if cached_resp.routing else None,  # type: ignore[arg-type]
+                routing=RoutingInfo(**cached_resp.routing) if cached_resp.routing else None,  # type: ignore[arg-type]  # cached JSON→Pydantic model; mypy can't verify dict keys match model fields
                 cold_start_profile=(
-                    ColdStartProfile(**cached_resp.cold_start_profile)  # type: ignore[arg-type]
+                    ColdStartProfile(**cached_resp.cold_start_profile)  # type: ignore[arg-type]  # cached JSON→Pydantic model; mypy can't verify dict keys match model fields
                     if cached_resp.cold_start_profile
                     else None
                 ),

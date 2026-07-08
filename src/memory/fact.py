@@ -73,7 +73,7 @@ class FactExtractor:
         返回 (fact_ids, trace_dict)，trace_dict 包含完整抽取管线数据供 UI 透明化展示。
         """
         existing = self._store.get_all_facts()
-        fact_state_hash = FactCache.compute_fact_state_hash(existing)  # type: ignore[arg-type]
+        fact_state_hash = FactCache.compute_fact_state_hash(existing)  # type: ignore[arg-type]  # list[dict]→Sequence[FactRow]; sqlite3 query returns untyped dicts
 
         # 检查 Fact 抽取缓存
         cached = self._fact_cache.get(user_msg, assistant_msg, fact_state_hash)
