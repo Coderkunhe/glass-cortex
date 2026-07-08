@@ -40,6 +40,17 @@ export interface TabBarProps {
   /** Accessible label for the tablist navigation landmark. */
   ariaLabel: string;
 
+  /**
+   * Prefix for generating `aria-controls` on each tab button.
+   *
+   * When provided, each tab gets `aria-controls="{prefix}-{tab.key}"`.
+   * The consumer must set matching `id` + `role="tabpanel"` +
+   * `aria-labelledby` on the corresponding content panel.
+   *
+   * Omit for backward compatibility (e.g. tabs with no JS-driven panel switch).
+   */
+  tabPanelIdPrefix?: string;
+
   /** Appended to the outermost `<nav>` element. Use for `px-gm-5 pt-gm-3` etc. */
   className?: string;
 }
@@ -66,7 +77,7 @@ const ACTIVE_COLOR: Record<"brand" | "info", string> = {
  * Controlled component: consumer owns useState, passes activeKey + onChange.
  *
  * Features: icon support, two size presets (sm/xs), brand/info color themes,
- * ARIA tablist/tab/aria-selected, border-b overlap technique.
+ * ARIA tablist/tab/aria-selected/aria-controls, border-b overlap technique.
  */
 export function TabBar({
   tabs,
@@ -75,6 +86,7 @@ export function TabBar({
   activeColor = "brand",
   size = "sm",
   ariaLabel,
+  tabPanelIdPrefix,
   className = "",
 }: TabBarProps) {
   const activeCls = ACTIVE_COLOR[activeColor];
@@ -95,7 +107,17 @@ export function TabBar({
             key={tab.key}
             type="button"
             role="tab"
+            id={
+              tabPanelIdPrefix
+                ? `${tabPanelIdPrefix}-tab-${tab.key}`
+                : undefined
+            }
             aria-selected={isActive}
+            aria-controls={
+              tabPanelIdPrefix
+                ? `${tabPanelIdPrefix}-${tab.key}`
+                : undefined
+            }
             onClick={() => onChange(tab.key)}
             className={`inline-flex items-center gap-gm-1.5 ${sizeCls} font-medium transition-colors border-b-2 -mb-[1px] ${
               isActive

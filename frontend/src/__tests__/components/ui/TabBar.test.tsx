@@ -230,4 +230,80 @@ describe("TabBar", () => {
     // Should render without trailing whitespace issues
     expect(nav).toBeInTheDocument();
   });
+
+  // ── ARIA aria-controls ──
+
+  it("sets aria-controls on each tab when tabPanelIdPrefix is provided", () => {
+    render(
+      <TabBar
+        tabs={BASIC_TABS}
+        activeKey="a"
+        onChange={() => {}}
+        ariaLabel="With controls"
+        tabPanelIdPrefix="lab"
+      />
+    );
+
+    expect(screen.getByRole("tab", { name: "Tab A" })).toHaveAttribute(
+      "aria-controls",
+      "lab-a"
+    );
+    expect(screen.getByRole("tab", { name: "Tab B" })).toHaveAttribute(
+      "aria-controls",
+      "lab-b"
+    );
+    expect(screen.getByRole("tab", { name: "Tab C" })).toHaveAttribute(
+      "aria-controls",
+      "lab-c"
+    );
+  });
+
+  it("does not set aria-controls when tabPanelIdPrefix is omitted", () => {
+    render(
+      <TabBar
+        tabs={BASIC_TABS}
+        activeKey="a"
+        onChange={() => {}}
+        ariaLabel="No controls"
+      />
+    );
+
+    expect(
+      screen.getByRole("tab", { name: "Tab A" })
+    ).not.toHaveAttribute("aria-controls");
+  });
+
+  it("sets id on each tab button when tabPanelIdPrefix is provided", () => {
+    render(
+      <TabBar
+        tabs={BASIC_TABS}
+        activeKey="a"
+        onChange={() => {}}
+        ariaLabel="With IDs"
+        tabPanelIdPrefix="lab"
+      />
+    );
+
+    expect(
+      screen.getByRole("tab", { name: "Tab A" })
+    ).toHaveAttribute("id", "lab-tab-a");
+    expect(
+      screen.getByRole("tab", { name: "Tab B" })
+    ).toHaveAttribute("id", "lab-tab-b");
+  });
+
+  it("does not set id on tab buttons when tabPanelIdPrefix is omitted", () => {
+    render(
+      <TabBar
+        tabs={BASIC_TABS}
+        activeKey="a"
+        onChange={() => {}}
+        ariaLabel="No IDs"
+      />
+    );
+
+    expect(
+      screen.getByRole("tab", { name: "Tab A" })
+    ).not.toHaveAttribute("id");
+  });
 });
