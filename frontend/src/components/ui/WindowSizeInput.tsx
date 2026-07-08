@@ -1,18 +1,11 @@
 "use client";
 
 import { useCallback, type ChangeEvent } from "react";
+import { clampWindow, MIN_WINDOW, MAX_WINDOW } from "@/lib/clampWindow";
 
 // ── Constants ─────────────────────────────────────────────────────────
 
-const MIN_WINDOW = 128;
-const MAX_WINDOW = 8192;
-
 const PRESETS = [128, 256, 512, 1024, 2048, 4096] as const;
-
-/** Clamp value to [MIN_WINDOW, MAX_WINDOW]. */
-function clampWindow(raw: number): number {
-  return Math.max(MIN_WINDOW, Math.min(MAX_WINDOW, raw));
-}
 
 function formatPreset(v: number): string {
   return v >= 1024 ? `${v / 1024}K` : String(v);

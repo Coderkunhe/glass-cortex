@@ -22,25 +22,13 @@ import Prism from "@/lib/prism";
 import { createRoot, type Root } from "react-dom/client";
 import { CopyButton } from "@/components/ui/CopyButton";
 import type { ApiTrace } from "@/lib/api/types";
+import { getExtra, getExtraString } from "@/lib/getExtra";
 
 // ── Constants ──────────────────────────────────────────────────────────
 
 const DRAWER_MAX_WIDTH = 520;
 const DRAWER_ANIMATION_DURATION_MS = 600;
 const CODE_SNIPPET_TRUNCATION_LENGTH = 80;
-
-// ── Helpers ──────────────────────────────────────────────────────────
-
-/** Safely read extra field from trace, returning undefined if key is absent. */
-function getExtra(trace: NonNullable<ReturnType<typeof useDrawer>["trace"]>, key: string): unknown {
-  return (trace as unknown as Record<string, unknown>)[key];
-}
-
-/** Read a string extra field with runtime validation — returns "" for absent or non-string values. */
-function getExtraString(trace: NonNullable<ReturnType<typeof useDrawer>["trace"]>, key: string): string {
-  const v = getExtra(trace, key);
-  return typeof v === "string" ? v : "";
-}
 
 /** Generates a synthetic Python OpenAI SDK call from ApiTrace data, for educational display. */
 function generatePythonRequestCode(trace: ApiTrace): string {

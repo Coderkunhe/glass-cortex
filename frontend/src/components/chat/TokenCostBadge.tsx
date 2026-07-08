@@ -71,21 +71,7 @@ function computeCost(breakdown: TokenBreakdown): {
   return { totalInput, totalOutput, totalTokens, cost, hasPricing };
 }
 
-/**
- * 格式化金额字符串。
- *
- * 策略：
- * - cost = 0 → "¥0"
- * - cost < 0.001 → "≈¥0.0003"（4 位小数，确保极小值可见）
- * - cost < 0.01 → "≈¥0.002"（3 位小数）
- * - cost ≥ 0.01 → "≈¥0.05"（2 位小数）
- */
-export function formatCost(cost: number): string {
-  if (cost === 0) return "¥0";
-  if (cost < 0.001) return `≈¥${cost.toFixed(4)}`;
-  if (cost < 0.01) return `≈¥${cost.toFixed(3)}`;
-  return `≈¥${cost.toFixed(2)}`;
-}
+import { formatCost } from "@/lib/formatCost";
 
 export default function TokenCostBadge({
   tokenBreakdown,

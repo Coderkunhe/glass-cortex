@@ -19,7 +19,7 @@
 
 import { useState } from "react";
 import type { TokenBreakdown } from "@/components/chat/TokenCostBadge";
-import { formatCost } from "@/components/chat/TokenCostBadge";
+import { formatCost } from "@/lib/formatCost";
 import { useSessionStats } from "@/components/chat/ChatParamsContext";
 import { fmtTokens } from "@/lib/formatNum";
 

@@ -11,14 +11,10 @@ import { CopyButton } from "@/components/ui/CopyButton";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
 import type { ApiTrace } from "@/lib/api/types";
 import type { TokenBreakdown } from "./TokenCostBadge";
+import { getExtra } from "@/lib/getExtra";
 
 interface ModelInferencePanelProps {
   apiTrace: ApiTrace;
-}
-
-/** 安全读取 apiTrace 的 extra field（index signature 字段） */
-function getExtra(trace: ApiTrace, key: string): unknown {
-  return (trace as unknown as Record<string, unknown>)[key];
 }
 
 /**
