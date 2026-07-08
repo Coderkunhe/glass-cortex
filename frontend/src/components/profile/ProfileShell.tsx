@@ -521,6 +521,7 @@ function TagCloud({
                         transition-all duration-200 hover:scale-110
                         focus-visible:ring-2 focus-visible:ring-brand/50
                         focus-visible:outline-none rounded-gm-xs
+                        hover:rounded-gm-sm hover:bg-surface-alt/30
                         active:scale-[0.98]
                         ${colorClass}`}
           >
