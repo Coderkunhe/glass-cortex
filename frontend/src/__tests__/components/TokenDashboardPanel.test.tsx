@@ -248,7 +248,6 @@ describe("TokenDashboardPanel", () => {
     render(<TokenDashboardPanel />);
     await waitFor(() => {
       // Bar segments are divs inside the bar container with inline width%
-      const bars = document.querySelectorAll("[style*='width:']:not([style*='100%'])");
       // prompt bar (bg-brand) + completion bar (bg-brand/60) inside the flex container
       const barDivs = document.querySelectorAll(".flex.h-5.rounded-gm-xs > div");
       expect(barDivs.length).toBe(2);
