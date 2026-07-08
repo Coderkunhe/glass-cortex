@@ -38,7 +38,7 @@ describe("TokenCostBadge", () => {
     );
   });
 
-  it("formats token count with locale separators for large numbers", () => {
+  it("formats token count with compact k-suffix for large numbers", () => {
     render(
       <TokenCostBadge
         tokenBreakdown={minimalBreakdown({
@@ -47,7 +47,7 @@ describe("TokenCostBadge", () => {
       />,
     );
     expect(screen.getByTestId("token-cost-count").textContent).toBe(
-      "7,000 token",
+      "7.0k token",
     );
   });
 

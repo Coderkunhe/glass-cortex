@@ -21,6 +21,7 @@ import { useState } from "react";
 import type { TokenBreakdown } from "@/components/chat/TokenCostBadge";
 import { formatCost } from "@/components/chat/TokenCostBadge";
 import { useSessionStats } from "@/components/chat/ChatParamsContext";
+import { fmtTokens } from "@/lib/formatNum";
 
 /** 会话 token 预算上限——油表满刻度（100k token）。 */
 const SESSION_TOKEN_BUDGET = 100_000;
@@ -92,13 +93,6 @@ function ringColorVar(pct: number): string {
   if (pct < 0.6) return "var(--gm-success)";
   if (pct < 0.85) return "var(--gm-warning)";
   return "var(--gm-danger)";
-}
-
-/** 紧凑格式化 token 数：<1k 原值，>=10k 整数 k，否则 1 位小数 k。 */
-function formatTokens(n: number): string {
-  if (n < 1000) return `${n}`;
-  const k = n / 1000;
-  return k >= 10 ? `${Math.round(k)}k` : `${k.toFixed(1)}k`;
 }
 
 /** 油表 variant（供测试断言颜色档位）。 */
@@ -198,10 +192,10 @@ export default function SessionTokenGauge() {
             style={{ color: colorVar }}
             data-testid="session-token-gauge-total"
           >
-            {formatTokens(total)}
+            {fmtTokens(total)}
           </p>
           <p className="text-gm-xs text-text-muted tabular-nums leading-tight">
-            / {formatTokens(SESSION_TOKEN_BUDGET)} · {pctPct}%
+            / {fmtTokens(SESSION_TOKEN_BUDGET)} · {pctPct}%
           </p>
         </div>
       </div>
@@ -214,13 +208,13 @@ export default function SessionTokenGauge() {
         >
           <span className="text-text-muted">输入</span>
           <span className="tabular-nums text-text-secondary">
-            {formatTokens(input)}
+            {fmtTokens(input)}
           </span>
         </div>
         <div className="flex items-center justify-between rounded-gm-xs bg-surface-lowered px-gm-2 py-gm-1">
           <span className="text-text-muted">输出</span>
           <span className="tabular-nums text-text-secondary">
-            {formatTokens(output)}
+            {fmtTokens(output)}
           </span>
         </div>
         <div
@@ -256,7 +250,7 @@ export default function SessionTokenGauge() {
         >
           <span className="text-text-muted">每轮</span>
           <span className="tabular-nums text-text-secondary">
-            {formatTokens(avgPerTurn)}
+            {fmtTokens(avgPerTurn)}
           </span>
         </div>
       </div>

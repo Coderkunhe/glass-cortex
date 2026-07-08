@@ -13,6 +13,7 @@
 "use client";
 
 import { useState } from "react";
+import { fmtTokens } from "@/lib/formatNum";
 
 /** 单调用点的 token 用量（镜像 api/routers/chat.py 注入结构） */
 interface TokenUsage {
@@ -141,7 +142,7 @@ export default function TokenCostBadge({
           </span>
         )}
         <span className="tabular-nums" data-testid="token-cost-count">
-          {totalTokens.toLocaleString()} token
+          {fmtTokens(totalTokens)} token
         </span>
       </span>
 
