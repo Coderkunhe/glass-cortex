@@ -487,17 +487,14 @@ class StepSummary(BaseModel):
 
 
 class ErrorCode(StrEnum):
-    """API 错误响应的标准错误码枚举。"""
+    """API 错误响应的标准错误码枚举。
+
+    仅保留实际使用的错误码。VALIDATION_ERROR 用于请求校验失败，
+    INTERNAL_ERROR 用于全局兜底异常处理器。
+    """
 
     VALIDATION_ERROR = "VALIDATION_ERROR"
-    LLM_UNAVAILABLE = "LLM_UNAVAILABLE"
-    ENGINE_NOT_INITIALIZED = "ENGINE_NOT_INITIALIZED"
-    RECALL_FAILED = "RECALL_FAILED"
-    PROFILE_NOT_FOUND = "PROFILE_NOT_FOUND"
-    PROFILE_ALREADY_EXISTS = "PROFILE_ALREADY_EXISTS"
-    PROFILE_IS_CURRENT = "PROFILE_IS_CURRENT"
     INTERNAL_ERROR = "INTERNAL_ERROR"
-    NOT_FOUND = "NOT_FOUND"
 
 
 # ── 追踪 ────────────────────────────────────────────────────────────

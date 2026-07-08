@@ -1,12 +1,12 @@
 /**
  * 中央术语注册表。
  *
- * 为 ExplainTooltip / ExplainPopover 提供统一的术语定义数据层。
+ * 为 ExplainTooltip 提供统一的术语定义数据层。
  * 词条从 Python 源码提取，写死在前端（项目术语不频繁变动），与 API 解耦。
  *
  * 设计原则：
  * - `shortDef` 用于 hover tooltip（1-2 行，秒懂）
- * - `longDef` 用于点击 popover（多段落，深入理解）
+ * - `longDef` 用于详情展示（多段落，深入理解）
  * - `relatedTerms` 交叉链接，形成知识网络
  * - `category` 支持分组展示
  */
@@ -16,7 +16,7 @@ export type GlossaryCategory = "记忆" | "上下文" | "Token" | "规划" | "�
 
 /** 单个术语定义 */
 export interface GlossaryTerm {
-  /** 唯一标识，用于 ExplainTooltip/ExplainPopover 的 termId prop */
+  /** 唯一标识，用于 ExplainTooltip 的 termId prop */
   id: string;
   /** 中文术语名 */
   term: string;

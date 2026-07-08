@@ -43,6 +43,10 @@ export interface UseFocusTrapOptions {
  * 每次按键重新查询可聚焦元素，支持动态增删的交互组件。
  * 容器内无可聚焦元素时，聚焦容器自身以保证 Escape 键仍可用。
  *
+ * @deprecated 仅 Drawer.tsx 单消费者使用。新焦点陷阱场景优先考虑
+ * {@link https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/ | Dialog APG pattern}
+ * 或浏览器原生 `<dialog>` 的 `showModal()`。
+ *
  * @param containerRef — 陷阱容器（Dialog / Drawer 面板）的 ref
  * @param options — 可选配置
  */

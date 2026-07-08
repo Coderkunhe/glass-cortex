@@ -59,6 +59,11 @@ def generate_plan(
 ) -> PlanGenerateResponse:
     """对用户消息生成任务规划 DAG，不执行聊天管线。
 
+    .. deprecated::
+        前端无调用方。此端点仅通过 Lab 调试面板手动触发。
+        新规划场景优先通过 POST /chat 管线内 PlanGenerator 调用。
+
+
     独立端点用于调试任务分解逻辑。PlanGenerator 通过 PlannerEngine
     组合注入（bootstrap 阶段创建），内置三阶回退解析——
     LLM 调用失败时返回空计划。
@@ -91,6 +96,11 @@ def detect_replan(
     engines: Any = EnginesDep,
 ) -> ReplanDetectResponse:
     """检测用户消息修正导致的意图漂移，生成修正计划。
+
+    .. deprecated::
+        前端无调用方。此端点仅通过 Lab 调试面板手动触发。
+        重规划检测已集成到 POST /chat 管线内 ReplanDetector 调用。
+
 
     独立端点用于调试重规划检测逻辑。ReplanDetector 通过 PlannerEngine
     组合注入（bootstrap 阶段创建），内置三阶回退解析——
