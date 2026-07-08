@@ -59,13 +59,17 @@ commit:
 	@$(MAKE) -s check-docs || (echo "❌ make check-docs 失败，拒绝提交" && exit 1)
 	@echo "🔒 预检：浏览器门禁..."
 	@$(MAKE) -s check-theme || (echo "❌ check-theme 失败，拒绝提交" && exit 1)
+	@echo "🔒 预检：视觉回归..."
+	@$(MAKE) -s check-visual || (echo "❌ check-visual 失败，拒绝提交" && exit 1)
+	@echo "🔒 预检：前端测试..."
+	@$(MAKE) -s frontend-test || (echo "❌ frontend-test 失败，拒绝提交" && exit 1)
 	@echo "🔒 预检：前端 ESLint..."
 	@$(MAKE) -s frontend-lint || (echo "❌ frontend-lint 失败，拒绝提交" && exit 1)
 	@echo "✅ 全部预检通过，执行提交（跳过产生 stash 冲突的 hook）..."
-	@SKIP=frontend-lint,check-theme git commit -e
+	@SKIP=frontend-lint,check-theme,check-visual git commit -e
 
 commit-msg:
-	@SKIP=frontend-lint,check-theme git commit -m "$(msg)"
+	@SKIP=frontend-lint,check-theme,check-visual git commit -m "$(msg)"
 
 # ── 质量门禁：lint + type + test ──────────────────────────────
 check: lint type test
