@@ -17,6 +17,7 @@
 
 "use client";
 
+import { useState } from "react";
 import type { TokenBreakdown } from "@/components/chat/TokenCostBadge";
 import { formatCost } from "@/components/chat/TokenCostBadge";
 import { useSessionStats } from "@/components/chat/ChatParamsContext";
@@ -116,6 +117,12 @@ export default function SessionTokenGauge() {
   const { stats } = useSessionStats();
   const { input, output, turns, cost, hasPricing } = stats.sessionTokens;
   const total = input + output;
+
+  // ── 即时 tooltip state — 替代原生 title 1-2s 延迟 ──
+  const [pricingTip, setPricingTip] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   // 空态：尚无 token 消耗——静默占位，保持卡片槽位稳定
   if (total === 0) {
@@ -224,8 +231,16 @@ export default function SessionTokenGauge() {
             估算
             {!hasPricing && total > 0 && (
               <span
-                className="ml-gm-1 text-gm-2xs text-warning"
-                title="无有效定价数据，成本为 0"
+                className="ml-gm-1 text-gm-2xs text-warning cursor-help"
+                onMouseEnter={(e) =>
+                  setPricingTip({ x: e.clientX, y: e.clientY })
+                }
+                onMouseMove={(e) =>
+                  setPricingTip((prev) =>
+                    prev ? { x: e.clientX, y: e.clientY } : null,
+                  )
+                }
+                onMouseLeave={() => setPricingTip(null)}
               >
                 ⚠
               </span>
@@ -250,6 +265,19 @@ export default function SessionTokenGauge() {
       <span className="hidden" data-testid="session-token-gauge-turns">
         {turns}
       </span>
+
+      {/* 即时 tooltip — 替代原生 title 延迟 */}
+      {pricingTip && (
+        <div
+          className="fixed z-50 pointer-events-none rounded-gm-sm bg-gray-900 px-gm-2 py-gm-1 text-gm-xs text-white shadow-gm-md dark:bg-gray-100 dark:text-gray-900"
+          style={{
+            left: pricingTip.x + 12,
+            top: pricingTip.y - 8,
+          }}
+        >
+          无有效定价数据，成本为 0
+        </div>
+      )}
     </div>
   );
 }
