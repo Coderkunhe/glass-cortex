@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { TabBar } from "@/components/ui/TabBar";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import HealthDashboard from "./HealthDashboard";
 import LogViewer from "./LogViewer";
 import PipelineTracePanel from "@/components/lab/PipelineTracePanel";
@@ -19,6 +20,8 @@ type TabKey = (typeof TABS)[number]["key"];
 /**
  * Observability 页面外壳组件。
  * 顶部 Tab 导航栏 + 条件内容区。
+ * 每个 tab 面板包裹 ErrorBoundary 以实现崩溃隔离 —
+ * 单个面板崩溃不影响其他 tab 的正常浏览。
  * 四个 tab 全部接入真实面板：健康仪表盘 / 日志查看器 / 调用追踪 / 压缩日志。
  */
 export default function ObserveShell() {
@@ -39,44 +42,54 @@ export default function ObserveShell() {
         className="px-gm-5 pt-gm-3"
       />
 
-      {/* 内容区 */}
+      {/* 内容区 — 外层 ErrorBoundary 兜底整体崩溃，内层 per-tab 隔离 */}
       <div className="flex-1 overflow-y-auto p-gm-5">
-        {activeTab === "health" && (
-          <section
-            role="tabpanel"
-            id="obs-health"
-            aria-labelledby="obs-tab-health"
-          >
-            <HealthDashboard />
-          </section>
-        )}
-        {activeTab === "logs" && (
-          <section
-            role="tabpanel"
-            id="obs-logs"
-            aria-labelledby="obs-tab-logs"
-          >
-            <LogViewer />
-          </section>
-        )}
-        {activeTab === "traces" && (
-          <section
-            role="tabpanel"
-            id="obs-traces"
-            aria-labelledby="obs-tab-traces"
-          >
-            <PipelineTracePanel />
-          </section>
-        )}
-        {activeTab === "compression" && (
-          <section
-            role="tabpanel"
-            id="obs-compression"
-            aria-labelledby="obs-tab-compression"
-          >
-            <CompressionLogPanel />
-          </section>
-        )}
+        <ErrorBoundary fallbackVariant="card">
+          {activeTab === "health" && (
+            <section
+              role="tabpanel"
+              id="obs-health"
+              aria-labelledby="obs-tab-health"
+            >
+              <ErrorBoundary fallbackVariant="card">
+                <HealthDashboard />
+              </ErrorBoundary>
+            </section>
+          )}
+          {activeTab === "logs" && (
+            <section
+              role="tabpanel"
+              id="obs-logs"
+              aria-labelledby="obs-tab-logs"
+            >
+              <ErrorBoundary fallbackVariant="card">
+                <LogViewer />
+              </ErrorBoundary>
+            </section>
+          )}
+          {activeTab === "traces" && (
+            <section
+              role="tabpanel"
+              id="obs-traces"
+              aria-labelledby="obs-tab-traces"
+            >
+              <ErrorBoundary fallbackVariant="card">
+                <PipelineTracePanel />
+              </ErrorBoundary>
+            </section>
+          )}
+          {activeTab === "compression" && (
+            <section
+              role="tabpanel"
+              id="obs-compression"
+              aria-labelledby="obs-tab-compression"
+            >
+              <ErrorBoundary fallbackVariant="card">
+                <CompressionLogPanel />
+              </ErrorBoundary>
+            </section>
+          )}
+        </ErrorBoundary>
       </div>
     </div>
   );
