@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
 import DataState from "@/components/ui/DataState";
 import { RefreshButton } from "@/components/ui/RefreshButton";
 import { api } from "@/lib/api/client";
-import type { CompressionStatsResponse, FetchState } from "@/lib/api/types";
+import { useFetchData } from "@/hooks/useFetchData";
+import type { CompressionStatsResponse } from "@/lib/api/types";
 
 /** 统计卡片定义 — label + 从响应数据中提取值的函数 */
 interface StatCard {
@@ -42,27 +42,10 @@ const STAT_CARDS: StatCard[] = [
  * 当前会话 + 历史压缩统计数据。详细事件日志列表在后续批次补齐。
  */
 export default function CompressionLogPanel() {
-  const [state, setState] = useState<FetchState>("loading");
-  const [data, setData] = useState<CompressionStatsResponse | null>(null);
-  const [error, setError] = useState<unknown>(null);
-
-  const fetchStats = useCallback(async () => {
-    setState("loading");
-    try {
-      const result = await api.getCompressionStats();
-      setData(result);
-      setState("success");
-    } catch (e) {
-      setError(e);
-      setState("error");
-    }
-  }, []);
-
-  useEffect(() => {
-    // 挂载时获取压缩统计数据 — setState 在 useCallback 内部
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchStats();
-  }, [fetchStats]);
+  const { state, data, error, refresh } = useFetchData(
+    () => api.getCompressionStats(),
+    [],
+  );
 
   return (
     <div className="flex flex-col gap-gm-4">
@@ -72,7 +55,7 @@ export default function CompressionLogPanel() {
           压缩统计
         </h3>
         <RefreshButton
-          onClick={fetchStats}
+          onClick={refresh}
           loading={state === "loading"}
           aria-label="刷新压缩统计"
         />
@@ -82,7 +65,7 @@ export default function CompressionLogPanel() {
       <DataState
         state={state}
         error={error}
-        onRetry={fetchStats}
+        onRetry={refresh}
         loadingMessage="加载压缩统计…"
         emptyMessage="暂无压缩统计数据"
       >

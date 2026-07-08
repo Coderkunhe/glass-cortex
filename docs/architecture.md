@@ -1,6 +1,6 @@
 # 架构文档
 
-> 最后更新: 2026-07-08 (Phase 66 B110-B112 — 产品走查修复段 ARIA 全链路 + Profile hover 增强 + L5 拉通闭环)
+> 最后更新: 2026-07-09 (Phase 66 B118 — useFetchData 推广到 Observability 4 面板 + RA 补齐)
 
 ## 实现现状
 

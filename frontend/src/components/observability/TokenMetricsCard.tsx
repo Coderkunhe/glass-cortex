@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
 import { RiCoinLine } from "@remixicon/react";
 import { RefreshButton } from "@/components/ui/RefreshButton";
 import DataState from "@/components/ui/DataState";
 import { api } from "@/lib/api/client";
-import type { TokenSummary, FetchState } from "@/lib/api/types";
+import { useFetchData } from "@/hooks/useFetchData";
 import {
   CALL_POINT_LABELS,
   CALL_POINT_COLORS,
@@ -19,27 +18,11 @@ import { fmtNum } from "@/lib/formatNum";
  * 总计 + 按调用点的 prompt/completion 分段柱状条。
  */
 export default function TokenMetricsCard() {
-  const [state, setState] = useState<FetchState>("idle");
-  const [data, setData] = useState<TokenSummary | null>(null);
-  const [error, setError] = useState<Error | string | null>(null);
-
-  const fetchTokens = useCallback(async () => {
-    setState("loading");
-    setError(null);
-    try {
-      const result = await api.getTokens();
-      setData(result);
-      setState(result.total_tokens > 0 ? "success" : "idle");
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("获取 Token 数据失败"));
-      setState("error");
-    }
-  }, []);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 对标 B89 消除模式，setState 在 useCallback 内部执行
-    fetchTokens();
-  }, [fetchTokens]);
+  const { state, data, error, refresh } = useFetchData(
+    () => api.getTokens(),
+    [],
+    { isEmpty: (r) => r.total_tokens === 0 },
+  );
 
   const sortedCallPoints =
     data && Object.keys(data.by_call_point).length > 0
@@ -62,14 +45,14 @@ export default function TokenMetricsCard() {
           <RiCoinLine className="w-4 h-4 text-brand shrink-0" />
           <h4 className="text-gm-sm font-semibold text-text">Token 消耗</h4>
           {state === "success" && (
-            <RefreshButton onClick={fetchTokens} className="ml-auto" />
+            <RefreshButton onClick={refresh} className="ml-auto" />
           )}
         </div>
 
         <DataState
           state={state}
           error={error}
-          onRetry={fetchTokens}
+          onRetry={refresh}
           loadingMessage="加载中…"
           emptyIcon={RiCoinLine}
           emptyMessage="暂无 Token 数据"

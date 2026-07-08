@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
 import { RiTimerLine } from "@remixicon/react";
 import { RefreshButton } from "@/components/ui/RefreshButton";
 import DataState from "@/components/ui/DataState";
 import { api } from "@/lib/api/client";
-import type { StepSummary, FetchState } from "@/lib/api/types";
+import { useFetchData } from "@/hooks/useFetchData";
 import { STEP_LABELS } from "@/lib/labels";
 import { fmtMs } from "@/lib/formatTime";
 import { latencyColor } from "./_utils";
@@ -16,27 +15,11 @@ import { latencyColor } from "./_utils";
  * 调用次数、平均/最小/最大耗时，颜色编码延迟等级。
  */
 export default function StepLatencyCard() {
-  const [state, setState] = useState<FetchState>("idle");
-  const [data, setData] = useState<StepSummary | null>(null);
-  const [error, setError] = useState<Error | string | null>(null);
-
-  const fetchSteps = useCallback(async () => {
-    setState("loading");
-    setError(null);
-    try {
-      const result = await api.getSteps();
-      setData(result);
-      setState(Object.keys(result.steps).length > 0 ? "success" : "idle");
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("获取步骤延迟数据失败"));
-      setState("error");
-    }
-  }, []);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- 对标 B89 消除模式，setState 在 useCallback 内部执行
-    fetchSteps();
-  }, [fetchSteps]);
+  const { state, data, error, refresh } = useFetchData(
+    () => api.getSteps(),
+    [],
+    { isEmpty: (r) => Object.keys(r.steps).length === 0 },
+  );
 
   const sortedSteps =
     data && Object.keys(data.steps).length > 0
@@ -54,14 +37,14 @@ export default function StepLatencyCard() {
           <RiTimerLine className="w-4 h-4 text-accent shrink-0" />
           <h4 className="text-gm-sm font-semibold text-text">步骤延迟</h4>
           {state === "success" && (
-            <RefreshButton onClick={fetchSteps} className="ml-auto" />
+            <RefreshButton onClick={refresh} className="ml-auto" />
           )}
         </div>
 
         <DataState
           state={state}
           error={error}
-          onRetry={fetchSteps}
+          onRetry={refresh}
           loadingMessage="加载中…"
           emptyIcon={RiTimerLine}
           emptyMessage="暂无步骤延迟数据"

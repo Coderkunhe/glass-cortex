@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { RiHeartPulseLine } from "@remixicon/react";
 import { RefreshButton } from "@/components/ui/RefreshButton";
 import DataState from "@/components/ui/DataState";
 import { api } from "@/lib/api/client";
-import type { HealthResponse, FetchState } from "@/lib/api/types";
+import { useFetchData } from "@/hooks/useFetchData";
 import HealthCard from "./HealthCard";
 import TokenMetricsCard from "./TokenMetricsCard";
 import StepLatencyCard from "./StepLatencyCard";
@@ -53,30 +53,18 @@ function overallDotClass(status: string): string {
  * 渲染 5 张 HealthCard、刷新按钮、整体状态和时间戳。
  */
 export default function HealthDashboard() {
-  const [state, setState] = useState<FetchState>("idle");
-  const [data, setData] = useState<HealthResponse | null>(null);
-  const [error, setError] = useState<unknown>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const fetchHealth = useCallback(async () => {
-    setState("loading");
-    setError(null);
-    try {
-      const result = await api.health();
-      setData(result);
-      setLastUpdated(new Date());
-      setState("success");
-    } catch (err) {
-      setError(err);
-      setState("error");
-    }
-  }, []);
+  const { state, data, error, refresh } = useFetchData(
+    () => api.health(),
+    [],
+  );
 
+  // 成功获取数据后记录时间戳（对标原 fetchHealth 中的 setLastUpdated(new Date())）
   useEffect(() => {
-    // 挂载时获取健康数据 — setState 在 useCallback 内部
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchHealth();
-  }, [fetchHealth]);
+    if (state === "success") setLastUpdated(new Date());
+  }, [state]);
 
   const isLoading = state === "loading";
 
@@ -91,7 +79,7 @@ export default function HealthDashboard() {
     <DataState
       state={state}
       error={error}
-      onRetry={fetchHealth}
+      onRetry={refresh}
       loadingMessage="检查中…"
       emptyIcon={RiHeartPulseLine}
       emptyMessage="暂无健康检查数据"
@@ -118,7 +106,7 @@ export default function HealthDashboard() {
           )}
 
           {/* 刷新按钮 */}
-          <RefreshButton onClick={fetchHealth} loading={isLoading} />
+          <RefreshButton onClick={refresh} loading={isLoading} />
         </div>
 
         {/* 时间戳 */}
