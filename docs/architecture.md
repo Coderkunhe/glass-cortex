@@ -1,6 +1,6 @@
 # 架构文档
 
-> 最后更新: 2026-07-08 (Phase 1000 B120 — L5 补拉通五批全线闭环 + 门禁全绿收官)
+> 最后更新: 2026-07-08 (Phase 66 B110-B112 — 产品走查修复段 ARIA 全链路 + Profile hover 增强 + L5 拉通闭环)
 
 ## 实现现状
 
@@ -27,7 +27,7 @@
 | CSS Token 补齐 (CROSS-7/8) | ✅ 完成 | 2026-06-24 | `globals.css` — 15 token (6 未定义 + 9 语义) + 3 @theme inline 映射 — Phase 31 Batch 1 |
 | ErrorDisplay 统一报错组件 | ✅ 完成 | 2026-06-24 | `frontend/src/components/ui/ErrorDisplay.tsx` — 三 variant (card/inline/fullscreen) + categorizeError 分类 — Phase 31 Batch 1 |
 | categorizeError 错误分类工具 | ✅ 完成 | 2026-06-24 | `frontend/src/lib/errorCategories.ts` — 5 分类 (network/server/llm/render/unknown) 全中文 + `CategorizedError` 接口导出 — Phase 31 Batch 1 |
-| TabBar 统一 Tab 导航栏 | ✅ 完成 | 2026-06-25 | `frontend/src/components/ui/TabBar.tsx` — controlled component + brand/info activeColor + sm/xs size + icon 支持 + ARIA tablist/tab — Phase 31 Batch 11 |
+| TabBar 统一 Tab 导航栏 | ✅ 完成 | 2026-07-08 | `frontend/src/components/ui/TabBar.tsx` — controlled component + brand/info activeColor + sm/xs size + icon 支持 + ARIA tablist/tab/aria-selected/aria-controls/tabPanelIdPrefix — Phase 31 Batch 11 + Phase 66 B110/B111 |
 | UI 组件打磨 | ✅ 完成 | 2026-06-17 | 侧边栏卡片化 + 强度条渐变 + Token 条/Accent 色迁移 — Batch 33 |
 | Fact 层 | ✅ 完成 | 2026-06-15 | FactExtractor + Store Fact 方法 + Recall 集成 — Batch 8 |
 | Recall Log | ✅ 完成 | 2026-06-15 | recall_log 表 + 日志记录 — Batch 9 |
@@ -145,7 +145,7 @@
 | 前端 — ContextualLens 组件 | ✅ 完成 | 2026-06-26 | `frontend/src/components/chat/ContextualLens.tsx` — 可复用展开/收起组件（trigger button → expanded card），聊天页上下文感知微型教学入口。3 处集成：ChatMessage token 透镜 (q4.1)、ErrorDisplay 错误透镜 (q7.6)、OnionPanel 溢出透镜 (q1.1)。标题可点击收起。IntenPill onClick 打开深度抽屉 — Phase 35 Batch 1-3 |
 | 前端 — extractMermaid 工具 | ✅ 完成 | 2026-06-26 | `frontend/src/lib/content/extractMermaid.ts` — 从 Answer/Markdown 提取 mermaid 代码块，复用 AnswerCard 正则 — Phase 35 Batch 1 |
 | 前端 — 测试体系 | ✅ 完成 | 2026-06-24 | 前端 594 tests / 52 文件：useChat hook + OnionPanel + 93 问 + ContextBar/ThemeToggle/LearnPage + API client + HealthDashboard + LogViewer + FourPillar + ParamSliders + Sidebar + ProfileCard + ModelInferencePanel + JourneyHistoryBrowser + LabShell + Lab 5 Tab 全面板 + ExplainTooltip/ExplainPopover + ProjectMapDrawer + MermaidDiagram + ExperimentComparePanel + CostWaterfallPanel |
-| 前端 — Observability 页 | ✅ 完成 | 2026-06-23 | `frontend/src/components/observability/` — ObserveShell + HealthDashboard + HealthCard + LogViewer + API 契约层 — Phase 28 Batch 155-157 |
+| 前端 — Observability 页 | ✅ 完成 | 2026-07-08 | `frontend/src/components/observability/` — ObserveShell + HealthDashboard + HealthCard + LogViewer + API 契约层 + ARIA role="tabpanel" + h1 sr-only 页面标题 — Phase 28 Batch 155-157 + Phase 66 B111 |
 | 前端 — M3.5 聊天页补齐 | ✅ 完成 | 2026-06-23 | Phase 28 Batch 158-162: ✅ Header 副标题 + ✅ 好奇心引导 + ✅ 滚动收折 + ✅ 系统状态 (158) + ✅ 四支柱全景面板 (159) + ✅ Sidebar 认知参数上 (160) + ✅ Sidebar 认知参数下 L5+L6 (161) + ✅ Profile 动态卡片 (161b) + ✅ Sidebar 收尾 (162) |
 | 前端 — Sidebar 认知参数 | ✅ 完成 | 2026-06-23 | `ParamSliders.tsx`（L2/L3/L5/L6 四折叠块 + SelectControl + SliderControl 基元 + ForgettingCurveSVG）+ `ChatParamsContext.tsx`（state + toChatParams 接线）+ `useChat.ts`（getter 模式参数传递）+ `Sidebar.tsx`（衰减触发 + 会话统计）+ `ProfileCard.tsx`（头像 + 标签云 + 三态）— Phase 28 Batch 160-161b |
 | 前端 — Profile 卡片 | ✅ 完成 | 2026-06-23 | `ProfileCard.tsx` — 头像（首字母大写圆形 bg-brand）+ 标签云 pills（三档置信度颜色）+ `GET /memory/tag-summary` API 端点 + `api.getTagSummary()` + 三态管理（loading/error/success）— Phase 28 Batch 161b |
@@ -175,8 +175,8 @@
 | Chat — ParamReplay | ✅ 完成 | 2026-06-25 | `frontend/src/components/chat/ParamReplay.tsx` — 参数回放面板：展示当前会话的认知参数快照 |
 | Chat — ChatParamsContext | ✅ 完成 | 2026-06-25 | `frontend/src/components/chat/ChatParamsContext.tsx` — 聊天参数上下文：L2/L3/L5/L6 状态管理 + toChatParams 导出 + resetToDefaults |
 | Profile — ProfileModal | ✅ 完成 | 2026-06-25 | `frontend/src/components/profile/ProfileModal.tsx` — Profile 创建/切换模态窗：输入用户名 + Enter 提交 + Esc 关闭 |
-| Profile — ProfileShell | ✅ 完成 | 2026-06-25 | `frontend/src/components/profile/ProfileShell.tsx` — Profile 画像页外壳：ProfileCard + 标签详情 + 事实列表 |
-| Lab — LabShell | ✅ 完成 | 2026-06-25 | `frontend/src/components/lab/LabShell.tsx` — Lab 实验台外壳：5 Tab（上下文/管线/数据/图谱/实验）+ TabBar 导航 |
+| Profile — ProfileShell | ✅ 完成 | 2026-07-08 | `frontend/src/components/profile/ProfileShell.tsx` — Profile 画像页外壳：ProfileCard + 标签详情 + 事实列表 + TagCloud hover 增强 (hover:bg-surface-alt/30 + hover:rounded-gm-sm 微妙 pill 感) — Phase 66 B112 |
+| Lab — LabShell | ✅ 完成 | 2026-07-08 | `frontend/src/components/lab/LabShell.tsx` — Lab 实验台外壳：5 Tab（上下文/管线/数据/图谱/实验）+ TabBar 导航 + ARIA role="tabpanel" 三向链接 — Phase 66 B111 |
 | 编号体系统一 | ✅ 完成 | 2026-06-26 | 全 docs/ 171 处旧 Batch 编号格式 → `Phase N Batch M` 统一两层编号 + Backlog 任务码去冲突 (C→Q/R→X/A→S) |
 | 内容可视化 — Phase 34 Batch 1 主题映射 | ✅ 完成 | 2026-06-26 | `MermaidDiagram.tsx` 一行映射 `"dark"`→`"neutral"` + 测试同步 |
 | 内容可视化 — Phase 34 Batch 2 渲染管线 | ✅ 完成 | 2026-06-26 | `AnswerCard.tsx` renderMarkdown 支持 ` ```mermaid ` fenced code → base64 placeholder → useEffect 水合 |
