@@ -1,6 +1,6 @@
 # 架构文档
 
-> 最后更新: 2026-07-08 (Phase 1000 B114 — Profile 页治理段全线闭环 · confidence.ts RA 补齐 · 🟡→0)
+> 最后更新: 2026-07-08 (Phase 1000 B120 — L5 补拉通五批全线闭环 + 门禁全绿收官)
 
 ## 实现现状
 
@@ -234,6 +234,8 @@
 | Risk Assessment ×9 🟠🟡 缺口补齐 | ✅ 完成 | 2026-07-07 | 🟠 `formatTime.ts` (9C·3L — fmtRelativeTime/fmtMs/fmtTimestamp) · `labels.ts` (5C·3L — STEP_LABELS/CALL_POINT_LABELS/CALL_POINT_COLORS) · `ErrorBoundary.tsx` (5C·2L — class boundary + ErrorDisplay fallback). 🟡 `useCodeHighlight.tsx` (4C·2L — Prism + CopyButton DOM) · `useLocalStorage.ts` (3C·3L — SSR-safe JSON persist) · `formatChapter.ts` (3C·2L — toChineseNumeral/formatChapterTitle) · `formatNum.ts` (3C·1L — toLocaleString) · `estimateReadingTime.ts` (3C·2L — 中英混合估算/格式化) · `WindowSizeInput.tsx` (3C·2L — 数字输入+preset 组合). 全 9 模块 Risk Assessment 写入 `docs/archive/architecture-ra-b89.md` — Phase 66 B89 |
 | Risk Assessment — `confidence.ts` | ✅ 完成 | 2026-07-08 | 🟡 `confidence.ts` (3C·1L — getConfidenceTier/CONFIDENCE_HIGH/CONFIDENCE_MEDIUM). 3 消费者: TagCloud(ProfileShell) · TagDetailDrawer · TagPill(ProfileCard). 品类：纯函数/常量模块 — 无状态、无副作用、无异步。变更风险极低：接口稳定（函数签名+导出常量），消费者仅依赖返回值类型 (ConfidenceTier="high"/"medium"/"low")。新增阈值常量需同步更新所有消费者视觉预期 — Phase 1000 B114 |
 | 治理工具链增强 (Feature Flag/Settings/Backlog) | ✅ 完成 | 2026-07-03 | 13 flags 审计矩阵 · `Settings.__post_init__` 验证 · master-backlog v2 (366→93 行) · CLAUDE.md 瘦身 (190→175) + 文件健康诊断 · 发现即待办规则 19 — Phase 1000 B61-B65 |
+| L5 补拉通五批 (B115-B119) | ✅ 完成 | 2026-07-08 | Context/Pipeline Tab (B115) · Tooltip 即时化 (B116) · Lab Tab 增强 (B117) · Experiment Tab (B118) · Data Tab + 共享 lib DRY (B119) — ~30 Batch 延迟 L5 检查全量闭环 · pre-commit hook 路径修复 + 机械门禁恢复 |
+| 门禁全绿收官 (B120) | ✅ 完成 | 2026-07-08 | 补 2 条 L5 自检验证方式 → check-docs 146/146 · eslint 0e 0w · 日报追记 B115-B120 |
 
 ## 架构决策记录
 
