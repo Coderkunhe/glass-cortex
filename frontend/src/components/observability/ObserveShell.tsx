@@ -26,21 +26,57 @@ export default function ObserveShell() {
 
   return (
     <div className="flex flex-col h-full">
+      {/* 页面标题 — 屏幕阅读器可感知 */}
+      <h1 className="sr-only">可观测性</h1>
+
       {/* Tab 导航栏 */}
       <TabBar
         tabs={TABS}
         activeKey={activeTab}
         onChange={(key) => setActiveTab(key as TabKey)}
         ariaLabel="可观测性面板"
+        tabPanelIdPrefix="obs"
         className="px-gm-5 pt-gm-3"
       />
 
       {/* 内容区 */}
       <div className="flex-1 overflow-y-auto p-gm-5">
-        {activeTab === "health" && <HealthDashboard />}
-        {activeTab === "logs" && <LogViewer />}
-        {activeTab === "traces" && <PipelineTracePanel />}
-        {activeTab === "compression" && <CompressionLogPanel />}
+        {activeTab === "health" && (
+          <section
+            role="tabpanel"
+            id="obs-health"
+            aria-labelledby="obs-tab-health"
+          >
+            <HealthDashboard />
+          </section>
+        )}
+        {activeTab === "logs" && (
+          <section
+            role="tabpanel"
+            id="obs-logs"
+            aria-labelledby="obs-tab-logs"
+          >
+            <LogViewer />
+          </section>
+        )}
+        {activeTab === "traces" && (
+          <section
+            role="tabpanel"
+            id="obs-traces"
+            aria-labelledby="obs-tab-traces"
+          >
+            <PipelineTracePanel />
+          </section>
+        )}
+        {activeTab === "compression" && (
+          <section
+            role="tabpanel"
+            id="obs-compression"
+            aria-labelledby="obs-tab-compression"
+          >
+            <CompressionLogPanel />
+          </section>
+        )}
       </div>
     </div>
   );

@@ -187,6 +187,7 @@ export default function MemoryBrowserPanel() {
         activeColor="info"
         size="xs"
         ariaLabel="记忆浏览器子面板"
+        tabPanelIdPrefix="memory"
         className="mb-gm-4"
       />
 
@@ -243,7 +244,12 @@ export default function MemoryBrowserPanel() {
 
       {/* ── Episodes Tab Content ── */}
       {isEpisodes ? (
-        <DataState
+        <section
+          role="tabpanel"
+          id="memory-episodes"
+          aria-labelledby="memory-tab-episodes"
+        >
+          <DataState
           state={epState}
           error={epError}
           onRetry={fetchEpisodes}
@@ -387,9 +393,15 @@ export default function MemoryBrowserPanel() {
             })}
           </div>
         </DataState>
+        </section>
       ) : (
         /* ── Facts Tab Content ── */
-        <DataState
+        <section
+          role="tabpanel"
+          id="memory-facts"
+          aria-labelledby="memory-tab-facts"
+        >
+          <DataState
           state={fctState}
           error={fctError}
           onRetry={fetchFacts}
@@ -518,6 +530,7 @@ export default function MemoryBrowserPanel() {
             })}
           </div>
         </DataState>
+        </section>
       )}
     </section>
   );

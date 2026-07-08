@@ -92,48 +92,74 @@ export default function LabShell() {
         activeKey={activeTab}
         onChange={(key) => setActiveTab(key as TabKey)}
         ariaLabel="实验室面板"
+        tabPanelIdPrefix="lab"
         className="px-gm-5 pt-gm-3"
       />
 
       {/* 内容区 */}
       <div className="flex-1 overflow-y-auto p-gm-5">
         {activeTab === "context" && (
-          <div className="space-y-gm-6">
+          <section
+            role="tabpanel"
+            id="lab-context"
+            aria-labelledby="lab-tab-context"
+            className="space-y-gm-6"
+          >
             <OverflowSimPanel />
             <OverflowSandboxPanel />
             <StrategyComparePanel />
             <ReplanComparePanel />
             <IntentTestPanel />
             <RecallRacePanel />
-          </div>
+          </section>
         )}
         {activeTab === "pipeline" && (
-          <div className="space-y-gm-6">
+          <section
+            role="tabpanel"
+            id="lab-pipeline"
+            aria-labelledby="lab-tab-pipeline"
+            className="space-y-gm-6"
+          >
             <TokenDashboardPanel />
             <StepLatencyPanel />
             <PipelineTracePanel />
-          </div>
+          </section>
         )}
         {activeTab === "data" && (
-          <div className="space-y-gm-6">
+          <section
+            role="tabpanel"
+            id="lab-data"
+            aria-labelledby="lab-tab-data"
+            className="space-y-gm-6"
+          >
             <MemoryBrowserPanel />
             <EmbeddingSpacePanel />
             <CacheStatsPanel />
-          </div>
+          </section>
         )}
         {activeTab === "graph" && (
-          <div className="space-y-gm-6">
+          <section
+            role="tabpanel"
+            id="lab-graph"
+            aria-labelledby="lab-tab-graph"
+            className="space-y-gm-6"
+          >
             <KnowledgeGraphPanel />
             <DecayDistributionPanel />
             <HealthDashboard />
             <LogViewer />
-          </div>
+          </section>
         )}
         {activeTab === "experiment" && (
-          <div className="space-y-gm-6">
+          <section
+            role="tabpanel"
+            id="lab-experiment"
+            aria-labelledby="lab-tab-experiment"
+            className="space-y-gm-6"
+          >
             <ExperimentComparePanel />
             <CostWaterfallPanel />
-          </div>
+          </section>
         )}
       </div>
     </div>
