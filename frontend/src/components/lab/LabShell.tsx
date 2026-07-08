@@ -24,6 +24,7 @@ import CacheStatsPanel from "./CacheStatsPanel";
 import KnowledgeGraphPanel from "./KnowledgeGraphPanel";
 import DecayDistributionPanel from "./DecayDistributionPanel";
 import { TabBar } from "@/components/ui/TabBar";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import HealthDashboard from "@/components/observability/HealthDashboard";
 import LogViewer from "@/components/observability/LogViewer";
 import ExperimentComparePanel from "./ExperimentComparePanel";
@@ -72,8 +73,10 @@ type TabKey = (typeof TABS)[number]["key"];
 
 /**
  * Lab 实验台外壳组件。
- * 顶部 Tab 导航栏 + 条件内容区。Batch 168 搭建外壳，
- * Batch 169-172 分批交付四 Tab 实装面板。
+ * 顶部 Tab 导航栏 + 条件内容区。
+ * 每个 tab 面板包裹 ErrorBoundary 以实现崩溃隔离 —
+ * 单个面板崩溃不影响其他 tab 的正常浏览。
+ * Batch 114：内容区外层 ErrorBoundary 兜底 + per-tab 隔离。
  */
 export default function LabShell() {
   const searchParams = useSearchParams();
@@ -96,71 +99,109 @@ export default function LabShell() {
         className="px-gm-5 pt-gm-3"
       />
 
-      {/* 内容区 */}
+      {/* 内容区 — 外层 ErrorBoundary 兜底整体崩溃，内层 per-tab 隔离 */}
       <div className="flex-1 overflow-y-auto p-gm-5">
-        {activeTab === "context" && (
-          <section
-            role="tabpanel"
-            id="lab-context"
-            aria-labelledby="lab-tab-context"
-            className="space-y-gm-6"
-          >
-            <OverflowSimPanel />
-            <OverflowSandboxPanel />
-            <StrategyComparePanel />
-            <ReplanComparePanel />
-            <IntentTestPanel />
-            <RecallRacePanel />
-          </section>
-        )}
-        {activeTab === "pipeline" && (
-          <section
-            role="tabpanel"
-            id="lab-pipeline"
-            aria-labelledby="lab-tab-pipeline"
-            className="space-y-gm-6"
-          >
-            <TokenDashboardPanel />
-            <StepLatencyPanel />
-            <PipelineTracePanel />
-          </section>
-        )}
-        {activeTab === "data" && (
-          <section
-            role="tabpanel"
-            id="lab-data"
-            aria-labelledby="lab-tab-data"
-            className="space-y-gm-6"
-          >
-            <MemoryBrowserPanel />
-            <EmbeddingSpacePanel />
-            <CacheStatsPanel />
-          </section>
-        )}
-        {activeTab === "graph" && (
-          <section
-            role="tabpanel"
-            id="lab-graph"
-            aria-labelledby="lab-tab-graph"
-            className="space-y-gm-6"
-          >
-            <KnowledgeGraphPanel />
-            <DecayDistributionPanel />
-            <HealthDashboard />
-            <LogViewer />
-          </section>
-        )}
-        {activeTab === "experiment" && (
-          <section
-            role="tabpanel"
-            id="lab-experiment"
-            aria-labelledby="lab-tab-experiment"
-            className="space-y-gm-6"
-          >
-            <ExperimentComparePanel />
-            <CostWaterfallPanel />
-          </section>
-        )}
+        <ErrorBoundary fallbackVariant="card">
+          {activeTab === "context" && (
+            <section
+              role="tabpanel"
+              id="lab-context"
+              aria-labelledby="lab-tab-context"
+              className="space-y-gm-6"
+            >
+              <ErrorBoundary fallbackVariant="card">
+                <OverflowSimPanel />
+              </ErrorBoundary>
+              <ErrorBoundary fallbackVariant="card">
+                <OverflowSandboxPanel />
+              </ErrorBoundary>
+              <ErrorBoundary fallbackVariant="card">
+                <StrategyComparePanel />
+              </ErrorBoundary>
+              <ErrorBoundary fallbackVariant="card">
+                <ReplanComparePanel />
+              </ErrorBoundary>
+              <ErrorBoundary fallbackVariant="card">
+                <IntentTestPanel />
+              </ErrorBoundary>
+              <ErrorBoundary fallbackVariant="card">
+                <RecallRacePanel />
+              </ErrorBoundary>
+            </section>
+          )}
+          {activeTab === "pipeline" && (
+            <section
+              role="tabpanel"
+              id="lab-pipeline"
+              aria-labelledby="lab-tab-pipeline"
+              className="space-y-gm-6"
+            >
+              <ErrorBoundary fallbackVariant="card">
+                <TokenDashboardPanel />
+              </ErrorBoundary>
+              <ErrorBoundary fallbackVariant="card">
+                <StepLatencyPanel />
+              </ErrorBoundary>
+              <ErrorBoundary fallbackVariant="card">
+                <PipelineTracePanel />
+              </ErrorBoundary>
+            </section>
+          )}
+          {activeTab === "data" && (
+            <section
+              role="tabpanel"
+              id="lab-data"
+              aria-labelledby="lab-tab-data"
+              className="space-y-gm-6"
+            >
+              <ErrorBoundary fallbackVariant="card">
+                <MemoryBrowserPanel />
+              </ErrorBoundary>
+              <ErrorBoundary fallbackVariant="card">
+                <EmbeddingSpacePanel />
+              </ErrorBoundary>
+              <ErrorBoundary fallbackVariant="card">
+                <CacheStatsPanel />
+              </ErrorBoundary>
+            </section>
+          )}
+          {activeTab === "graph" && (
+            <section
+              role="tabpanel"
+              id="lab-graph"
+              aria-labelledby="lab-tab-graph"
+              className="space-y-gm-6"
+            >
+              <ErrorBoundary fallbackVariant="card">
+                <KnowledgeGraphPanel />
+              </ErrorBoundary>
+              <ErrorBoundary fallbackVariant="card">
+                <DecayDistributionPanel />
+              </ErrorBoundary>
+              <ErrorBoundary fallbackVariant="card">
+                <HealthDashboard />
+              </ErrorBoundary>
+              <ErrorBoundary fallbackVariant="card">
+                <LogViewer />
+              </ErrorBoundary>
+            </section>
+          )}
+          {activeTab === "experiment" && (
+            <section
+              role="tabpanel"
+              id="lab-experiment"
+              aria-labelledby="lab-tab-experiment"
+              className="space-y-gm-6"
+            >
+              <ErrorBoundary fallbackVariant="card">
+                <ExperimentComparePanel />
+              </ErrorBoundary>
+              <ErrorBoundary fallbackVariant="card">
+                <CostWaterfallPanel />
+              </ErrorBoundary>
+            </section>
+          )}
+        </ErrorBoundary>
       </div>
     </div>
   );

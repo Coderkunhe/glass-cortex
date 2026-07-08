@@ -119,7 +119,7 @@ export function TabBar({
                 : undefined
             }
             onClick={() => onChange(tab.key)}
-            className={`inline-flex items-center gap-gm-1.5 ${sizeCls} font-medium transition-colors border-b-2 -mb-[1px] ${
+            className={`inline-flex items-center gap-gm-1.5 ${sizeCls} font-medium transition-all border-b-2 -mb-[1px] focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] ${
               isActive
                 ? activeCls
                 : "border-transparent text-text-muted hover:text-text-secondary hover:border-border-strong"
