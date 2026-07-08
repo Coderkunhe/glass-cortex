@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import {
   RiBarChartGroupedLine,
 } from "@remixicon/react";
@@ -8,7 +8,7 @@ import { RefreshButton } from "@/components/ui/RefreshButton";
 import { api } from "@/lib/api/client";
 import DataState from "@/components/ui/DataState";
 import ImageViewer from "@/components/ui/ImageViewer";
-import type { DecayDistributionResponse, FetchState } from "@/lib/api/types";
+import { useFetchData } from "@/hooks/useFetchData";
 
 
 /** λ → 衰减速度标签 */
@@ -31,9 +31,11 @@ const BAR_GAP = 0.18; // 柱间间隙比例
  * 纯 SVG 垂直柱状图——10 个强度区间 (bin_label)，柱色按中间值线性插值蓝→橙。
  */
 export default function DecayDistributionPanel() {
-  const [state, setState] = useState<FetchState>("idle");
-  const [data, setData] = useState<DecayDistributionResponse | null>(null);
-  const [error, setError] = useState<Error | string | null>(null);
+  const { state, data, error, refresh } = useFetchData(
+    () => api.getDecayDistribution(),
+    [],
+    { isEmpty: (r) => !(r.total_episodes > 0 && r.bins.length > 0) },
+  );
 
   // ── Lightbox state ──
   const [lightboxSvg, setLightboxSvg] = useState<string | null>(null);
@@ -52,30 +54,6 @@ export default function DecayDistributionPanel() {
   // Phase 66 B105 — 即时 tooltip 替代原生 title (T12: 点击查看大图)
   const [zoomTooltip, setZoomTooltip] = useState<{ x: number; y: number } | null>(null);
 
-  const fetchDistribution = useCallback(async () => {
-    setState("loading");
-    setError(null);
-    try {
-      const result = await api.getDecayDistribution();
-      setData(result);
-      setState(
-        result.total_episodes > 0 && result.bins.length > 0 ? "success" : "idle"
-      );
-    } catch (err) {
-      setError(
-        err instanceof Error ? err : new Error("获取衰减分布失败")
-      );
-      setState("error");
-    }
-  }, []);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchDistribution();
-  }, [fetchDistribution]);
-
-
-  // ── 柱状图缩放 ──
   function computeBarScales(bins: NonNullable<typeof data>["bins"]) {
     if (!bins || bins.length === 0) return null;
     const maxCount = Math.max(...bins.map((b) => b.count), 1);
@@ -123,7 +101,7 @@ export default function DecayDistributionPanel() {
           Ebbinghaus 遗忘曲线 · 共 {data?.total_episodes ?? 0} 条记忆
         </span>
         {state === "success" && (
-          <RefreshButton onClick={fetchDistribution} className="ml-auto" />
+          <RefreshButton onClick={refresh} className="ml-auto" />
         )}
       </div>
 
@@ -132,7 +110,7 @@ export default function DecayDistributionPanel() {
       <DataState
         state={state}
         error={error}
-        onRetry={fetchDistribution}
+        onRetry={refresh}
         loadingMessage="加载衰减分布…"
         loadingIconClassName="text-warning"
         emptyIcon={RiBarChartGroupedLine}

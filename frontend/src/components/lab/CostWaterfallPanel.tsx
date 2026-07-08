@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import {
   RiFundsLine,
 } from "@remixicon/react";
 import { RefreshButton } from "@/components/ui/RefreshButton";
 import { api } from "@/lib/api/client";
 import DataState from "@/components/ui/DataState";
-import type { CostWaterfallResponse, FetchState } from "@/lib/api/types";
+import { useFetchData } from "@/hooks/useFetchData";
 import { fmtTokens } from "@/lib/formatNum";
 
 /** Time range presets for the quick-select pills (B96 E4). */
@@ -52,37 +52,23 @@ function timeRangeToEpoch(range: TimeRange): { since?: number; until?: number } 
 }
 
 export default function CostWaterfallPanel() {
-  const [state, setState] = useState<FetchState>("idle");
-  const [data, setData] = useState<CostWaterfallResponse | null>(null);
-  const [error, setError] = useState<Error | string | null>(null);
   const [viewMode, setViewMode] = useState<"waterfall" | "call_point">("waterfall");
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
 
-  const fetchWaterfall = useCallback(async () => {
-    setState("loading");
-    setError(null);
-    try {
+  const { state, data, error, refresh } = useFetchData(
+    async () => {
       const params: { by?: string; since?: number; until?: number } = {};
       if (viewMode === "call_point") params.by = "call_point";
-      // B96 E4: time range filter
       const range = timeRangeToEpoch(timeRange);
       if (range.since !== undefined) {
         params.since = range.since;
         params.until = range.until;
       }
-      const result = await api.getCostWaterfall(params);
-      setData(result);
-      setState(result.gross_tokens > 0 ? "success" : "idle");
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("获取成本瀑布数据失败"));
-      setState("error");
-    }
-  }, [viewMode, timeRange]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchWaterfall();
-  }, [fetchWaterfall]);
+      return await api.getCostWaterfall(params);
+    },
+    [viewMode, timeRange],
+    { isEmpty: (r) => r.gross_tokens === 0 },
+  );
 
   const hasData = data && data.gross_tokens > 0;
 
@@ -101,7 +87,7 @@ export default function CostWaterfallPanel() {
             : "按调用点分组 → 净消耗"}
         </span>
         {state === "success" && (
-          <RefreshButton onClick={fetchWaterfall} className="ml-auto" />
+          <RefreshButton onClick={refresh} className="ml-auto" />
         )}
       </div>
 
@@ -158,7 +144,7 @@ export default function CostWaterfallPanel() {
       <DataState
         state={state}
         error={error}
-        onRetry={fetchWaterfall}
+        onRetry={refresh}
         loadingMessage="正在计算 Token 消耗…"
         loadingIconClassName="text-accent"
         emptyIcon={RiFundsLine}

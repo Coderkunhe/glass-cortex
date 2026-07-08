@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState } from "react";
 import {
   RiHardDrive2Line,
   RiCheckboxCircleLine,
@@ -12,7 +12,7 @@ import { RefreshButton } from "@/components/ui/RefreshButton";
 import { TabBar } from "@/components/ui/TabBar";
 import { api } from "@/lib/api/client";
 import DataState from "@/components/ui/DataState";
-import type { CacheEntriesResponse, FetchState } from "@/lib/api/types";
+import { useFetchData } from "@/hooks/useFetchData";
 import { fmtNum } from "@/lib/formatNum";
 
 type CacheType = "embedding" | "fact" | "response";
@@ -128,28 +128,12 @@ function CacheBar({
  */
 export default function CacheStatsPanel() {
   const [cacheType, setCacheType] = useState<CacheType>("embedding");
-  const [state, setState] = useState<FetchState>("idle");
-  const [data, setData] = useState<CacheEntriesResponse | null>(null);
-  const [error, setError] = useState<Error | string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setState("loading");
-    setError(null);
-    try {
-      const result = await api.getCacheEntries(cacheType, 50);
-      setData(result);
-      const hasData = result.entries.length > 0 || result.total_entries > 0;
-      setState(hasData ? "success" : "idle");
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("获取缓存数据失败"));
-      setState("error");
-    }
-  }, [cacheType]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchData();
-  }, [fetchData]);
+  const { state, data, error, refresh } = useFetchData(
+    () => api.getCacheEntries(cacheType, 50),
+    [cacheType],
+    { isEmpty: (r) => r.entries.length === 0 && r.total_entries === 0 },
+  );
 
   const totalRequests = data ? data.hits + data.misses : 0;
   const showEmpty =
@@ -166,7 +150,7 @@ export default function CacheStatsPanel() {
           三缓存系统统一视图
         </span>
         {state === "success" && (
-          <RefreshButton onClick={fetchData} className="ml-auto" />
+          <RefreshButton onClick={refresh} className="ml-auto" />
         )}
       </div>
 
@@ -184,7 +168,7 @@ export default function CacheStatsPanel() {
       <DataState
         state={state}
         error={error}
-        onRetry={fetchData}
+        onRetry={refresh}
         loadingMessage="加载缓存数据…"
         loadingIconClassName="text-brand"
         emptyIcon={RiFileListLine}
