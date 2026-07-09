@@ -1,6 +1,6 @@
 # 架构文档
 
-> 最后更新: 2026-07-09 (Phase 66 B118 — useFetchData 推广到 Observability 4 面板 + RA 补齐)
+> 最后更新: 2026-07-09 (Phase 67 Batch 1 — FAISS→usearch 替换 + Windows Server 部署基础设施)
 
 ## 实现现状
 
@@ -14,7 +14,7 @@
 | Lab 实验台页面 | ✅ 完成 | 2026-06-24 | `frontend/src/app/lab/` + `components/lab/` — 5 Tab 实验台。上下文 Tab (B169): OverflowSimPanel + StrategyComparePanel + IntentTestPanel。管线 Tab (B170): TokenDashboardPanel + StepLatencyPanel + PipelineTracePanel。数据 Tab (B171): MemoryBrowserPanel + EmbeddingSpacePanel + CacheStatsPanel。图谱 Tab (B172): KnowledgeGraphPanel + DecayDistributionPanel + Health/Log 复用。实验 Tab (B179): ExperimentComparePanel + CostWaterfallPanel。全部 11 面板 + 1 新 API 端点。 |
 | Profile 标签溯源 | ✅ Phase 30 B1-B4 完成 | 2026-06-24 | TagDetailDrawer 右侧滑入抽屉 + `GET /memory/tag-detail` (JOIN facts+episodes+confidence_log 三表联查) + `POST /facts/{id}/confidence` (纠正+加星) + `MemoryStore.get_tag_detail()` / `get_fact_confidence_history_batch()` — Batch Phase30 B1-B4 |
 | 新人上车路径 | ✅ 完成 | 2026-06-15 | requirements.in + lock / make setup + clean |
-| 核心记忆引擎 | ✅ 完成 | 2026-06-15 | Store / FAISS / Embed / Recall / Forgetting |
+| 核心记忆引擎 | ✅ 完成 | 2026-06-15 | Store / usearch / Embed / Recall / Forgetting |
 | CLI 聊天界面 | ✅ 完成 | 2026-06-15 | rich 终端面板 + 召回/记忆可视化 |
 | 集成测试 | ✅ 完成 | 2026-06-22 | 12 tests — memory 全链路 + 多轮遗忘 + 索引持久化 + recall top_k + overflow 模拟 + 冲突检测 + 事实抽取 + 压缩 + 记忆增强 + 错误恢复 + 策略对比 — Batch 76-87, 138 |
 | 测试体系（Python） | ✅ 完成 | 2026-06-30 | Python: 999 tests / 34 文件。test_web.py 5001→7 域文件（Phase 28 Batch 130）。fact.py 纯函数测试 +32（Phase 28 Batch 131），CLI 命令测试 +20（Phase 28 Batch 132），二次加固 +92（Phase 28 Batch 133-137），集成测试 5→12（Phase 28 Batch 138），E2E Playwright +6（Phase 28 Batch 139） |
@@ -236,6 +236,7 @@
 | 治理工具链增强 (Feature Flag/Settings/Backlog) | ✅ 完成 | 2026-07-03 | 13 flags 审计矩阵 · `Settings.__post_init__` 验证 · master-backlog v2 (366→93 行) · CLAUDE.md 瘦身 (190→175) + 文件健康诊断 · 发现即待办规则 19 — Phase 1000 B61-B65 |
 | L5 补拉通五批 (B115-B119) | ✅ 完成 | 2026-07-08 | Context/Pipeline Tab (B115) · Tooltip 即时化 (B116) · Lab Tab 增强 (B117) · Experiment Tab (B118) · Data Tab + 共享 lib DRY (B119) — ~30 Batch 延迟 L5 检查全量闭环 · pre-commit hook 路径修复 + 机械门禁恢复 |
 | 门禁全绿收官 (B120) | ✅ 完成 | 2026-07-08 | 补 2 条 L5 自检验证方式 → check-docs 146/146 · eslint 0e 0w · 日报追记 B115-B120 |
+| Windows Server 部署基础设施 | ✅ 完成 | 2026-07-09 | FAISS→usearch 替换 (消除 Windows 部署阻塞点) · Next.js standalone 构建 · Nginx 反向代理配置 · NSSM Windows Service 注册脚本 · 一键部署脚本 — Phase 67 Batch 1 |
 
 ## 架构决策记录
 
