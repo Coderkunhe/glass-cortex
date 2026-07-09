@@ -21,8 +21,8 @@ class MockStore:
 class MockIndex:
     def __init__(self, ntotal: int = 42, dim: int = 384) -> None:
         self.index = MagicMock()
-        self.index.ntotal = ntotal
-        self.index.d = dim
+        self.index.size = ntotal
+        self.index.ndim = dim
 
 
 class MockChatEngine:

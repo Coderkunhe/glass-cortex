@@ -67,7 +67,7 @@ def current_profile(
     db_size = db_path.stat().st_size if db_path.exists() else 0
     episode_count = len(store.get_all_episodes()) if store else 0
     fact_count = len(store.get_all_facts()) if store else 0
-    ntotal = idx.index.ntotal if idx and idx.index is not None else 0
+    ntotal = idx.index.size if idx and idx.index is not None else 0
 
     return ProfileInfo(
         name=profile_name,

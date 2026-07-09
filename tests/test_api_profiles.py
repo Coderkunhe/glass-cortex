@@ -30,7 +30,7 @@ class TestProfiles:
         alice_dir.mkdir(parents=True)
         bob_dir.mkdir(parents=True)
         (alice_dir / "memory.db").write_text("")
-        (alice_dir / "index.faiss").write_text("")
+        (alice_dir / "index.usearch").write_text("")
         (bob_dir / "memory.db").write_text("")
 
         with make_client(data_dir=str(data_dir)) as client:
@@ -53,7 +53,7 @@ class TestProfiles:
         store.get_all_facts.return_value = [{"id": 1}]
 
         idx = MagicMock()
-        idx.index.ntotal = 42
+        idx.index.size = 42
 
         engines = build_mock_engines(store=store, idx=idx)
         with make_client(engines) as client:

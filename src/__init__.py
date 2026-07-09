@@ -2,8 +2,8 @@
 
 import os as _os
 
-# PyTorch (sentence-transformers) 与 FAISS 都使用 Intel OpenMP 并行。
-# 第二个初始化的库会破坏第一个的线程池 → SIGSEGV。强制单线程规避。
+# PyTorch (sentence-transformers) 与 usearch 都使用 Intel OpenMP 并行。
+# 多个 OpenMP 运行时同时初始化可能冲突。强制单线程规避。
 # 必须在所有库导入之前设置，因此放在 src/__init__.py 最顶部。
 for _omp_var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
     _os.environ.setdefault(_omp_var, "1")

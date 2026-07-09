@@ -17,7 +17,7 @@ from typing import Any, TypedDict
 
 # ── 文件名/URL 常量（避免硬编码散落各模块）──
 DB_FILENAME = "memory.db"
-INDEX_FILENAME = "index.faiss"
+INDEX_FILENAME = "index.usearch"
 LOG_FILENAME = "glasscortex.log"
 DEFAULT_PROFILE = "default"
 
@@ -66,7 +66,7 @@ class PathsConfig:
 
     @property
     def resolved_index_path(self) -> Path:
-        """解析后的 FAISS 索引路径——显式设置者优先，否则回退到 profile 目录。"""
+        """解析后的向量索引路径——显式设置者优先，否则回退到 profile 目录。"""
         return (
             self.index_path
             if self.index_path is not None

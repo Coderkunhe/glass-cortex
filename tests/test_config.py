@@ -26,7 +26,7 @@ class TestSettingsDefaults:
         s = Settings()
         assert s.data_dir == Path("data")
         assert s.resolved_db_path == Path("data") / "default" / "memory.db"
-        assert s.resolved_index_path == Path("data") / "default" / "index.faiss"
+        assert s.resolved_index_path == Path("data") / "default" / "index.usearch"
         assert s.env_file == Path(".env")
 
     def test_default_embedding(self) -> None:
@@ -89,7 +89,7 @@ class TestSettingsCustom:
     def test_resolved_paths_use_data_dir(self) -> None:
         s = Settings.from_flat(data_dir=Path("/custom/data"))
         assert s.resolved_db_path == Path("/custom/data") / "default" / "memory.db"
-        assert s.resolved_index_path == Path("/custom/data") / "default" / "index.faiss"
+        assert s.resolved_index_path == Path("/custom/data") / "default" / "index.usearch"
 
     def test_ab_experiment_two_instances(self) -> None:
         """A/B 实验：同一代码两套配置。"""

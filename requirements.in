@@ -1,7 +1,7 @@
 # GlassCortex 直接依赖
 # 人工维护，pip-compile 生成 requirements-lock.txt
 
-faiss-cpu
+usearch
 sentence-transformers
 rich
 numpy

@@ -232,10 +232,10 @@ export const GLOSSARY: Record<string, GlossaryTerm> = {
     longDef:
       "FAISS（Facebook AI Similarity Search）是一个专为稠密向量设计的高效相似度搜索库。" +
       "GlassCortex 将每条对话消息通过 Sentence Transformer 转换为 384 维语义向量，" +
-      "存入 FAISS 索引（IndexIDMap 封装）。\n\n" +
-      "每次记忆召回时，用户消息也被转换为向量，FAISS 在毫秒级内从数万条历史记忆中找出语义最相似的 top_k 条。" +
+      "存入向量索引（usearch Co s距离）。\n\n" +
+      "每次记忆召回时，用户消息也被转换为向量，索引在毫秒级内从数万条历史记忆中找出语义最相似的 top_k 条。" +
       "这比 SQL LIKE 搜索快几个数量级，而且能匹配「意思相近但措辞不同」的内容。\n\n" +
-      "FAISS 索引存储在 `data/{profile}/index.faiss` 文件中，与 SQLite 数据库分离。" +
+      "向量索引存储在 `data/{profile}/index.usearch` 文件中，与 SQLite 数据库分离。" +
       "Profile 切换时会自动加载对应的索引文件。你可以在实验室页的「嵌入空间」面板看到向量在 2D/3D 空间的分布。",
     category: "架构",
     relatedTerms: ["memory-recall", "embedding"],

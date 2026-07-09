@@ -22,7 +22,7 @@ _RECOVERY_HINTS: dict[str, dict[str, str]] = {
         "warn": "",
     },
     "faiss_index": {
-        "error": ("FAISS index file corrupted. Delete index.faiss 并重启服务器。"),
+        "error": ("向量索引文件异常。Delete index.usearch 并重启服务器。"),
         "warn": (
             "索引尚未创建——新 Profile 的正常状态。 It will be built on the first chat message."
         ),

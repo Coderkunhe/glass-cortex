@@ -94,7 +94,7 @@ def test_index_save_and_load(tmp_path: Path) -> None:
 
     idx2 = IndexManager()
     idx2.load(index_path)
-    assert idx2.index.ntotal == 3
+    assert idx2.index.size == 3
 
     store.close()
 

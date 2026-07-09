@@ -44,7 +44,7 @@ class TestProfileResolvedPaths:
         s = Settings()
         assert s.profile_data_dir == Path("data") / "default"
         assert s.resolved_db_path == Path("data") / "default" / "memory.db"
-        assert s.resolved_index_path == Path("data") / "default" / "index.faiss"
+        assert s.resolved_index_path == Path("data") / "default" / "index.usearch"
 
     def test_custom_profile_resolves_to_profile_subdir(self) -> None:
         s = Settings.from_flat(user_profile="alice")
@@ -76,7 +76,7 @@ class TestMigration:
         from src.bootstrap import _migrate_legacy_flat_data
 
         legacy_db = self._touch(tmp_path / "memory.db")
-        legacy_idx = self._touch(tmp_path / "index.faiss")
+        legacy_idx = self._touch(tmp_path / "index.usearch")
         profile_dir = tmp_path / "default"
 
         _migrate_legacy_flat_data(tmp_path, profile_dir)
@@ -84,7 +84,7 @@ class TestMigration:
         assert not legacy_db.exists()
         assert not legacy_idx.exists()
         assert (profile_dir / "memory.db").exists()
-        assert (profile_dir / "index.faiss").exists()
+        assert (profile_dir / "index.usearch").exists()
 
     def test_migration_noop_when_no_legacy(self, tmp_path: Path) -> None:
         from src.bootstrap import _migrate_legacy_flat_data
@@ -169,7 +169,7 @@ class TestProfileInitEngines:
         store, idx, _, _, _, _, _ = engines
         try:
             assert s.resolved_db_path == tmp_path / "integration-test" / "memory.db"
-            assert s.resolved_index_path == tmp_path / "integration-test" / "index.faiss"
+            assert s.resolved_index_path == tmp_path / "integration-test" / "index.usearch"
         finally:
             idx.save(str(s.resolved_index_path))
             store.close()

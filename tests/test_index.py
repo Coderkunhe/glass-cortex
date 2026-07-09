@@ -122,7 +122,10 @@ def test_save_load_reconstruct_values_preserved() -> None:
 
 
 def test_load_old_format_without_vecs_file() -> None:
-    """旧格式索引（无 .vecs 伴随文件）load 后 reconstruct 抛 KeyError（优雅降级）。"""
+    """无 .vecs 伴随文件的索引 load 后 reconstruct 抛 KeyError（优雅降级）。
+
+    Phase 67 B1: FAISS → usearch 后，\"旧格式\" 指仅保存索引本体但缺少 .vecs 伴随文件。
+    """
     idx = IndexManager(dimension=8)
     rng = np.random.default_rng(42)
     vecs = rng.normal(size=(3, 8)).astype(np.float32)
@@ -130,26 +133,24 @@ def test_load_old_format_without_vecs_file() -> None:
 
     with tempfile.TemporaryDirectory() as tmpdir:
         path = str(Path(tmpdir) / "test.index")
-        # 仅保存 FAISS index，不保存 .vecs（模拟旧格式）
-        import faiss
-
-        faiss.write_index(idx.index, path)
+        # 仅保存索引文件，跳过 .vecs 伴随文件（模拟伴随文件缺失）
+        idx.index.save_index_to_path(path)
 
         idx2 = IndexManager(dimension=8)
         idx2.load(path)
-        # search 仍正常工作（FAISS index 完整）
+        # search 仍正常工作（索引本体完整）
         results = idx2.search(vecs[0], k=3)
         assert len(results) == 3
         # reconstruct 不可用（无 .vecs 文件）
         try:
             idx2.reconstruct(0)
-            raise AssertionError("Expected KeyError for old-format index")
+            raise AssertionError("Expected KeyError for missing .vecs")
         except KeyError:
             pass
 
 
-def test_add_consistency__vectors_faiss_next_id_aligned() -> None:
-    """add 后 _vectors、FAISS ntotal、_next_id 三者一致。"""
+def test_add_consistency__vectors_index_next_id_aligned() -> None:
+    """add 后 _vectors、索引 ntotal、_next_id 三者一致。"""
     idx = IndexManager(dimension=8)
     rng = np.random.default_rng(42)
     vecs = rng.normal(size=(5, 8)).astype(np.float32)
@@ -157,7 +158,7 @@ def test_add_consistency__vectors_faiss_next_id_aligned() -> None:
 
     assert len(ids) == 5
     assert idx._next_id == 5
-    assert idx.index.ntotal == 5
+    assert idx.index.size == 5
     assert len(idx._vectors) == 5
     # 每个 ID 都能 reconstruct
     for fid in ids:

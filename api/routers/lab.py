@@ -270,7 +270,7 @@ def embedding_coords(
     _store, idx, _recall, _forget, _chat, _ledger, _planner = engines
 
     max_vectors = max(1, min(max_vectors, 2000))
-    n_total = idx.index.ntotal
+    n_total = idx.index.size
     if n_total == 0:
         return EmbeddingCoordsResponse(coords=[], total_vectors=0, pca_variance_explained=[])
 

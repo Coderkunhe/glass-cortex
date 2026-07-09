@@ -75,7 +75,7 @@ class TestLabEmbeddingCoords:
     def test_embedding_coords_empty_index(self) -> None:
         """无向量时返回空坐标列表。"""
         idx = MagicMock()
-        idx.index.ntotal = 0
+        idx.index.size = 0
         engines = build_mock_engines(idx=idx)
         with make_client(engines) as client:
             resp = client.get("/lab/embedding-coords")
@@ -96,7 +96,7 @@ class TestLabEmbeddingCoords:
         ]
 
         idx = MagicMock()
-        idx.index.ntotal = 3
+        idx.index.size = 3
         # 返回 3 个 4 维向量（需要 ≥ 4 样本才能 PCA 到 3 维）
         # 实际上只需要 ntotal ≥ 1
         vectors_384 = [np.random.randn(384).astype(np.float32) for _ in range(3)]
@@ -121,7 +121,7 @@ class TestLabEmbeddingCoords:
     def test_embedding_coords_max_vectors_clamped(self) -> None:
         """max_vectors 被限制在 1-2000 区间。"""
         idx = MagicMock()
-        idx.index.ntotal = 0
+        idx.index.size = 0
         engines = build_mock_engines(idx=idx)
         with make_client(engines) as client:
             resp = client.get("/lab/embedding-coords?max_vectors=5000")

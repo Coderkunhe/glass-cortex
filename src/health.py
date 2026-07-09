@@ -43,13 +43,13 @@ def check_health(
             "detail": str(exc)[:200],
         }
 
-    # ── 2. FAISS 索引 ──
+    # ── 2. 向量索引 ──
     t0 = time.time()
     try:
-        ntotal = idx.index.ntotal if idx.index is not None else 0
+        index_size = idx.index.size if idx.index is not None else 0
         index_path = settings.resolved_index_path
         index_exists = index_path.exists()
-        if not index_exists and ntotal == 0:
+        if not index_exists and index_size == 0:
             results["faiss_index"] = {
                 "status": "warn",
                 "latency_ms": round((time.time() - t0) * 1000, 1),
@@ -60,7 +60,7 @@ def check_health(
                 "status": "ok",
                 "latency_ms": round((time.time() - t0) * 1000, 1),
                 "detail": (
-                    f"ntotal={ntotal}, dim={idx.index.d if idx.index is not None else '?'}"
+                    f"ntotal={index_size}, dim={idx.index.ndim if idx.index is not None else '?'}"
                     f", index={index_path}"
                 ),
             }

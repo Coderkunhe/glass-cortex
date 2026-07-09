@@ -10,7 +10,7 @@ from src.config import Settings
 
 
 class TestWipeProfileData:
-    """wipe_profile_data deletes memory.db + index.faiss for a given profile."""
+    """wipe_profile_data deletes memory.db + index.usearch for a given profile."""
 
     def test_wipe_deletes_db_and_index(self) -> None:
         td = Path(tempfile.mkdtemp())
@@ -67,7 +67,7 @@ class TestWipeProfileData:
             store2, idx2, *_ = init_engines(settings_override=s)
             episodes = store2.get_all_episodes()
             assert len(episodes) == 0
-            assert idx2.index.ntotal == 0
+            assert idx2.index.size == 0
             store2.close()
         finally:
             import shutil
