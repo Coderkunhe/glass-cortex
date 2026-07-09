@@ -1,6 +1,6 @@
 # 架构文档
 
-> 最后更新: 2026-07-09 (Phase 67 Batch 1 — FAISS→usearch 替换 + Windows Server 部署基础设施)
+> 最后更新: 2026-07-09 (Phase 67 Batch 2 — 部署文档 + B1 缺口修补 · Windows Server 可交付化闭环)
 
 ## 实现现状
 
@@ -237,6 +237,7 @@
 | L5 补拉通五批 (B115-B119) | ✅ 完成 | 2026-07-08 | Context/Pipeline Tab (B115) · Tooltip 即时化 (B116) · Lab Tab 增强 (B117) · Experiment Tab (B118) · Data Tab + 共享 lib DRY (B119) — ~30 Batch 延迟 L5 检查全量闭环 · pre-commit hook 路径修复 + 机械门禁恢复 |
 | 门禁全绿收官 (B120) | ✅ 完成 | 2026-07-08 | 补 2 条 L5 自检验证方式 → check-docs 146/146 · eslint 0e 0w · 日报追记 B115-B120 |
 | Windows Server 部署基础设施 | ✅ 完成 | 2026-07-09 | FAISS→usearch 替换 (消除 Windows 部署阻塞点) · Next.js standalone 构建 · Nginx 反向代理配置 · NSSM Windows Service 注册脚本 · 一键部署脚本 — Phase 67 Batch 1 |
+| Windows Server 部署文档 + B1 缺口修补 | ✅ 完成 | 2026-07-09 | 修 install-services.ps1 standalone bug (next start → node server.js) · deploy.ps1 补目录兜底 + 健康检查 · 新增 .env.example + deploy/README.md (7 章主手册) + deploy/offline-model.md (离线模型 SOP) — Phase 67 Batch 2 |
 
 ## 架构决策记录
 

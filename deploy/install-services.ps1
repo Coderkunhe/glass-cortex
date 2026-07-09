@@ -31,24 +31,37 @@ if (-not (Test-Path $nssm)) {
 if (-not (Test-Path $PythonPath)) {
     Write-Error "Python venv not found at $PythonPath — run deploy.ps1 first"
 }
-if (-not (Test-Path "$AppRoot\frontend\.next\standalone")) {
-    Write-Error "Next.js build not found — run: cd $AppRoot\frontend && npm run build"
+$standaloneServer = "$AppRoot\frontend\.next\standalone\frontend\server.js"
+if (-not (Test-Path $standaloneServer)) {
+    Write-Error "Next.js standalone build not found at $standaloneServer — run: cd $AppRoot\frontend && npm run build"
 }
 
 # ── 辅助函数 ──
 function Install-Service {
-    param([string]$Name, [string]$DisplayName, [string]$Path, [string]$Args, [string]$Dir)
+    param(
+        [string]$Name,
+        [string]$DisplayName,
+        [string]$Path,
+        [string]$Args,
+        [string]$Dir,
+        [hashtable]$EnvVars = @{}
+    )
 
     Write-Host "  Installing $Name..." -NoNewline
     & $nssm install $Name $Path $Args 2>&1 | Out-Null
     & $nssm set $Name AppDirectory $Dir
     & $nssm set $Name DisplayName $DisplayName
     & $nssm set $Name Start SERVICE_AUTO_START
-    & $nssm set $Name AppStdout "$Dir\logs\$Name-stdout.log"
-    & $nssm set $Name AppStderr "$Dir\logs\$Name-stderr.log"
+    & $nssm set $Name AppStdout "$AppRoot\logs\$Name-stdout.log"
+    & $nssm set $Name AppStderr "$AppRoot\logs\$Name-stderr.log"
     & $nssm set $Name AppRotateFiles 1
     & $nssm set $Name AppRotateOnline 1
     & $nssm set $Name AppRotateBytes 10485760  # 10MB rotation
+
+    if ($EnvVars.Count -gt 0) {
+        $envStr = ($EnvVars.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join "`n"
+        & $nssm set $Name AppEnvironmentExtra $envStr
+    }
     Write-Host " OK" -ForegroundColor Green
 }
 
@@ -72,16 +85,26 @@ Install-Service `
     -DisplayName "GlassCortex API (FastAPI)" `
     -Path $PythonPath `
     -Args "-m uvicorn api.main:app --host 127.0.0.1 --port 8000 --workers 1" `
-    -Dir $AppRoot
+    -Dir $AppRoot `
+    -EnvVars @{
+        "PYTHONPATH" = $AppRoot
+        "PYTHONUNBUFFERED" = "1"
+    }
 
-# ── 2. GlassCortex Web (Next.js) ──
-$nextStart = "$AppRoot\frontend\node_modules\.bin\next"
+# ── 2. GlassCortex Web (Next.js standalone) ──
+# 使用 Next.js standalone 产物直接运行 server.js，不依赖 node_modules 或 next 二进制
+# Ref: https://nextjs.org/docs/pages/api-reference/config/next-config-js/output#automatically-copying-traced-files
 Install-Service `
     -Name "GlassCortexWeb" `
-    -DisplayName "GlassCortex Web (Next.js)" `
+    -DisplayName "GlassCortex Web (Next.js standalone)" `
     -Path $NodePath `
-    -Args "$nextStart start -p 3000" `
-    -Dir "$AppRoot\frontend"
+    -Args "$AppRoot\frontend\.next\standalone\frontend\server.js" `
+    -Dir "$AppRoot\frontend\.next\standalone\frontend" `
+    -EnvVars @{
+        "PORT" = "3000"
+        "HOSTNAME" = "127.0.0.1"
+        "NODE_ENV" = "production"
+    }
 
 # ── 启动服务 ──
 Write-Host "`nStarting services..." -ForegroundColor Cyan

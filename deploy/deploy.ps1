@@ -42,7 +42,7 @@ Write-Host @"
 # ═══════════════════════════════════════════════════════
 
 if (-not $SkipClone) {
-    Write-Host "`n[1/5] Cloning repository..." -ForegroundColor Cyan
+    Write-Host "`n[1/6] Cloning repository..." -ForegroundColor Cyan
     if ($GitUrl) {
         if (Test-Path $AppRoot) {
             Write-Host "  Pulling latest changes..." -ForegroundColor Yellow
@@ -57,7 +57,7 @@ if (-not $SkipClone) {
         Write-Warning "No -GitUrl provided, assuming code is already at $AppRoot"
     }
 } else {
-    Write-Host "[1/5] Skipping clone (--SkipClone)" -ForegroundColor Yellow
+    Write-Host "[1/6] Skipping clone (--SkipClone)" -ForegroundColor Yellow
 }
 
 if (-not (Test-Path $AppRoot)) {
@@ -65,10 +65,30 @@ if (-not (Test-Path $AppRoot)) {
 }
 
 # ═══════════════════════════════════════════════════════
+# Step 1.5: 目录/配置兜底（数据 + 日志 + .env）
+# ═══════════════════════════════════════════════════════
+
+Write-Host "`n[1.5/6] Bootstrapping directories + config..." -ForegroundColor Cyan
+New-Item -ItemType Directory -Force -Path "$AppRoot\data" | Out-Null
+New-Item -ItemType Directory -Force -Path "$AppRoot\logs" | Out-Null
+Write-Host "  data\ + logs\ ensured" -ForegroundColor Green
+
+if (-not (Test-Path "$AppRoot\.env")) {
+    if (Test-Path "$AppRoot\.env.example") {
+        Copy-Item "$AppRoot\.env.example" "$AppRoot\.env"
+        Write-Warning "  .env not found — copied from .env.example. EDIT $AppRoot\.env to fill API keys before starting services!"
+    } else {
+        Write-Warning "  Neither .env nor .env.example found — services will fail without API keys."
+    }
+} else {
+    Write-Host "  .env exists" -ForegroundColor Green
+}
+
+# ═══════════════════════════════════════════════════════
 # Step 2: Python 环境
 # ═══════════════════════════════════════════════════════
 
-Write-Host "`n[2/5] Setting up Python environment..." -ForegroundColor Cyan
+Write-Host "`n[2/6] Setting up Python environment..." -ForegroundColor Cyan
 
 Push-Location $AppRoot
 
@@ -95,7 +115,7 @@ Pop-Location
 # Step 3: 模型下载（可选——首次运行自动下载）
 # ═══════════════════════════════════════════════════════
 
-Write-Host "`n[3/5] Checking embedding model..." -ForegroundColor Cyan
+Write-Host "`n[3/6] Checking embedding model..." -ForegroundColor Cyan
 $hfCache = "$env:USERPROFILE\.cache\huggingface"
 if (Test-Path $hfCache) {
     Write-Host "  HF cache exists: $hfCache" -ForegroundColor Green
@@ -109,7 +129,7 @@ if (Test-Path $hfCache) {
 # Step 4: 前端构建
 # ═══════════════════════════════════════════════════════
 
-Write-Host "`n[4/5] Building frontend..." -ForegroundColor Cyan
+Write-Host "`n[4/6] Building frontend..." -ForegroundColor Cyan
 Push-Location "$AppRoot\frontend"
 
 # 检查 Node.js
@@ -119,10 +139,10 @@ if (-not $nodeVersion) {
 }
 Write-Host "  Node.js $nodeVersion" -ForegroundColor Green
 
-# npm install
+# npm install (standalone 构建需要完整 devDeps；构建完成后 node_modules 可选清理)
 if (-not (Test-Path "node_modules")) {
-    Write-Host "  Installing npm dependencies..." -ForegroundColor Yellow
-    npm ci --production
+    Write-Host "  Installing npm dependencies (including devDeps for build)..." -ForegroundColor Yellow
+    npm ci
 }
 
 # Build (standalone)
@@ -165,12 +185,46 @@ Pop-Location
 # Step 5: 注册 Windows Service
 # ═══════════════════════════════════════════════════════
 
-Write-Host "`n[5/5] Registering Windows Services..." -ForegroundColor Cyan
+Write-Host "`n[5/6] Registering Windows Services..." -ForegroundColor Cyan
 $installScript = "$AppRoot\deploy\install-services.ps1"
 if (Test-Path $installScript) {
     & $installScript -AppRoot $AppRoot
 } else {
     Write-Warning "install-services.ps1 not found — please register services manually"
+}
+
+# ═══════════════════════════════════════════════════════
+# Step 6: 健康检查（冒烟验证）
+# ═══════════════════════════════════════════════════════
+
+Write-Host "`n[6/6] Smoke test — waiting for services to be healthy..." -ForegroundColor Cyan
+Start-Sleep -Seconds 5
+
+$apiHealthy = $false
+$webHealthy = $false
+for ($i = 1; $i -le 12; $i++) {
+    try {
+        $api = Invoke-WebRequest -Uri "http://127.0.0.1:8000/health" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+        if ($api.StatusCode -eq 200) { $apiHealthy = $true }
+    } catch { }
+    try {
+        $web = Invoke-WebRequest -Uri "http://127.0.0.1:3000/" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+        if ($web.StatusCode -eq 200) { $webHealthy = $true }
+    } catch { }
+    if ($apiHealthy -and $webHealthy) { break }
+    Write-Host "  Retry $i/12 (API=$apiHealthy Web=$webHealthy)..." -ForegroundColor DarkGray
+    Start-Sleep -Seconds 5
+}
+
+if ($apiHealthy) {
+    Write-Host "  API   /health  → 200 OK" -ForegroundColor Green
+} else {
+    Write-Warning "  API   /health  → not responding after 60s — check C:\apps\glasscortex\logs\GlassCortexAPI-stderr.log"
+}
+if ($webHealthy) {
+    Write-Host "  Web   /        → 200 OK" -ForegroundColor Green
+} else {
+    Write-Warning "  Web   /        → not responding after 60s — check C:\apps\glasscortex\logs\GlassCortexWeb-stderr.log"
 }
 
 # ═══════════════════════════════════════════════════════
