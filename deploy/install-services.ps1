@@ -125,9 +125,10 @@ foreach ($svc in @("GlassCortexAPI", "GlassCortexWeb")) {
 }
 
 Write-Host "`n=== Next Steps ===" -ForegroundColor Cyan
-Write-Host "  1. Install Nginx: https://nginx.org/en/docs/windows.html"
+Write-Host "  1. Install Nginx: download https://nginx.org/en/download.html, unzip to C:\apps\nginx\"
 Write-Host "  2. Copy deploy\nginx.conf → C:\apps\nginx\conf\nginx.conf"
-Write-Host "  3. Start Nginx: net start nginx"
+Write-Host "  3. Start Nginx: cd C:\apps\nginx; .\nginx.exe   (first-time launch)"
+Write-Host "     (optional: register as NSSM service — see deploy\README.md §2.2)"
 Write-Host "  4. Visit: http://localhost"
 Write-Host "`n  Service management:" -ForegroundColor Yellow
 Write-Host "    Stop:    nssm stop GlassCortexAPI"

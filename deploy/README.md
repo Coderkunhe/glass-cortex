@@ -15,10 +15,13 @@ git clone https://github.com/<your-org>/glasscortex.git C:\apps\glasscortex
 cd C:\apps\glasscortex
 Copy-Item .env.example .env
 notepad .env                                       # 填 3 个 API key
-.\deploy\deploy.ps1 -SkipClone                     # 一键部署
+.\deploy\deploy.ps1 -SkipClone                     # 一键部署应用服务
+
+# ── nginx 首次装（下载解压到 C:\apps\nginx\ 后）──
 Copy-Item deploy\nginx.conf C:\apps\nginx\conf\nginx.conf
-Restart-Service nginx
-Invoke-WebRequest http://localhost                 # 冒烟
+cd C:\apps\nginx; .\nginx.exe                      # 首次启动（不是 Restart-Service）
+Invoke-WebRequest http://localhost -UseBasicParsing   # 冒烟
+# 若要 nginx 开机自启 + 崩溃拉起 → 走 §2.2 NSSM 注册（可选）
 ```
 
 不熟悉的往下看详细版。
@@ -225,6 +228,9 @@ Invoke-WebRequest http://localhost/ -UseBasicParsing
 
 ### 4.1 服务管理
 
+> **前提**：本节的 `*-Service Nginx` 命令假设你已按 §2.2 将 nginx 注册为 NSSM 服务。
+> 若 nginx 仍以前台进程方式跑，请用 `.\nginx.exe -s reload` / `-s stop`（在 `C:\apps\nginx\` 目录）。
+
 ```powershell
 # 状态
 Get-Service GlassCortexAPI, GlassCortexWeb, Nginx
@@ -233,7 +239,7 @@ Get-Service GlassCortexAPI, GlassCortexWeb, Nginx
 Restart-Service GlassCortexAPI
 Restart-Service GlassCortexWeb
 
-# 完全重启（含 nginx）
+# 完全重启（含 nginx · 需 nginx 已注册为服务）
 Restart-Service Nginx, GlassCortexAPI, GlassCortexWeb
 
 # 停止全部

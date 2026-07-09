@@ -240,15 +240,17 @@ Write-Host @"
   Duration: $($elapsed.TotalSeconds.ToString('0.0'))s
   App Root: $AppRoot
   API:      http://127.0.0.1:8000 (uvicorn)
-  Web:      http://127.0.0.1:3000 (next start)
+  Web:      http://127.0.0.1:3000 (node .next\standalone\frontend\server.js)
   Nginx:    http://localhost       (after setup)
 ========================================
 
 Next Steps:
-  1. Install Nginx: winget install nginx  或 手动下载
-  2. Copy config:  copy deploy\nginx.conf C:\apps\nginx\conf\nginx.conf
-  3. Start Nginx:  net start nginx
-  4. Verify:       浏览器打开 http://localhost
+  1. Install Nginx: download from https://nginx.org/en/download.html
+                    unzip to C:\apps\nginx\ (see deploy\README.md §1.3)
+  2. Copy config:   copy deploy\nginx.conf C:\apps\nginx\conf\nginx.conf
+  3. Start Nginx:   cd C:\apps\nginx; .\nginx.exe      (first-time launch)
+                    (optional: register as NSSM service — see README §2.2)
+  4. Verify:        Invoke-WebRequest http://localhost -UseBasicParsing
 
 Service Management:
   nssm status GlassCortexAPI
