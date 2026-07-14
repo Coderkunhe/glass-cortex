@@ -328,6 +328,46 @@ node frontend\.next\standalone\server.js
 # npm run dev   ← 会输出 "webpack compiled" 和 WSS HMR 连接，生产不应出现
 ```
 
+#### 手动构建完整步骤（无 deploy.ps1 时）
+
+`npm run build` 不会自动将 `.next/static` 拷贝到 standalone 目录。手动构建需完整执行以下步骤：
+
+```powershell
+# PowerShell（推荐）
+cd C:\apps\glasscortex\frontend
+npm ci                                    # 安装依赖
+set NODE_ENV=production && npm run build  # 生产构建
+
+# ⚠️ 关键：拷贝 static 到 standalone（npm run build 不做这一步！）
+Copy-Item -Recurse -Force .next\static .next\standalone\.next\static
+
+# public 目录（如有字体/favicon）
+if (Test-Path public) {
+    New-Item -ItemType Directory -Force -Path .next\standalone\public | Out-Null
+    Copy-Item -Recurse -Force public\* .next\standalone\public
+}
+
+# 启动
+node .next\standalone\server.js
+```
+
+```cmd
+:: CMD 版本
+cd C:\apps\glasscortex\frontend
+npm ci
+set NODE_ENV=production && npm run build
+
+:: ⚠️ 关键：拷贝 static 到 standalone
+xcopy /E /I /Y .next\static .next\standalone\.next\static
+
+:: 启动
+node .next\standalone\server.js
+```
+
+> **`.env.production` 要求**：生产构建依赖 `frontend\.env.production` 中的 `NEXT_PUBLIC_API_URL=/api`。
+> 缺失会导致前端 API 请求打到 `http://localhost:8000`（硬编码默认值）而非 nginx `/api/` 反代。
+> 若文件不存在：`echo NEXT_PUBLIC_API_URL=/api> .env.production` 后重建。
+
 ---
 
 ## 3. 验证清单（Verification Checklist）
@@ -471,6 +511,8 @@ Copy-Item C:\apps\glasscortex\data\index.usearch "C:\backups\index-$stamp.usearc
 | 页面白屏，浏览器 F12 显示 `/\_next/static/...` JS/CSS 404 | nginx `location /\_next/` 段 `proxy_pass` 端口配成了 8000 而非 3000 | 检查 nginx.conf：`location /\_next/` 的 `proxy_pass` 必须是 `http://nextjs`（端口 3000），不是 FastAPI |
 | Chat 对话不流式输出（整段一起吐出来）或 30s 超时断开 | nginx `/api/` 段缺 `proxy_buffering off` 或 `proxy_read_timeout` 太短 | nginx.conf 中 `/api/` 段必须配：`proxy_buffering off;` `proxy_cache off;` `proxy_read_timeout 300s;` |
 | 安全扫描报警 TLSv1/TLSv1.1 不安全 | nginx `ssl_protocols` 包含了已弃用的 TLS 版本 | 改为 `ssl_protocols TLSv1.2 TLSv1.3;`，去掉 TLSv1 和 TLSv1.1。nginx 参考 TLS 配置见 `deploy/nginx.conf` 底部注释块 |
+| 前端 API 请求打到 `http://localhost:8000`（非 `/api/...`），浏览器 F12 Network 全 404 | 构建时 `.env.production` 缺失或未加载，`NEXT_PUBLIC_API_URL` 回退到硬编码默认值 | `echo NEXT_PUBLIC_API_URL=/api> frontend\.env.production`，`set NODE_ENV=production && npm run build`，重启。详见 §2.5 |
+| `/_next/static/...` CSS/JS 404，样式全丢、交互失效 | `npm run build` 不会自动拷贝 `.next/static` 到 standalone 目录 | `xcopy /E /I /Y .next\static .next\standalone\.next\static`（CMD）或 `Copy-Item -Recurse -Force .next\static .next\standalone\.next\static`（PowerShell）。详见 §2.5 |
 
 ---
 
