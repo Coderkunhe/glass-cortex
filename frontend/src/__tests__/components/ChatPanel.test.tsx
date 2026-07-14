@@ -92,7 +92,7 @@ describe("ChatPanel", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /发送/ }));
 
-    expect(await screen.findByText(/服务暂时不可用/)).toBeInTheDocument();
+    expect(await screen.findByText(/AI 响应失败/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "重试" })).toBeInTheDocument();
     // Error lens trigger should appear alongside ErrorDisplay
     expect(screen.getByText("🤔 为什么这样处理？")).toBeInTheDocument();

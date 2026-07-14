@@ -51,7 +51,9 @@ class FactExtractor:
             api_key = os.environ.get(settings.llm_api_key_env)
             if not api_key:
                 raise RuntimeError(f"{settings.llm_api_key_env} 未设置，无法抽取事实。")
-            self._client = OpenAI(api_key=api_key, base_url=settings.llm_base_url)
+            self._client = OpenAI(
+                api_key=api_key, base_url=settings.llm_base_url, timeout=settings.llm_timeout
+            )
         return self._client
 
     def set_ledger(self, ledger: TokenLedger) -> None:

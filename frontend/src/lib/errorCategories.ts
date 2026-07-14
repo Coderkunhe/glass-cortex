@@ -151,7 +151,7 @@ export function categorizeError(err: unknown): CategorizedError {
   // LLM errors take priority over server errors — a 500 with
   // error_code="llm_unavailable" is an LLM problem, not a server crash.
   if (isApiClientError(err)) {
-    const errorCode = err.apiError.error_code ?? "";
+    const errorCode = err.apiError.error_code ?? err.apiError.error ?? "";
 
     if (LLM_ERROR_CODES.some((p) => p.test(errorCode))) {
       return {

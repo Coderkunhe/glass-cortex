@@ -76,17 +76,19 @@ def check_health(
     try:
         client = chat_engine.client
         api_key = getattr(client, "api_key", None)
-        if api_key and api_key != "未设置":
-            results["llm_api"] = {
-                "status": "ok",
-                "latency_ms": round((time.time() - t0) * 1000, 1),
-                "detail": f"model={settings.llm_model}, base_url={settings.llm_base_url}",
-            }
-        else:
+        if not api_key or api_key == "未设置":
             results["llm_api"] = {
                 "status": "warn",
                 "latency_ms": round((time.time() - t0) * 1000, 1),
                 "detail": "API key 未设置，对话功能不可用",
+            }
+        else:
+            # 真实 API 探测：调用 models.list() 验证网络/SSL/DNS 全链路
+            _ = client.models.list()
+            results["llm_api"] = {
+                "status": "ok",
+                "latency_ms": round((time.time() - t0) * 1000, 1),
+                "detail": f"model={settings.llm_model}, base_url={settings.llm_base_url}",
             }
     except RuntimeError:
         results["llm_api"] = {
@@ -100,6 +102,54 @@ def check_health(
             "latency_ms": round((time.time() - t0) * 1000, 1),
             "detail": str(exc)[:200],
         }
+    except Exception as exc:
+        # 真实 API 调用失败
+        latency_ms = round((time.time() - t0) * 1000, 1)
+        # 若异常携带 HTTP 状态码（如 404/401），说明 TCP+TLS 链路已通，
+        # API 可达——只是 models 端点不可用或无权限，视为 ok
+        if hasattr(exc, "status_code") or hasattr(exc, "response"):
+            results["llm_api"] = {
+                "status": "ok",
+                "latency_ms": latency_ms,
+                "detail": (
+                    f"API 可达（收到 HTTP 响应），model={settings.llm_model}, "
+                    f"base_url={settings.llm_base_url}"
+                ),
+            }
+        else:
+            # 连接级失败 → 分类异常类型给出可操作的诊断提示
+            detail = str(exc)[:200]
+            cause_chain: list[BaseException] = [exc]
+            current: BaseException = exc
+            while current.__cause__ is not None:
+                current = current.__cause__
+                cause_chain.append(current)
+            for e in cause_chain:
+                cls_name = type(e).__qualname__
+                if "SSL" in cls_name or "Certificate" in cls_name:
+                    detail = (
+                        f"SSL 证书验证失败（Windows Server 常见问题）。原始错误: {str(exc)[:150]}"
+                    )
+                    break
+                if "Connect" in cls_name or "RemoteDisconnected" in cls_name:
+                    detail = (
+                        f"无法连接 {settings.llm_base_url} —— "
+                        f"请检查服务器外网访问、防火墙规则和 DNS 解析。"
+                        f"原始错误: {str(exc)[:120]}"
+                    )
+                    break
+                if "Timeout" in cls_name or "ReadTimeout" in cls_name:
+                    detail = (
+                        f"连接 {settings.llm_base_url} 超时 —— "
+                        f"请检查网络延迟或代理设置。"
+                        f"原始错误: {str(exc)[:150]}"
+                    )
+                    break
+            results["llm_api"] = {
+                "status": "error",
+                "latency_ms": latency_ms,
+                "detail": detail,
+            }
 
     # ── 4. 磁盘空间 ──
     t0 = time.time()
