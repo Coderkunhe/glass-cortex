@@ -1,19 +1,23 @@
 # GlassCortex 一键部署脚本 — Windows Server
-# Phase 67 Batch 1
+# Phase 67 Batch 1 · Batch 3 (offline package support)
+#
+# 三种部署模式（脚本自动检测）：
+#   模式 1 — Git Clone：    deploy.ps1 -GitUrl "https://..."           （有 git + 网络）
+#   模式 2 — 已有源码：      deploy.ps1 -SkipClone                      （手动拷贝了源码）
+#   模式 3 — 打包部署：      deploy.ps1                                  （从 build-package.ps1 产物解压）
+#                             自动检测：无 .git 目录 + 有 wheels/ → 启用离线 pip + 预缓存模型
 #
 # 用法（管理员 PowerShell）：
 #   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 #   .\deploy\deploy.ps1 -GitUrl "https://github.com/your-org/glasscortex.git"
 #
-# 或手动 clone 后从项目目录运行：
-#   .\deploy\deploy.ps1 -SkipClone
-#
 # 此脚本：
-#   1. Clone / 确认源码
-#   2. 创建 Python venv + 安装依赖
-#   3. npm install + next build (standalone)
-#   4. 调用 install-services.ps1 注册 Windows Service
-#   5. 引导 Nginx 安装
+#   1. Clone / 确认源码（打包模式跳过）
+#   2. 创建 Python venv + 安装依赖（打包模式：离线 wheels/）
+#   3. 模型缓存检测（打包模式：预缓存 models/huggingface/）
+#   4. npm install + next build (standalone)（打包模式跳过）
+#   5. 调用 install-services.ps1 注册 Windows Service
+#   6. 引导 Nginx 安装
 
 param(
     [string]$GitUrl = "",
@@ -26,16 +30,45 @@ param(
 $ErrorActionPreference = "Stop"
 $startTime = Get-Date
 
+# ── 打包部署模式自动检测 ──
+# 条件：无 .git 目录（非 clone 产物）→ 自动启用 SkipClone + SkipBuild
+#       有 wheels/ → 后续 step 自动走离线 pip；有 models/huggingface/ → 预缓存模型
+$isPackageMode = $false
+if (-not (Test-Path "$AppRoot\.git")) {
+    $isPackageMode = $true
+    if (-not $SkipClone) {
+        $SkipClone = $true
+    }
+    if (-not $SkipBuild) {
+        $SkipBuild = $true
+    }
+}
+
 Write-Host @"
 ========================================
  GlassCortex Production Deployment
- Phase 67 Batch 1
+ Phase 67 Batch 1 · Batch 3
 ========================================
-  Target: $AppRoot
-  Branch: $Branch
-  Time:   $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+  Target:    $AppRoot
+  Branch:    $Branch
+  Mode:      $(if ($isPackageMode) { "Package (offline)" } else { "Git (online)" })
+  Time:      $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
 ========================================
 "@ -ForegroundColor Cyan
+
+if ($isPackageMode) {
+    Write-Host "  [Package Mode] No .git detected — auto-enabling SkipClone + SkipBuild" -ForegroundColor Green
+    if (Test-Path "$AppRoot\wheels") {
+        Write-Host "                  wheels/ detected — will use offline pip install" -ForegroundColor Green
+    } else {
+        Write-Warning "                  wheels/ NOT found — pip install requires internet"
+    }
+    if (Test-Path "$AppRoot\models\huggingface") {
+        Write-Host "                  models/huggingface/ detected — will use pre-cached model" -ForegroundColor Green
+    } else {
+        Write-Warning "                  models/huggingface/ NOT found — model download on first run"
+    }
+}
 
 # ═══════════════════════════════════════════════════════
 # Step 1: 获取源码
@@ -101,9 +134,21 @@ if (-not (Test-Path "$AppRoot\venv\Scripts\python.exe")) {
 # 激活 venv + 安装依赖
 $env:PYTHONPATH = $AppRoot
 $pip = "$AppRoot\venv\Scripts\pip.exe"
-Write-Host "  Installing Python dependencies..." -ForegroundColor Yellow
 & $pip install --upgrade pip -q
-& $pip install -r requirements-lock.txt
+
+# 检测是否为打包部署模式（含预下载 wheels/ 目录）
+$wheelsDir = "$AppRoot\wheels"
+if (Test-Path $wheelsDir) {
+    Write-Host "  [Offline Package Mode] Installing from wheels/ (no PyPI access needed)..." -ForegroundColor Yellow
+    & $pip install --no-index --find-links="$wheelsDir" -r "$AppRoot\requirements-lock.txt"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "  Offline install from wheels/ failed — falling back to online pip install"
+        & $pip install -r requirements-lock.txt
+    }
+} else {
+    Write-Host "  Installing Python dependencies (online)..." -ForegroundColor Yellow
+    & $pip install -r requirements-lock.txt
+}
 
 # 验证关键依赖
 Write-Host "  Verifying usearch..." -NoNewline
@@ -116,13 +161,22 @@ Pop-Location
 # ═══════════════════════════════════════════════════════
 
 Write-Host "`n[3/6] Checking embedding model..." -ForegroundColor Cyan
-$hfCache = "$env:USERPROFILE\.cache\huggingface"
-if (Test-Path $hfCache) {
-    Write-Host "  HF cache exists: $hfCache" -ForegroundColor Green
+
+# 优先检测打包部署模式下的预缓存模型（models/huggingface/）
+$pkgModelDir = "$AppRoot\models\huggingface"
+if (Test-Path $pkgModelDir) {
+    Write-Host "  [Offline Package Mode] Pre-cached model found: $pkgModelDir" -ForegroundColor Green
+    Write-Host "  HF_HOME will be set to this path at service runtime (see install-services.ps1)"
 } else {
-    Write-Host "  Model will be downloaded on first run." -ForegroundColor Yellow
-    Write-Host "  For offline servers, pre-download with: " -ForegroundColor Yellow
-    Write-Host "    python -c `"from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')`""
+    # 否则检查默认 HF cache
+    $hfCache = "$env:USERPROFILE\.cache\huggingface"
+    if (Test-Path $hfCache) {
+        Write-Host "  HF cache exists: $hfCache" -ForegroundColor Green
+    } else {
+        Write-Host "  Model will be downloaded on first run." -ForegroundColor Yellow
+        Write-Host "  For offline servers, pre-download with: " -ForegroundColor Yellow
+        Write-Host "    python -c `"from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')`""
+    }
 }
 
 # ═══════════════════════════════════════════════════════
@@ -164,7 +218,7 @@ if (Test-Path $standaloneDir) {
 # 拷贝 static 目录到 standalone（Next.js standalone 模式需要手动处理）
 # Ref: https://nextjs.org/docs/pages/api-reference/config/next-config-js/output
 $staticDir = ".next\static"
-$standaloneStaticDir = "$standaloneDir\frontend\.next\static"
+$standaloneStaticDir = "$standaloneDir\.next\static"
 if (Test-Path $staticDir) {
     Write-Host "  Copying static assets to standalone..." -ForegroundColor Yellow
     New-Item -ItemType Directory -Force -Path (Split-Path $standaloneStaticDir) | Out-Null
@@ -172,7 +226,7 @@ if (Test-Path $staticDir) {
 }
 
 # 拷贝 public/ 到 standalone
-$publicStandaloneDir = "$standaloneDir\frontend\public"
+$publicStandaloneDir = "$standaloneDir\public"
 if (Test-Path "public") {
     Write-Host "  Copying public/ to standalone..." -ForegroundColor Yellow
     New-Item -ItemType Directory -Force -Path $publicStandaloneDir | Out-Null
@@ -240,7 +294,7 @@ Write-Host @"
   Duration: $($elapsed.TotalSeconds.ToString('0.0'))s
   App Root: $AppRoot
   API:      http://127.0.0.1:8000 (uvicorn)
-  Web:      http://127.0.0.1:3000 (node .next\standalone\frontend\server.js)
+  Web:      http://127.0.0.1:3000 (node .next\standalone\server.js)
   Nginx:    http://localhost       (after setup)
 ========================================
 

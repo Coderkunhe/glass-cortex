@@ -45,7 +45,7 @@ def load_dotenv() -> None:
     """加载 .env 文件中的环境变量（已存在的变量不被覆盖）。"""
     if not ENV_FILE.exists():
         return
-    for line in ENV_FILE.read_text().splitlines():
+    for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue

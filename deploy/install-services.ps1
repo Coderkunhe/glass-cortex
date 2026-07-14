@@ -1,12 +1,17 @@
 # GlassCortex Windows Service 注册脚本 — NSSM
-# Phase 67 Batch 1
+# Phase 67 Batch 1 · Batch 3 (model pre-cache support)
 #
 # 前置条件：
 #   1. NSSM 已下载到 C:\apps\nssm\nssm.exe
 #      https://nssm.cc/download
 #   2. 项目已部署到 C:\apps\glasscortex
 #   3. Python venv 已创建（C:\apps\glasscortex\venv）
-#   4. Next.js 已构建（npm run build）
+#   4. Next.js standalone build 已构建（npm run build）
+#
+# 打包部署模式：
+#   若 C:\apps\glasscortex\models\huggingface\ 存在（build-package.ps1 产物），
+#   自动配置 HF_HOME + TRANSFORMERS_CACHE + 离线模式环境变量，
+#   服务启动时直接从本地加载嵌入模型，无需联网。
 #
 # 用法（管理员 PowerShell）：
 #   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
@@ -31,7 +36,7 @@ if (-not (Test-Path $nssm)) {
 if (-not (Test-Path $PythonPath)) {
     Write-Error "Python venv not found at $PythonPath — run deploy.ps1 first"
 }
-$standaloneServer = "$AppRoot\frontend\.next\standalone\frontend\server.js"
+$standaloneServer = "$AppRoot\frontend\.next\standalone\server.js"
 if (-not (Test-Path $standaloneServer)) {
     Write-Error "Next.js standalone build not found at $standaloneServer — run: cd $AppRoot\frontend && npm run build"
 }
@@ -80,16 +85,27 @@ foreach ($svc in @("GlassCortexAPI", "GlassCortexWeb")) {
 }
 
 # ── 1. GlassCortex API (FastAPI + uvicorn) ──
+# 检测预缓存模型路径（build-package.ps1 产物）
+$apiEnvVars = @{
+    "PYTHONPATH" = $AppRoot
+    "PYTHONUNBUFFERED" = "1"
+}
+$pkgModelDir = "$AppRoot\models\huggingface"
+if (Test-Path $pkgModelDir) {
+    Write-Host "  Pre-cached model detected — configuring HF_HOME + offline mode" -ForegroundColor Green
+    $apiEnvVars["HF_HOME"] = $pkgModelDir
+    $apiEnvVars["TRANSFORMERS_CACHE"] = $pkgModelDir
+    $apiEnvVars["TRANSFORMERS_OFFLINE"] = "1"
+    $apiEnvVars["HF_HUB_OFFLINE"] = "1"
+}
+
 Install-Service `
     -Name "GlassCortexAPI" `
     -DisplayName "GlassCortex API (FastAPI)" `
     -Path $PythonPath `
     -Args "-m uvicorn api.main:app --host 127.0.0.1 --port 8000 --workers 1" `
     -Dir $AppRoot `
-    -EnvVars @{
-        "PYTHONPATH" = $AppRoot
-        "PYTHONUNBUFFERED" = "1"
-    }
+    -EnvVars $apiEnvVars
 
 # ── 2. GlassCortex Web (Next.js standalone) ──
 # 使用 Next.js standalone 产物直接运行 server.js，不依赖 node_modules 或 next 二进制
@@ -98,8 +114,8 @@ Install-Service `
     -Name "GlassCortexWeb" `
     -DisplayName "GlassCortex Web (Next.js standalone)" `
     -Path $NodePath `
-    -Args "$AppRoot\frontend\.next\standalone\frontend\server.js" `
-    -Dir "$AppRoot\frontend\.next\standalone\frontend" `
+    -Args "$AppRoot\frontend\.next\standalone\server.js" `
+    -Dir "$AppRoot\frontend\.next\standalone" `
     -EnvVars @{
         "PORT" = "3000"
         "HOSTNAME" = "127.0.0.1"

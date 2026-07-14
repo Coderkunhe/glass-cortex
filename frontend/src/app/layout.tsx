@@ -9,7 +9,7 @@
 
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "remixicon/fonts/remixicon.css";
 import "./tokens.css";
 import "./theme.css";
@@ -22,16 +22,28 @@ const THEME_STORAGE_KEY = "gm-theme";
 /** 未设置主题时的默认值 */
 const DEFAULT_THEME = "dark";
 
-/** Geist Sans — 正文字体，Latin 子集 */
-const geistSans = Geist({
+/**
+ * Geist Sans — 正文字体，Variable woff2。
+ *
+ * Phase 67 B3: 从 next/font/google 迁移到 next/font/local，
+ * 避免构建时下载 Google Fonts（国内网络不通 · 离线构建兼容）。
+ * 字体源：Vercel geist npm package (SIL OFL), variable woff2。
+ */
+const geistSans = localFont({
+  src: "../fonts/GeistVF.woff2",
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  display: "swap",
 });
 
-/** Geist Mono — 等宽字体，Latin 子集 */
-const geistMono = Geist_Mono({
+/**
+ * Geist Mono — 等宽字体，Variable woff2。
+ *
+ * 同上，从 Google Fonts 迁移到本地文件。
+ */
+const geistMono = localFont({
+  src: "../fonts/GeistMonoVF.woff2",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 /** 页面元数据（title + description） */

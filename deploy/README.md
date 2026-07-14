@@ -1,12 +1,14 @@
 # GlassCortex Windows Server 部署手册
 
 > **适用场景**：内网 Windows Server 2019/2022 · 单机部署 · FastAPI + Next.js standalone + Nginx 反代
-> **产物版本**：Phase 67 Batch 2（2026-07-09）
+> **产物版本**：Phase 67 Batch 3（2026-07-13）
 > **目标读者**：运维/SA，未接触过项目源码也能照抄跑通
 
 ---
 
 ## 0. 30 秒版（老运维直接抄）
+
+**路径 A — Git 部署（服务器有 git + 网络）：**
 
 ```powershell
 # 管理员 PowerShell
@@ -16,8 +18,27 @@ cd C:\apps\glasscortex
 Copy-Item .env.example .env
 notepad .env                                       # 填 3 个 API key
 .\deploy\deploy.ps1 -SkipClone                     # 一键部署应用服务
+```
 
-# ── nginx 首次装（下载解压到 C:\apps\nginx\ 后）──
+**路径 B — 打包部署（服务器无 git · 无 npm · 可选无网）：**
+
+```powershell
+# 构建机侧（有 git + npm + 网络）
+cd <project-root>
+.\deploy\build-package.ps1                         # 产出一个 zip
+
+# 服务器侧（免 git · 免 npm · 免编译）
+Expand-Archive C:\temp\glasscortex-deploy-YYYYMMDD.zip C:\apps\
+Rename-Item C:\apps\glasscortex-deploy-YYYYMMDD glasscortex
+cd C:\apps\glasscortex
+Copy-Item .env.example .env
+notepad .env                                       # 填 API key
+.\deploy\deploy.ps1                                # 自动检测打包模式 → 离线 pip + 预缓存模型
+```
+
+**两条路径汇合 — Nginx：**
+
+```powershell
 Copy-Item deploy\nginx.conf C:\apps\nginx\conf\nginx.conf
 cd C:\apps\nginx; .\nginx.exe                      # 首次启动（不是 Restart-Service）
 Invoke-WebRequest http://localhost -UseBasicParsing   # 冒烟
@@ -172,6 +193,117 @@ C:\apps\nssm\nssm.exe start Nginx
 2. 在有网机器上 `pip download -r requirements-lock.txt -d ./wheels` → 拷到目标机 `pip install --no-index --find-links=./wheels`
 3. `.env` 追加 `TRANSFORMERS_OFFLINE=1` `HF_HUB_OFFLINE=1`
 
+### 2.4 免 Git 部署（打包模式）
+
+> 适用场景：服务器不允许装 Git · 限制外网访问 · 必须通过制品包交付
+
+**原理**：构建机（有 Git + npm + 网络）跑打包脚本产出 zip，服务器只解压 + 注册服务。
+
+**构建机侧（一次性）**：
+
+```bash
+# macOS / Linux 构建机（推荐）
+chmod +x deploy/build-package.sh
+./deploy/build-package.sh
+
+# 参数（全部可选）：
+#   -o <path>            产物输出目录（默认: ./deploy-package/）
+#   -v <tag>             版本标签（默认: 当前日期 YYYYMMDD）
+#   --skip-build         跳过 npm 构建（已有 .next/standalone 时用）
+#   --skip-model         跳过模型下载
+#   --skip-wheels        跳过 wheel 下载
+```
+
+```powershell
+# Windows 构建机
+.\deploy\build-package.ps1
+
+# 参数（全部可选）：
+#   -OutputDir <path>    产物输出目录（默认: .\deploy-package\）
+#   -Version <tag>       版本标签（默认: 当前日期 YYYYMMDD）
+#   -SkipBuild           跳过 npm 构建
+#   -SkipModel           跳过模型下载
+#   -SkipWheels          跳过 wheel 下载
+```
+
+脚本执行七步：
+
+| 步骤 | 内容 | 说明 |
+|:--|:--|:--|
+| [1/7] | 准备 staging 目录 | 清理旧临时文件 |
+| [2/7] | 拷贝源码 | 排除 .git / venv / node_modules / __pycache__ / data / logs |
+| [3/7] | 下载 Python wheels | `pip download` → `wheels/`，服务器侧离线安装 |
+| [4/7] | 下载嵌入模型 | `all-MiniLM-L6-v2` (~90MB) → `models/huggingface/` |
+| [5/7] | 构建前端 | `npm ci` + `npm run build` → standalone 产物 |
+| [6/7] | 创建 zip | `Compress-Archive` → `glasscortex-deploy-YYYYMMDD.zip` |
+| [7/7] | 清理 staging | 删除临时目录 |
+
+产物 `glasscortex-deploy-YYYYMMDD.zip` 解压后即为完整项目目录，含预构建前端 + Python wheels + 嵌入模型缓存。
+
+**服务器侧**：
+
+```powershell
+# 1. 将 zip 传输到服务器（U盘 / SMB / SFTP 任意方式）
+# 2. 解压 + 配置
+Expand-Archive -Path C:\temp\glasscortex-deploy-YYYYMMDD.zip -DestinationPath C:\apps\
+Rename-Item C:\apps\glasscortex-deploy-YYYYMMDD glasscortex
+cd C:\apps\glasscortex
+
+# 3. 配置 .env
+Copy-Item .env.example .env
+notepad .env
+
+# 4. 一键部署（自动检测打包模式 → SkipClone + SkipBuild + 离线 pip + 预缓存模型）
+.\deploy\deploy.ps1
+
+# 5. Nginx（同标准流程）
+Copy-Item deploy\nginx.conf C:\apps\nginx\conf\nginx.conf
+cd C:\apps\nginx
+.\nginx.exe -t
+.\nginx.exe
+```
+
+`deploy.ps1` 自动检测打包模式（无 `.git` 目录 → 自动启用 `-SkipClone -SkipBuild`），检测到 `wheels/` → 离线 pip 安装，检测到 `models/huggingface/` → 自动配置 `HF_HOME` 环境变量到 Windows Service。
+
+**服务器运行时要求**：
+
+| 组件 | 打包模式 | Git 模式 |
+|:--|:--:|:--:|
+| Python 3.14 | ✅ 必需 | ✅ 必需 |
+| Node.js 22.x | ✅ 必需（运行 standalone server.js） | ✅ 必需 |
+| Git | ❌ 不需要 | ✅ 必需 |
+| npm | ❌ 不需要 | ✅ 必需 |
+| VC++ Build Tools | ❌ 不需要（wheels 预编译） | ✅ 可能需（编译 usearch） |
+| 外网（PyPI / npm） | ❌ 不需要 | ✅ 必需 |
+| 外网（HuggingFace） | ❌ 不需要（模型已缓存） | 首次运行需要 |
+
+**跨平台打包**（macOS/Linux 构建机 → Windows Server）：
+
+```powershell
+# 在 macOS/Linux 上交叉下载 Windows wheels
+.\deploy\build-package.ps1 -TargetPlatform win_amd64
+```
+
+注意事项：
+- 纯 Python 包和有预编译 wheel 的包可直接交叉下载
+- 少数无 Windows wheel 的包（如 usearch）需在服务器端编译 → 仍需 VC++ Build Tools
+- 推荐：构建机和目标机同平台（都是 Windows）以免交叉编译问题
+
+**升级流程（打包模式）**：
+
+```powershell
+# 构建机重新打包新版本 → 传输到服务器
+# 服务器侧：
+Stop-Service GlassCortexAPI, GlassCortexWeb
+Expand-Archive -Force C:\temp\glasscortex-deploy-NEWDATE.zip C:\apps\
+# ⚠️ 注意：不要覆盖 data/ 和 .env
+Copy-Item C:\apps\glasscortex\data C:\apps\glasscortex-deploy-NEWDATE\data -Recurse -Force
+Copy-Item C:\apps\glasscortex\.env C:\apps\glasscortex-deploy-NEWDATE\.env -Force
+Remove-Item C:\apps\glasscortex -Recurse -Force
+Rename-Item C:\apps\glasscortex-deploy-NEWDATE glasscortex
+.\deploy\deploy.ps1 -SkipClone -SkipBuild
+```
+
 ---
 
 ## 3. 验证清单（Verification Checklist）
@@ -302,7 +434,7 @@ Copy-Item C:\apps\glasscortex\data\index.usearch "C:\backups\index-$stamp.usearc
 | `usearch import failed` in deploy [2/6] | 缺 VC++ Build Tools 或 Python 版本不匹配 | 安装 VC++ Build Tools 2019+，`pip install --force-reinstall usearch` |
 | `npm ci` 失败 `EACCES / EPERM` | Node.js 权限问题或杀软拦截 | 以管理员打开 PowerShell；将 `C:\apps\glasscortex` 加入杀软白名单 |
 | `next build` 报 `standalone: not defined` | `frontend/next.config.ts` 未含 `output: "standalone"` | B1 已配好；若被覆盖，检查该文件 |
-| GlassCortexWeb 启动即崩，stderr 有 `Cannot find module '.../server.js'` | Next.js standalone 产物路径不对 | 确认 `frontend\.next\standalone\frontend\server.js` 存在。不存在则重跑 `.\deploy\deploy.ps1 -SkipClone -SkipBuild=$false` |
+| GlassCortexWeb 启动即崩，stderr 有 `Cannot find module '.../server.js'` | Next.js standalone 产物路径不对 | 确认 `frontend\.next\standalone\server.js` 存在。不存在则重跑 `.\deploy\deploy.ps1 -SkipClone -SkipBuild=$false` |
 | GlassCortexAPI 启动即崩，stderr 有 `KeyError: 'DEEPSEEK_API_KEY'` | `.env` 未创建或未填 | `notepad C:\apps\glasscortex\.env` 补 key，`Restart-Service GlassCortexAPI` |
 | GlassCortexAPI 启动即崩，stderr 有 `HuggingFace Hub` 相关网络错 | 无外网 + 无本地模型缓存 | 走 [离线模型 SOP](./offline-model.md) |
 | `http://localhost/api/health` 404 | Nginx location 匹配问题 | 检查 `nginx.conf` `location /api/` 段的 `proxy_pass http://fastapi/;` 末尾斜杠必须有 |
@@ -331,9 +463,14 @@ C:\apps\glasscortex\
 │   └── .next\
 │       ├── static\           # 静态资源
 │       └── standalone\
-│           └── frontend\
-│               └── server.js # ← Web Service 启动入口
+│           └── server.js         # ← Web Service 启动入口 (Next.js 16)
 └── deploy\                   # 本目录（部署脚本 + 本手册）
+    ├── README.md              # 本文件
+    ├── build-package.ps1      # 构建机制品打包（§2.4）
+    ├── deploy.ps1             # 一键部署
+    ├── install-services.ps1   # NSSM 服务注册
+    ├── nginx.conf             # Nginx 反代配置
+    └── offline-model.md       # 离线模型 SOP
 ```
 
 ---
@@ -341,6 +478,8 @@ C:\apps\glasscortex\
 ## 7. 相关文档
 
 - [离线模型 SOP](./offline-model.md) — 无外网环境模型分发
+- [build-package.sh](./build-package.sh) — 构建机制品打包（macOS/Linux · §2.4 入口）
+- [build-package.ps1](./build-package.ps1) — 构建机制品打包（Windows）
 - [nginx.conf](./nginx.conf) — Nginx 配置源文件（含 /api SSE 支持）
 - [deploy.ps1](./deploy.ps1) — 一键部署脚本源文件
 - [install-services.ps1](./install-services.ps1) — NSSM 服务注册源文件

@@ -101,7 +101,7 @@ class MemoryStore:
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.conn.execute("PRAGMA journal_mode=WAL")
         schema = Path(__file__).parent / "schema.sql"
-        self.conn.executescript(schema.read_text())
+        self.conn.executescript(schema.read_text(encoding="utf-8"))
         self._migrate()
         self.conn.commit()
 
