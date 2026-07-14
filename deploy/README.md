@@ -304,6 +304,30 @@ Rename-Item C:\apps\glasscortex-deploy-NEWDATE glasscortex
 .\deploy\deploy.ps1 -SkipClone -SkipBuild
 ```
 
+### 2.5 开发 vs 生产模式
+
+> **关键区分**：`npm run dev`（开发）和 `node server.js`（生产）行为完全不同。生产环境用错会引入 HMR 报错和性能问题。
+
+| | `npm run dev`（开发） | `node server.js`（生产 standalone） |
+|:--|:--|:--|
+| **用途** | 本地开发，热更新 | 生产部署，稳定运行 |
+| **启动命令** | `cd frontend && npm run dev` | `node frontend\.next\standalone\server.js` |
+| **HMR** | ✅ 有（WebSocket） | ❌ 无 |
+| **性能** | 慢（编译中） | 快（预构建） |
+| **端口** | 3000 | 3000 |
+| **构建要求** | 无需预构建 | 必须先 `npm run build` |
+| **Windows Service** | ❌ 不适用 | ✅ GlassCortexWeb 默认 |
+| **webpack-hmr 日志** | 正常 | 不应出现，出现说明启错模式 |
+
+```powershell
+# 生产模式正确启动（在项目根目录）：
+node frontend\.next\standalone\server.js
+# 输出应显示：Listening on port 3000（无 webpack/HMR 日志）
+
+# 常见错误 — 生产环境用了 dev 命令：
+# npm run dev   ← 会输出 "webpack compiled" 和 WSS HMR 连接，生产不应出现
+```
+
 ---
 
 ## 3. 验证清单（Verification Checklist）
@@ -353,6 +377,7 @@ Invoke-WebRequest http://localhost/ -UseBasicParsing
 | Chat 对话 | 发送"你好" → 收到 DeepSeek 回复（首次可能慢 3-5s，需下载模型 + 建索引） |
 | 记忆检索 | 对话数轮后关闭重开，之前提到的关键词仍能被召回 |
 | Observability | Health 页面显示所有子系统 ✅ |
+| **生产模式** | Web 服务 stdout 不应出现 `webpack` / `HMR` / `hot-update` 日志（出现说明用错 `npm run dev`，应用 `node server.js`）|
 
 ---
 
@@ -442,6 +467,10 @@ Copy-Item C:\apps\glasscortex\data\index.usearch "C:\backups\index-$stamp.usearc
 | Chat 首次响应超时 | 首次触发嵌入模型下载（~90MB） | 等 30-60s；日志出现 `SentenceTransformer loaded` 即好 |
 | 端口被占 (`Address in use`) | 8000/3000 被其他进程占用 | `netstat -ano \| findstr "8000 3000"` 查 PID → `taskkill /PID <pid> /F` |
 | 服务无法启动（Access Denied） | NSSM 用了 LocalSystem 但目录 ACL 拒绝 | `icacls C:\apps\glasscortex /grant "NT AUTHORITY\SYSTEM:(OI)(CI)F" /T` |
+| 浏览器控制台持续报 `WebSocket connection to 'wss://.../\_next/webpack-hmr' failed` | 生产环境用了 `npm run dev` 启动前端（HMR 只在 dev 模式存在） | 改用生产模式：`npm run build` 后 `node frontend\.next\standalone\server.js`。详见 §2.5 |
+| 页面白屏，浏览器 F12 显示 `/\_next/static/...` JS/CSS 404 | nginx `location /\_next/` 段 `proxy_pass` 端口配成了 8000 而非 3000 | 检查 nginx.conf：`location /\_next/` 的 `proxy_pass` 必须是 `http://nextjs`（端口 3000），不是 FastAPI |
+| Chat 对话不流式输出（整段一起吐出来）或 30s 超时断开 | nginx `/api/` 段缺 `proxy_buffering off` 或 `proxy_read_timeout` 太短 | nginx.conf 中 `/api/` 段必须配：`proxy_buffering off;` `proxy_cache off;` `proxy_read_timeout 300s;` |
+| 安全扫描报警 TLSv1/TLSv1.1 不安全 | nginx `ssl_protocols` 包含了已弃用的 TLS 版本 | 改为 `ssl_protocols TLSv1.2 TLSv1.3;`，去掉 TLSv1 和 TLSv1.1。nginx 参考 TLS 配置见 `deploy/nginx.conf` 底部注释块 |
 
 ---
 
