@@ -523,7 +523,7 @@ class ReflectionEngine:
             confidence = float(data.get("confidence", _DEFAULT_CONFIDENCE))
             confidence = max(_CONFIDENCE_MIN, min(_CONFIDENCE_MAX, confidence))
             return suggestions, quality_score, confidence, None
-        except json.JSONDecodeError, ValueError, TypeError:
+        except (json.JSONDecodeError, ValueError, TypeError):
             pass
 
         # ── 层级 2：提取 {...} 块 ──
@@ -541,7 +541,7 @@ class ReflectionEngine:
                 confidence = float(data.get("confidence", _DEFAULT_CONFIDENCE))
                 confidence = max(_CONFIDENCE_MIN, min(_CONFIDENCE_MAX, confidence))
                 return suggestions, quality_score, confidence, None
-            except json.JSONDecodeError, ValueError, TypeError:
+            except (json.JSONDecodeError, ValueError, TypeError):
                 pass
 
         # ── 层级 3：兜底 — 返回空建议 ──
@@ -988,7 +988,7 @@ class ReflectionEngine:
             if isinstance(data, dict) and ("insights" in data or "templates" in data):
                 result = _extract_list(data)
                 return result, None
-        except json.JSONDecodeError, ValueError, TypeError:
+        except (json.JSONDecodeError, ValueError, TypeError):
             pass
 
         # ── 层级 2：提取 {...} 块 ──
@@ -1001,7 +1001,7 @@ class ReflectionEngine:
                     result = _extract_list(data)
                     if result:
                         return result, None
-            except json.JSONDecodeError, ValueError, TypeError:
+            except (json.JSONDecodeError, ValueError, TypeError):
                 pass
 
         # ── 层级 3：兜底 ──
@@ -1041,7 +1041,7 @@ class ReflectionEngine:
                 plan_quality_score=plan_quality_score,
                 confidence=confidence,
             ), None
-        except json.JSONDecodeError, ValueError, TypeError:
+        except (json.JSONDecodeError, ValueError, TypeError):
             pass
 
         # ── 层级 2：提取 {...} 块 ──
@@ -1068,7 +1068,7 @@ class ReflectionEngine:
                     plan_quality_score=plan_quality_score,
                     confidence=confidence,
                 ), None
-            except json.JSONDecodeError, ValueError, TypeError:
+            except (json.JSONDecodeError, ValueError, TypeError):
                 pass
 
         # ── 层级 3：兜底 — 返回空反思 ──

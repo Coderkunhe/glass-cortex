@@ -53,7 +53,7 @@ def _parse_log_lines(lines: list[str], start_line: int = 1) -> list[dict[str, st
                     "raw": line,
                 }
             )
-        except json.JSONDecodeError, TypeError:
+        except (json.JSONDecodeError, TypeError):
             entries.append(
                 {
                     "id": str(line_number),
@@ -177,7 +177,7 @@ def get_log_detail(
             next_id=log_id + 1 if log_id < total_lines else None,
             total_lines=total_lines,
         )
-    except json.JSONDecodeError, TypeError:
+    except (json.JSONDecodeError, TypeError):
         return LogDetailResponse(
             id=log_id,
             timestamp="",

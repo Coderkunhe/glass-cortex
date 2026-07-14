@@ -92,11 +92,15 @@ class PathsConfig:
 
 @dataclass(frozen=True)
 class EmbedConfig:
-    """嵌入模型配置——B77 从 Settings 扁平字段提取。"""
+    """嵌入模型配置——B77 从 Settings 扁平字段提取。
+
+    B7: 新增 hf_endpoint — 国内服务器无法直连 huggingface.co 时使用镜像。
+    """
 
     embed_model: str = "all-MiniLM-L6-v2"
     embed_dim: int = 384
     embed_device: str = "cpu"
+    hf_endpoint: str = "https://huggingface.co"  # 国内部署改 https://hf-mirror.com
 
 
 @dataclass(frozen=True)
@@ -404,6 +408,10 @@ class Settings:
     @property
     def embed_device(self) -> str:
         return self.embed.embed_device
+
+    @property
+    def hf_endpoint(self) -> str:
+        return self.embed.hf_endpoint
 
     # ── LLMConfig ──
     @property

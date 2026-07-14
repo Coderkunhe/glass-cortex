@@ -75,7 +75,7 @@ def make_client(
         for attr in ("engines", "settings", "store"):
             try:
                 delattr(app.state, attr)
-            except AttributeError, KeyError:
+            except (AttributeError, KeyError):
                 pass
 
         app.state.engines = engines
@@ -88,7 +88,7 @@ def make_client(
     for attr in ("engines", "settings", "store"):
         try:
             delattr(app.state, attr)
-        except AttributeError, KeyError:
+        except (AttributeError, KeyError):
             pass
 
 

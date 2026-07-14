@@ -254,7 +254,7 @@ class PlannerEngine:
                 confidence=max(_CONFIDENCE_MIN, min(_CONFIDENCE_MAX, confidence)),
                 rationale=rationale,
             ), None
-        except json.JSONDecodeError, ValueError, TypeError:
+        except (json.JSONDecodeError, ValueError, TypeError):
             pass
 
         # 容错：尝试提取 {...} 之间的内容
@@ -273,7 +273,7 @@ class PlannerEngine:
                     confidence=max(_CONFIDENCE_MIN, min(_CONFIDENCE_MAX, confidence)),
                     rationale=rationale,
                 ), None
-            except json.JSONDecodeError, ValueError, TypeError:
+            except (json.JSONDecodeError, ValueError, TypeError):
                 pass
 
         # 容错：正则匹配中文意图名

@@ -252,11 +252,11 @@ class SessionBoundaryDetector:
             prev_questions_raw = str(prev.get("open_questions_json", "[]"))
             try:
                 prev_intents: list[dict[str, object]] = json.loads(prev_intents_raw)
-            except json.JSONDecodeError, TypeError:
+            except (json.JSONDecodeError, TypeError):
                 prev_intents = []
             try:
                 prev_questions: list[dict[str, object]] = json.loads(prev_questions_raw)
-            except json.JSONDecodeError, TypeError:
+            except (json.JSONDecodeError, TypeError):
                 prev_questions = []
 
             for intent in prev_intents:

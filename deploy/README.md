@@ -1,7 +1,7 @@
 # GlassCortex Windows Server 部署手册
 
 > **适用场景**：内网 Windows Server 2019/2022 · 单机部署 · FastAPI + Next.js standalone + Nginx 反代
-> **产物版本**：Phase 67 Batch 3（2026-07-13）
+> **产物版本**：Phase 67 Batch 7（2026-07-14）
 > **目标读者**：运维/SA，未接触过项目源码也能照抄跑通
 
 ---
@@ -184,7 +184,21 @@ C:\apps\nssm\nssm.exe set Nginx Start SERVICE_AUTO_START
 C:\apps\nssm\nssm.exe start Nginx
 ```
 
-### 2.3 离线部署（无外网环境）
+### 2.3 HuggingFace 国内镜像（推荐中国大陆服务器）
+
+> 中国大陆服务器无法直连 `huggingface.co` 时使用。可替代完整离线部署方案。
+
+```powershell
+# 在服务器的 .env 中加一行：
+Add-Content C:\your-project\glasscortex\.env "`nHF_ENDPOINT=https://hf-mirror.com"
+# 重启 uvicorn 即可。首次加载嵌入模型会自动从镜像下载。
+```
+
+`sentence-transformers` 通过 `huggingface_hub` 下载模型，`HF_ENDPOINT` 环境变量决定下载源。默认 `https://huggingface.co`，国内改为 `https://hf-mirror.com`。此配置已内置于 `src/config.py`（`EmbedConfig.hf_endpoint`）。
+
+如果镜像也不可达，走完整离线方案。
+
+### 2.4 离线部署（无外网环境）
 
 见 [deploy/offline-model.md](./offline-model.md)。
 
@@ -193,7 +207,7 @@ C:\apps\nssm\nssm.exe start Nginx
 2. 在有网机器上 `pip download -r requirements-lock.txt -d ./wheels` → 拷到目标机 `pip install --no-index --find-links=./wheels`
 3. `.env` 追加 `TRANSFORMERS_OFFLINE=1` `HF_HUB_OFFLINE=1`
 
-### 2.4 免 Git 部署（打包模式）
+### 2.5 免 Git 部署（打包模式）
 
 > 适用场景：服务器不允许装 Git · 限制外网访问 · 必须通过制品包交付
 
@@ -265,6 +279,44 @@ cd C:\apps\nginx
 
 `deploy.ps1` 自动检测打包模式（无 `.git` 目录 → 自动启用 `-SkipClone -SkipBuild`），检测到 `wheels/` → 离线 pip 安装，检测到 `models/huggingface/` → 自动配置 `HF_HOME` 环境变量到 Windows Service。
 
+**轻量更新（仅 Python 变更，不需重建前端）**：
+
+适合 B6/B7 这类 Python 热修复场景——构建机打好 zip（仅含变更的 `.py` 文件），服务器解压覆盖后重启 uvicorn，无需走完整打包流程。
+
+```powershell
+# 服务器侧（假设 zip 已从构建机传到 C:\temp\python-update.zip）
+Stop-Service GlassCortexAPI
+Expand-Archive -Force C:\temp\python-update.zip -DestinationPath C:\temp\pyupdate
+# 按文件名覆盖到对应子目录（zip 扁平结构需分目录拷贝）
+Get-ChildItem C:\temp\pyupdate\*.py | ForEach-Object {
+    $target = "C:\apps\glasscortex\src\" + $_.Name
+    Copy-Item $_.FullName $target -Force
+}
+Start-Service GlassCortexAPI
+```
+
+**轻量更新（仅前端构建产物，不需重建 Python）**：
+
+适合前端改动——在构建机（内存充足的 Mac/Linux）上 `npm run build`，打包 `.next/standalone/` 整个目录，传到服务器解压替换。
+
+```bash
+# 构建机侧（Mac/Linux，内存充足）
+cd frontend && NODE_ENV=production npm run build
+cp -R .next/static .next/standalone/.next/static   # 关键：拷贝 static
+cd .next/standalone && zip -r /tmp/frontend-standalone.zip .
+```
+
+```powershell
+# 服务器侧
+Stop-Service GlassCortexWeb
+Rename-Item C:\apps\glasscortex\frontend C:\apps\glasscortex\frontend.old
+Expand-Archive -Force C:\temp\frontend-standalone.zip -DestinationPath C:\apps\glasscortex\frontend
+# standalone 自包含 server.js + node_modules（仅生产依赖）+ .next
+Start-Service GlassCortexWeb
+```
+
+> **为什么要构建机打包？** Windows Server 通常内存有限（2-4GB），`npm run build`（Turbopack + TypeScript）会触发 JavaScript heap OOM。在 Mac/Linux 构建机上跑完再传产物，服务器只负责运行 `node server.js`。
+
 **服务器运行时要求**：
 
 | 组件 | 打包模式 | Git 模式 |
@@ -304,7 +356,7 @@ Rename-Item C:\apps\glasscortex-deploy-NEWDATE glasscortex
 .\deploy\deploy.ps1 -SkipClone -SkipBuild
 ```
 
-### 2.5 开发 vs 生产模式
+### 2.6 开发 vs 生产模式
 
 > **关键区分**：`npm run dev`（开发）和 `node server.js`（生产）行为完全不同。生产环境用错会引入 HMR 报错和性能问题。
 
@@ -513,6 +565,11 @@ Copy-Item C:\apps\glasscortex\data\index.usearch "C:\backups\index-$stamp.usearc
 | 安全扫描报警 TLSv1/TLSv1.1 不安全 | nginx `ssl_protocols` 包含了已弃用的 TLS 版本 | 改为 `ssl_protocols TLSv1.2 TLSv1.3;`，去掉 TLSv1 和 TLSv1.1。nginx 参考 TLS 配置见 `deploy/nginx.conf` 底部注释块 |
 | 前端 API 请求打到 `http://localhost:8000`（非 `/api/...`），浏览器 F12 Network 全 404 | 构建时 `.env.production` 缺失或未加载，`NEXT_PUBLIC_API_URL` 回退到硬编码默认值 | `echo NEXT_PUBLIC_API_URL=/api> frontend\.env.production`，`set NODE_ENV=production && npm run build`，重启。详见 §2.5 |
 | `/_next/static/...` CSS/JS 404，样式全丢、交互失效 | `npm run build` 不会自动拷贝 `.next/static` 到 standalone 目录 | `xcopy /E /I /Y .next\static .next\standalone\.next\static`（CMD）或 `Copy-Item -Recurse -Force .next\static .next\standalone\.next\static`（PowerShell）。详见 §2.5 |
+| `[WinError 10060]` 连接 `huggingface.co` 超时 | 中国大陆服务器无法直连 HuggingFace（GFW 干扰） | `.env` 加 `HF_ENDPOINT=https://hf-mirror.com` → 重启 uvicorn。详见 §2.3 |
+| `npm run build` OOM（JavaScript heap out of memory） | Windows Server 内存不足（<4GB free），Turbopack + TSC 内存超限 | 在构建机（Mac/Linux）上构建 → 打包 standalone → 传服务器。详见 §2.5「轻量更新」 |
+| uvicorn 启动 SyntaxError：`except X, Y, Z:` | Python 2 旧式 except 语法，Python 3.12 不兼容 | 全项目已修复为 `except (X, Y, Z):`（Phase 67 B7）。若仍有，搜索 `except [a-z].*, [A-Z]` 并加括号 |
+| `/health` 中 `llm_api` 返回假 OK | 旧版 health check 仅检查 API key 存在性，不探测真实 API | Phase 67 B6 已修复：`models.list()` 真实探测 + SSL/连接/超时三类诊断。更新 `src/health.py` |
+| chat 请求超时但后端正常 | 前端默认 fetch 超时 30s，后端 LLM 调用可能 >60s | Phase 67 B6 已修复：前端 120s（后端 60s × 2 余量）。更新 `frontend/src/lib/api/client.ts` |
 
 ---
 

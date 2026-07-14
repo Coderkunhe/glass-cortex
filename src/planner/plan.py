@@ -299,7 +299,7 @@ class PlanGenerator:
                 rationale=rationale,
                 confidence=max(_CONFIDENCE_MIN, min(_CONFIDENCE_MAX, confidence)),
             ), None
-        except json.JSONDecodeError, ValueError, TypeError:
+        except (json.JSONDecodeError, ValueError, TypeError):
             pass
 
         # ── 层级 2：提取 {...} 块 ──
@@ -333,7 +333,7 @@ class PlanGenerator:
                     rationale=rationale,
                     confidence=max(_CONFIDENCE_MIN, min(_CONFIDENCE_MAX, confidence)),
                 ), None
-            except json.JSONDecodeError, ValueError, TypeError:
+            except (json.JSONDecodeError, ValueError, TypeError):
                 pass
 
         # ── 层级 3：兜底 — 返回空计划 ──

@@ -498,7 +498,7 @@ class ReplanDetector:
                         }
                     )
             return subtasks, None
-        except json.JSONDecodeError, ValueError, TypeError:
+        except (json.JSONDecodeError, ValueError, TypeError):
             pass
 
         # ── 层级 2：提取 {...} 块 ──
@@ -525,7 +525,7 @@ class ReplanDetector:
                             }
                         )
                 return subtasks, None
-            except json.JSONDecodeError, ValueError, TypeError:
+            except (json.JSONDecodeError, ValueError, TypeError):
                 pass
 
         # ── 层级 3：兜底 — 返回空列表 ──
@@ -753,7 +753,7 @@ class ReplanDetector:
                 revised_plan=revised_plan,
                 confidence=confidence,
             ), None
-        except json.JSONDecodeError, ValueError, TypeError:
+        except (json.JSONDecodeError, ValueError, TypeError):
             pass
 
         # ── 层级 2：提取 {...} 块 ──
@@ -798,7 +798,7 @@ class ReplanDetector:
                     revised_plan=revised_plan,
                     confidence=confidence,
                 ), None
-            except json.JSONDecodeError, ValueError, TypeError:
+            except (json.JSONDecodeError, ValueError, TypeError):
                 pass
 
         # ── 层级 3：兜底 — 返回无漂移 ──
