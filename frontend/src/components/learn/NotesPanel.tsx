@@ -174,9 +174,9 @@ export default function NotesPanel({
               data-testid="note-create-btn"
               onClick={() => setIsCreating(true)}
               className="flex items-center gap-gm-1 text-gm-sm text-text-muted
-                         hover:text-text transition-colors
+                         hover:text-text transition-all
                          focus-visible:ring-2 focus-visible:ring-brand/50
-                         focus-visible:outline-none rounded-gm-xs
+                         focus-visible:outline-none active:scale-[0.98] rounded-gm-xs
                          px-gm-1 py-gm-0.5 -ml-gm-1"
             >
               <RiAddLine className="w-gm-icon-sm h-gm-icon-sm" />
@@ -220,10 +220,10 @@ export default function NotesPanel({
                   className="flex items-center gap-gm-0.5 text-gm-xs
                              bg-brand text-white rounded-gm-md
                              px-gm-2 py-gm-0.5
-                             hover:bg-brand/90 transition-colors
+                             hover:bg-brand/90 transition-all
                              disabled:opacity-50 disabled:cursor-not-allowed
                              focus-visible:ring-2 focus-visible:ring-brand/50
-                             focus-visible:outline-none"
+                             focus-visible:outline-none active:scale-[0.98]"
                 >
                   <RiCheckLine className="w-gm-icon-sm h-gm-icon-sm" />
                   <span>保存</span>
@@ -235,9 +235,9 @@ export default function NotesPanel({
                   className="flex items-center gap-gm-0.5 text-gm-xs
                              text-text-muted hover:text-text
                              rounded-gm-md px-gm-2 py-gm-0.5
-                             transition-colors
+                             transition-all
                              focus-visible:ring-2 focus-visible:ring-brand/50
-                             focus-visible:outline-none"
+                             focus-visible:outline-none active:scale-[0.98]"
                 >
                   <RiCloseLine className="w-gm-icon-sm h-gm-icon-sm" />
                   <span>取消</span>
@@ -293,10 +293,10 @@ export default function NotesPanel({
                           className="flex items-center gap-gm-0.5 text-gm-xs
                                      bg-brand text-white rounded-gm-md
                                      px-gm-2 py-gm-0.5
-                                     hover:bg-brand/90 transition-colors
+                                     hover:bg-brand/90 transition-all
                                      disabled:opacity-50 disabled:cursor-not-allowed
                                      focus-visible:ring-2 focus-visible:ring-brand/50
-                                     focus-visible:outline-none"
+                                     focus-visible:outline-none active:scale-[0.98]"
                         >
                           <RiCheckLine className="w-gm-icon-sm h-gm-icon-sm" />
                           <span>保存</span>
@@ -308,9 +308,9 @@ export default function NotesPanel({
                           className="flex items-center gap-gm-0.5 text-gm-xs
                                      text-text-muted hover:text-text
                                      rounded-gm-md px-gm-2 py-gm-0.5
-                                     transition-colors
+                                     transition-all
                                      focus-visible:ring-2 focus-visible:ring-brand/50
-                                     focus-visible:outline-none"
+                                     focus-visible:outline-none active:scale-[0.98]"
                         >
                           <RiCloseLine className="w-gm-icon-sm h-gm-icon-sm" />
                           <span>取消</span>
@@ -338,9 +338,9 @@ export default function NotesPanel({
                           onClick={() => startEdit(note)}
                           aria-label="编辑笔记"
                           className="p-gm-0.5 text-text-muted hover:text-text
-                                     rounded-gm-xs transition-colors
+                                     rounded-gm-xs transition-all
                                      focus-visible:ring-2 focus-visible:ring-brand/50
-                                     focus-visible:outline-none"
+                                     focus-visible:outline-none active:scale-[0.98]"
                         >
                           <RiPencilLine className="w-gm-icon-sm h-gm-icon-sm" />
                         </button>
@@ -350,9 +350,9 @@ export default function NotesPanel({
                           onClick={() => setDeletingId(note.id)}
                           aria-label="删除笔记"
                           className="p-gm-0.5 text-text-muted hover:text-text
-                                     rounded-gm-xs transition-colors
+                                     rounded-gm-xs transition-all
                                      focus-visible:ring-2 focus-visible:ring-brand/50
-                                     focus-visible:outline-none"
+                                     focus-visible:outline-none active:scale-[0.98]"
                         >
                           <RiDeleteBinLine className="w-gm-icon-sm h-gm-icon-sm" />
                         </button>

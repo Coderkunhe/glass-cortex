@@ -315,7 +315,7 @@ export default function AnswerCard({
           <button
             onClick={onBack}
             className="lg:hidden inline-flex items-center gap-gm-1 text-gm-sm text-text-secondary
-                       hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none rounded-gm-xs"
+                       hover:text-text transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] rounded-gm-xs"
           >
             <RiArrowLeftLine className="w-gm-icon-md h-gm-icon-md" />
             返回列表
@@ -345,7 +345,7 @@ export default function AnswerCard({
         <button
           onClick={onBack}
           className="lg:hidden inline-flex items-center gap-gm-1 text-gm-sm text-text-secondary
-                     hover:text-text transition-colors focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none rounded-gm-xs"
+                     hover:text-text transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] rounded-gm-xs"
         >
           <RiArrowLeftLine className="w-gm-icon-md h-gm-icon-md" />
           返回列表
@@ -375,7 +375,7 @@ export default function AnswerCard({
         <div className="flex justify-end">
           <button
             onClick={onToggleBookmark}
-            className={`inline-flex items-center gap-gm-1 px-gm-1_5 py-gm-0_5 rounded-gm-md transition-colors focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none ${
+            className={`inline-flex items-center gap-gm-1 px-gm-1_5 py-gm-0_5 rounded-gm-md transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] ${
               isBookmarked
                 ? "text-warning-light hover:text-warning"
                 : "text-text-muted hover:text-warning-light"
@@ -471,8 +471,8 @@ export default function AnswerCard({
                   key={i}
                   onClick={() => router.push(`/learn?q=${encodeURIComponent(conn.questionId)}`)}
                   className="flex items-start gap-gm-2 px-gm-3 py-gm-2 rounded-gm-md
-                             bg-surface-elevated hover:bg-surface-hover transition-colors
-                             text-left w-full group focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
+                             bg-surface-elevated hover:bg-surface-hover transition-all
+                             text-left w-full group focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.99]"
                 >
                   <span className="mt-gm-0_5 flex-shrink-0 text-brand/70 group-hover:text-brand transition-colors">
                     {typeIcon}
@@ -511,8 +511,8 @@ export default function AnswerCard({
                 onClick={() => router.push(`/lab?tab=${link.tab}`)}
                 className="inline-flex items-center gap-gm-1_5 px-gm-3 py-gm-1_5
                            rounded-gm-md border border-brand/40 text-brand
-                           hover:bg-brand/5 transition-colors text-gm-sm font-medium
-                           focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
+                           hover:bg-brand/5 transition-all text-gm-sm font-medium
+                           focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
               >
                 <RiFlaskLine className="w-gm-icon-md h-gm-icon-md" />
                 {link.label || "在实验室中探索"}

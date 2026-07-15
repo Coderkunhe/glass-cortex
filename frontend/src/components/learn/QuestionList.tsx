@@ -272,7 +272,7 @@ export default function QuestionList({
         {searchQuery && (
           <button
             onClick={clearSearch}
-            className="search-bar-clear"
+            className="search-bar-clear focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
             aria-label="清除搜索"
           >
             <RiCloseLine className="w-3 h-3" />
@@ -400,7 +400,7 @@ export default function QuestionList({
               <div key={ch.id}>
                 <button
                   onClick={() => toggleChapter(ch.id)}
-                  className="chapter-tree-header"
+                  className="chapter-tree-header focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.99]"
                   aria-expanded={!isCollapsed}
                 >
                   <div className="flex-1 min-w-0">
@@ -472,7 +472,7 @@ export default function QuestionList({
                 {/* 章节头部 — 点击切换折叠 */}
                 <button
                   onClick={() => toggleChapter(ch.id)}
-                  className="chapter-tree-header"
+                  className="chapter-tree-header focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.99]"
                   aria-expanded={!isCollapsed}
                 >
                   <div className="flex-1 min-w-0">
@@ -553,7 +553,7 @@ export default function QuestionList({
               <button
                 key={a.id}
                 onClick={() => onSelect(a)}
-                className={`flex items-center gap-gm-1_5 px-gm-2 py-gm-1 rounded-gm-md text-gm-xs text-left transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none ${
+                className={`flex items-center gap-gm-1_5 px-gm-2 py-gm-1 rounded-gm-md text-gm-xs text-left transition-all hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] ${
                   a.id === selectedId
                     ? "bg-brand/10 text-brand"
                     : "text-text-secondary"
@@ -588,7 +588,7 @@ function FilterChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`inline-flex items-center px-gm-2 py-gm-0_5 rounded-gm-md text-gm-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none min-h-[44px] ${
+      className={`inline-flex items-center px-gm-2 py-gm-0_5 rounded-gm-md text-gm-xs font-medium transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] min-h-[44px] ${
         active
           ? "bg-brand text-white"
           : "bg-surface-alt text-text-muted hover:text-text hover:bg-surface-hover"
@@ -618,7 +618,7 @@ function QuestionItem({
   return (
     <button
       onClick={() => onSelect(answer)}
-      className={`question-list-item border-brand ${
+      className={`question-list-item border-brand focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] ${
         isSelected
           ? "question-list-item--selected"
           : "text-text-secondary"

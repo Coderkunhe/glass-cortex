@@ -66,10 +66,10 @@ const HEADER: Record<string, string> = {
     "rounded-gm-xs hover:bg-bg-subtle w-full text-left",
   bordered:
     "flex items-center gap-gm-1_5 cursor-pointer px-gm-3 py-gm-2 " +
-    "w-full text-left hover:bg-bg-subtle transition-colors",
+    "w-full text-left hover:bg-bg-subtle transition-all",
   card:
     "flex items-center gap-gm-2 cursor-pointer px-gm-4 py-gm-3 " +
-    "w-full text-left bg-bg-subtle border-b border-border hover:opacity-80 transition-colors",
+    "w-full text-left bg-bg-subtle border-b border-border hover:opacity-80 transition-all",
 };
 
 const HEADER_TEXT: Record<string, string> = {

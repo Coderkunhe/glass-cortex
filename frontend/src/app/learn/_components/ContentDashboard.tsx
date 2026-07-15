@@ -133,7 +133,7 @@ export function ContentDashboard({
         <button
           type="button"
           onClick={() => onNavigate?.(continueReading.question)}
-          className="w-full text-left cursor-pointer rounded-gm-lg border border-l-2 border-l-brand border-border bg-brand/10 px-gm-5 py-gm-4 transition-all hover:bg-brand/15 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
+          className="w-full text-left cursor-pointer rounded-gm-lg border border-l-2 border-l-brand border-border bg-brand/10 px-gm-5 py-gm-4 transition-all hover:bg-brand/15 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.99]"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-gm-2">
@@ -170,7 +170,7 @@ export function ContentDashboard({
                 const target = questions.find(q => q.l0 === "") || questions[0];
                 onNavigate?.(target);
               }}
-              className="flex items-center gap-gm-3 px-gm-4 py-gm-3 rounded-gm-lg bg-surface-elevated border border-border text-left w-full transition-all hover:bg-surface-hover cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
+              className="flex items-center gap-gm-3 px-gm-4 py-gm-3 rounded-gm-lg bg-surface-elevated border border-border text-left w-full transition-all hover:bg-surface-hover cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.99]"
             >
               {(() => {
                 const Icon = CHAPTER_ICON_MAP[ch.icon];
@@ -210,7 +210,7 @@ export function ContentDashboard({
         <button
           type="button"
           onClick={() => onNavigate?.(bestChapterFirstQuestion)}
-          className="w-full text-left cursor-pointer rounded-gm-lg border border-border bg-brand/5 px-gm-4 py-gm-3 transition-all hover:bg-brand/10 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
+          className="w-full text-left cursor-pointer rounded-gm-lg border border-border bg-brand/5 px-gm-4 py-gm-3 transition-all hover:bg-brand/10 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.99]"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-gm-2">
@@ -246,8 +246,8 @@ export function ContentDashboard({
                     onClick={() => onNavigate?.(a)}
                     className="flex items-center gap-gm-2 px-gm-3 py-gm-2 rounded-gm-md
                                bg-surface-elevated border border-border hover:bg-surface-hover
-                               transition-colors text-left w-full
-                               focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
+                               transition-all text-left w-full
+                               focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                   >
                     {Icon && <Icon className="w-gm-icon-sm h-gm-icon-sm text-text-muted flex-shrink-0" />}
                     <span className="text-gm-sm text-text truncate flex-1">

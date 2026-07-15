@@ -37,13 +37,13 @@ export interface RefreshButtonProps {
 const BUTTON_STYLE: Record<string, string> = {
   ghost:
     "shrink-0 p-gm-1 rounded-gm-xs text-text-muted " +
-    "hover:text-text hover:bg-bg-subtle transition-colors " +
+    "hover:text-text hover:bg-bg-subtle transition-all " +
     "focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none " +
     "active:scale-[0.98] disabled:opacity-50",
   bordered:
     "shrink-0 rounded-gm-sm border border-border bg-surface " +
     "px-gm-2 py-gm-0.5 text-gm-xs text-text-muted " +
-    "hover:text-text transition-colors " +
+    "hover:text-text transition-all " +
     "focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none " +
     "active:scale-[0.98]",
 };

@@ -484,7 +484,7 @@ export default function LearnClientShell({
             <div className="sticky top-0 z-10 flex items-center gap-gm-2 px-gm-4 py-gm-2 bg-bg-subtle border-b border-border">
               <button
                 onClick={toggleSidebar}
-                className="sidebar-toggle-btn"
+                className="sidebar-toggle-btn focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                 onMouseEnter={(e) => setLearnTooltip({ x: e.clientX, y: e.clientY, text: sidebarOpen ? "收起目录" : "展开目录" })}
                 onMouseMove={(e) => setLearnTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
                 onMouseLeave={() => setLearnTooltip(null)}
@@ -499,7 +499,7 @@ export default function LearnClientShell({
 
               <button
                 onClick={goToDashboard}
-                className="learn-nav-btn group relative focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
+                className="learn-nav-btn group relative focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                 aria-label="学习进度"
               >
                 <RiBarChart2Line className="w-gm-icon-md h-gm-icon-md" />
@@ -524,7 +524,7 @@ export default function LearnClientShell({
                 <button
                   onClick={handlePrev}
                   disabled={isFirst}
-                  className="learn-nav-btn"
+                  className="learn-nav-btn focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                   onMouseEnter={(e) => setLearnTooltip({ x: e.clientX, y: e.clientY, text: isFirst ? "已是第一节" : "上一节" })}
                   onMouseMove={(e) => setLearnTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
                   onMouseLeave={() => setLearnTooltip(null)}
@@ -536,7 +536,7 @@ export default function LearnClientShell({
                 {isLast ? (
                   <button
                     onClick={handleScrollToTop}
-                    className="learn-nav-btn"
+                    className="learn-nav-btn focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                     onMouseEnter={(e) => setLearnTooltip({ x: e.clientX, y: e.clientY, text: "回到顶部" })}
                     onMouseMove={(e) => setLearnTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
                     onMouseLeave={() => setLearnTooltip(null)}
@@ -547,7 +547,7 @@ export default function LearnClientShell({
                 ) : (
                   <button
                     onClick={handleNext}
-                    className="learn-nav-btn"
+                    className="learn-nav-btn focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                     onMouseEnter={(e) => setLearnTooltip({ x: e.clientX, y: e.clientY, text: "下一节" })}
                     onMouseMove={(e) => setLearnTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
                     onMouseLeave={() => setLearnTooltip(null)}
@@ -564,7 +564,7 @@ export default function LearnClientShell({
                         prev === "sm" ? "md" : prev === "md" ? "lg" : "sm",
                       )
                     }
-                    className="learn-nav-btn"
+                    className="learn-nav-btn focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                     onMouseEnter={(e) => setLearnTooltip({ x: e.clientX, y: e.clientY, text: `字号：${fontSize === "sm" ? "小" : fontSize === "lg" ? "大" : "中"}` })}
                     onMouseMove={(e) => setLearnTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
                     onMouseLeave={() => setLearnTooltip(null)}
@@ -577,7 +577,7 @@ export default function LearnClientShell({
                 <div className="ml-gm-2">
                   <button
                     onClick={toggleImmersive}
-                    className="learn-nav-btn"
+                    className="learn-nav-btn focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                     onMouseEnter={(e) => setLearnTooltip({ x: e.clientX, y: e.clientY, text: "沉浸阅读" })}
                     onMouseMove={(e) => setLearnTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
                     onMouseLeave={() => setLearnTooltip(null)}
@@ -631,7 +631,7 @@ export default function LearnClientShell({
                     <button
                       onClick={handlePrev}
                       disabled={isFirst}
-                      className="learn-nav-bottom-btn"
+                      className="learn-nav-bottom-btn focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                     >
                       <RiArrowLeftSLine className="w-4 h-4" />
                       上一节
@@ -644,7 +644,7 @@ export default function LearnClientShell({
                     {isLast ? (
                       <button
                         onClick={handleScrollToTop}
-                        className="learn-nav-top-btn"
+                        className="learn-nav-top-btn focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                       >
                         <RiArrowUpSLine className="w-4 h-4" />
                         回到顶部
@@ -652,7 +652,7 @@ export default function LearnClientShell({
                     ) : (
                       <button
                         onClick={handleNext}
-                        className="learn-nav-bottom-btn"
+                        className="learn-nav-bottom-btn focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                       >
                         下一节
                         <RiArrowRightSLine className="w-4 h-4" />
@@ -691,7 +691,7 @@ export default function LearnClientShell({
 
               <button
                 onClick={toggleImmersive}
-                className="immersive-exit-btn"
+                className="immersive-exit-btn focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                 aria-label="退出沉浸模式"
                 onMouseEnter={(e) => setLearnTooltip({ x: e.clientX, y: e.clientY, text: "退出沉浸模式 (Esc)" })}
                 onMouseMove={(e) => setLearnTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}

@@ -144,9 +144,9 @@ export default function SelectionToolbar({
         className="flex items-center gap-gm-1 px-gm-2_5 py-gm-1
                    bg-deep text-inverse text-gm-xs font-medium
                    rounded-gm-md shadow-gm-md
-                   hover:bg-deep/90 transition-colors
+                   hover:bg-deep/90 transition-all
                    focus-visible:ring-2 focus-visible:ring-brand/50
-                   focus-visible:outline-none
+                   focus-visible:outline-none active:scale-[0.98]
                    whitespace-nowrap select-none"
       >
         <RiStickyNoteLine className="w-gm-icon-sm h-gm-icon-sm" />

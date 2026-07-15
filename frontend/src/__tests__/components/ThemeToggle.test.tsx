@@ -148,6 +148,6 @@ describe("ThemeToggle", () => {
     await renderHydrated();
     const button = screen.getByRole("button");
     expect(button.className).toContain("hover:bg-surface-alt");
-    expect(button.className).toContain("transition-colors");
+    expect(button.className).toContain("transition-all");
   });
 });

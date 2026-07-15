@@ -39,7 +39,7 @@ export default function ThemeToggle() {
   if (!mounted) {
     return (
       <button
-        className="rounded-gm-md p-gm-2 text-text-secondary hover:bg-surface-alt transition-colors focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
+        className="rounded-gm-md p-gm-2 text-text-secondary hover:bg-surface-alt transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
         aria-label="切换主题"
       >
         <div className="text-gm-icon h-6 w-6" />
@@ -50,7 +50,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="rounded-gm-md p-gm-2 text-text-secondary hover:bg-surface-alt transition-colors focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
+      className="rounded-gm-md p-gm-2 text-text-secondary hover:bg-surface-alt transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
       aria-label={`切换到${theme === "dark" ? "亮色" : "暗色"}模式`}
     >
       {theme === "dark" ? (

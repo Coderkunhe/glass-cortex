@@ -103,7 +103,7 @@ export default function ErrorDisplay({
               type="button"
               onClick={onRetry}
               className="ml-auto text-brand hover:underline text-gm-sm
-                         shrink-0 transition-colors
+                         shrink-0 transition-all
                          focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none
                          active:scale-[0.98] rounded-gm-xs"
             >
@@ -146,7 +146,7 @@ export default function ErrorDisplay({
                 onClick={onRetry}
                 className="rounded-gm-sm bg-surface-elevated border
                            border-border px-gm-4 py-gm-2 text-gm-sm text-text
-                           hover:bg-surface-alt transition-colors
+                           hover:bg-surface-alt transition-all
                            focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none
                            active:scale-[0.98]"
               >
@@ -187,7 +187,7 @@ export default function ErrorDisplay({
               onClick={onRetry}
               className="rounded-gm-sm bg-surface-elevated border
                          border-border px-gm-3 py-gm-1 text-gm-sm text-text
-                         hover:bg-surface-alt transition-colors
+                         hover:bg-surface-alt transition-all
                          focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none
                          active:scale-[0.98]"
             >
