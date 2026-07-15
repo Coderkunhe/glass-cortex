@@ -55,7 +55,9 @@ export function CopyButton({
       className={`shrink-0 inline-flex items-center gap-gm-1
                   px-gm-2 py-gm-0_5 text-gm-xs rounded-gm-xs
                   bg-bg-subtle hover:bg-brand/10 text-text-muted
-                  hover:text-brand transition-colors ${className}`.trim()}
+                  hover:text-brand transition-colors
+                  focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none
+                  active:scale-[0.98] ${className}`.trim()}
       data-testid={dataTestId}
     >
       <RiFileCopyLine className="text-gm-icon" />

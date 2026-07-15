@@ -1,6 +1,6 @@
 # 架构文档
 
-> 最后更新: 2026-07-15 (Phase 66 B121 — 总² 启动·过渡 token 标准化)
+> 最后更新: 2026-07-15 (Phase 66 B122 — UI 共享组件四态补齐)
 
 ## 实现现状
 
@@ -241,6 +241,7 @@
 | 移动端 Drawer sidebar slot 线程 | ✅ 完成 | 2026-07-15 | `MobileSidebarDrawer.tsx` — 新增 `sidebarSlot` prop · AppShell 透传 `sidebar` prop → 三态路由（undefined→默认/false→无/ReactNode→自定义）· `.sidebar-panel` CSS 拆为基础层 + 桌面专属层 (`@media (min-width: 1024px)`) · `/learn` 移动端 Drawer 从聊天参数面板切换为 QuestionList 目录 — Phase 66 B119 |
 | 移动端 QuestionList 精简 | ✅ 完成 | 2026-07-15 | `QuestionList.tsx` — 4 处 CSS 响应式 class：过滤芯片行 gap/px/py 收紧 · 章节进度条 ×2 `hidden lg:block` · 最近阅读 section `hidden lg:block` · 非目录 chrome 从 ~200px (40%) 降至 ~120px (25%)，目录可视面积 +~60% — Phase 66 B120 |
 | 过渡 token 标准化 (总² 启动) | ✅ 完成 | 2026-07-15 | `components.css` + `ImageViewer.tsx` + `MermaidDiagram.tsx` + `ContentDashboard.tsx` + `OnionPanel.tsx` + `ProjectMapDrawer.tsx` + `CostWaterfallPanel.tsx` — 10 处硬编码过渡时长 → 5 档 `var(--gm-duration-*)` token · 全站 167 交互元素四态扫描（36% focus-visible / 13% active）排 B122-B125 — Phase 66 B121 |
+| UI 共享组件四态补齐 | ✅ 完成 | 2026-07-15 | 8 文件 14 处：CopyButton/RefreshButton/ThemeToggle/WindowSizeInput/ErrorDisplay/ImageViewer/CollapsibleSection/ConfirmModal — 统一 `focus-visible:ring-2` + `active:scale-[0.98]` — Phase 66 B122 |
 
 ## 架构决策记录
 

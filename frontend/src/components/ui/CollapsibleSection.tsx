@@ -139,7 +139,7 @@ export function CollapsibleSection({
           type="button"
           onClick={toggle}
           aria-expanded={isOpen}
-          className={`${headerCls} ${headerClassName}`.trim()}
+          className={`${headerCls} focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] ${headerClassName}`.trim()}
         >
           {/* Arrow indicator — rotates 90° when open */}
           <span

@@ -294,7 +294,7 @@ svg{max-width:100%;max-height:100%;height:auto;width:auto}
 
       {/* 关闭按钮 */}
       <button
-        className="gm-iv-close"
+        className="gm-iv-close focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
         onClick={(e) => {
           e.stopPropagation();
           onClose();

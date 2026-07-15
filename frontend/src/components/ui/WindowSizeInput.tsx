@@ -90,7 +90,9 @@ export function WindowSizeInput({
               type="button"
               onClick={() => handlePreset(v)}
               aria-pressed={isActive}
-              className={`rounded-gm-xs px-gm-2 py-gm-0.5 text-gm-xs font-medium transition-colors ${
+              className={`rounded-gm-xs px-gm-2 py-gm-0.5 text-gm-xs font-medium transition-colors
+                focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none
+                active:scale-[0.98] ${
                 isActive
                   ? "bg-brand text-white"
                   : "bg-surface-alt text-text-secondary hover:bg-surface-alt/80 border border-border"

@@ -120,7 +120,8 @@ export default function ConfirmModal({
             disabled={isLoading}
             className="p-gm-1 rounded-gm-sm text-text-muted
                        hover:text-text hover:bg-surface-lowered
-                       transition-colors disabled:opacity-40"
+                       transition-colors disabled:opacity-40
+                       focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
             aria-label="关闭"
           >
             <RiCloseLine className="w-5 h-5" />
@@ -152,7 +153,9 @@ export default function ConfirmModal({
             className="rounded-gm-sm px-gm-4 py-gm-2
                        text-gm-sm text-text-secondary
                        hover:text-text hover:bg-surface-lowered
-                       transition-colors disabled:opacity-40"
+                       transition-colors disabled:opacity-40
+                       focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none
+                       active:scale-[0.98]"
           >
             取消
           </button>
