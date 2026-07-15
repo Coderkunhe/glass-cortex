@@ -123,7 +123,7 @@ export default function DecayDistributionPanel() {
       {/* Success — SVG 柱状图 */}
       {state === "success" && data && scales && data.bins.length > 0 && (
         <div
-          className="border-t border-border pt-gm-4"
+          className="border-t border-border pt-gm-4 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] transition-transform rounded-gm-sm"
           style={{ cursor: "zoom-in" }}
           role="img"
           aria-label="衰减分布 SVG 可视化"

@@ -156,7 +156,7 @@ export default function KnowledgeGraphPanel() {
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-gm-2 top-1/2 -translate-y-1/2 text-text-muted/60 hover:text-text-muted"
+                  className="absolute right-gm-2 top-1/2 -translate-y-1/2 text-text-muted/60 hover:text-text-muted focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] rounded-gm-xs"
                   aria-label="清除搜索"
                 >
                   <RiCloseLine className="w-4 h-4" />
@@ -180,7 +180,7 @@ export default function KnowledgeGraphPanel() {
                 step={0.05}
                 value={minConfidence}
                 onChange={handleConfidenceChange}
-                className="flex-1 h-1.5 accent-indigo-600 cursor-pointer"
+                className="flex-1 h-1.5 accent-indigo-600 cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none rounded-gm-sm"
                 style={{
                   background: `linear-gradient(to right, var(--gm-brand, #4f46e5) ${minConfidence * 100}%, var(--gm-border, #e2e8f0) ${minConfidence * 100}%)`,
                 }}

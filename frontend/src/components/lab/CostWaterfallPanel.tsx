@@ -105,7 +105,7 @@ export default function CostWaterfallPanel() {
                 role="radio"
                 aria-checked={isActive}
                 onClick={() => setViewMode(opt.key)}
-                className={`text-gm-xs px-gm-2 py-gm-0.5 rounded-gm-sm border transition-colors ${
+                className={`text-gm-xs px-gm-2 py-gm-0.5 rounded-gm-sm border transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] ${
                   isActive
                     ? "border-accent bg-accent/10 text-accent ring-1 ring-accent/50"
                     : "border-text-muted/30 text-text-muted opacity-60 hover:opacity-80"
@@ -126,7 +126,7 @@ export default function CostWaterfallPanel() {
                 aria-checked={isActive}
                 data-testid={`time-range-${opt.key}`}
                 onClick={() => setTimeRange(opt.key)}
-                className={`text-gm-xs px-gm-2 py-gm-0.5 rounded-gm-sm border transition-colors ${
+                className={`text-gm-xs px-gm-2 py-gm-0.5 rounded-gm-sm border transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] ${
                   isActive
                     ? "border-warning bg-warning/10 text-warning ring-1 ring-warning/50"
                     : "border-text-muted/30 text-text-muted opacity-60 hover:opacity-80"

@@ -240,7 +240,7 @@ export default function OverflowSandboxPanel() {
                 setState("idle");
               }}
               aria-pressed={i === presetIndex}
-              className={`rounded-gm-xs px-gm-3 py-gm-1 text-gm-xs font-medium transition-colors ${
+              className={`rounded-gm-xs px-gm-3 py-gm-1 text-gm-xs font-medium transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] ${
                 i === presetIndex
                   ? "bg-brand text-white"
                   : "bg-surface-alt text-text-secondary hover:bg-surface-alt/80 border border-border"
@@ -348,7 +348,7 @@ export default function OverflowSandboxPanel() {
           onClick={runComparison}
           disabled={state === "loading"}
           className="w-full rounded-gm-sm bg-brand px-gm-4 py-gm-2 text-gm-sm
-                     font-medium text-white hover:bg-brand-600 transition-colors
+                     font-medium text-white hover:bg-brand-600 transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]
                      disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {state === "loading" ? (

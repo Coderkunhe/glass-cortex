@@ -195,7 +195,7 @@ export default function PipelineTracePanel() {
                     onMouseEnter={(e) => setExpandTooltip({ x: e.clientX, y: e.clientY })}
                     onMouseMove={(e) => setExpandTooltip((prev) => prev ? { x: e.clientX, y: e.clientY } : null)}
                     onMouseLeave={() => setExpandTooltip(null)}
-                    className="text-text-muted hover:text-text transition-colors shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none rounded-gm-xs"
+                    className="text-text-muted hover:text-text transition-all shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] rounded-gm-xs"
                   >
                     {isExpanded ? (
                       <RiArrowDownSLine className="w-4 h-4" />
@@ -285,7 +285,7 @@ export default function PipelineTracePanel() {
             <div className="flex justify-center pt-gm-3">
               <button
                 onClick={handleLoadMore}
-                className="text-gm-xs text-brand hover:text-brand/80 transition-colors px-gm-3 py-gm-1 rounded-gm-sm border border-border hover:border-brand/30 cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
+                className="text-gm-xs text-brand hover:text-brand/80 transition-all px-gm-3 py-gm-1 rounded-gm-sm border border-border hover:border-brand/30 cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
               >
                 加载更多
               </button>

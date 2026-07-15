@@ -501,7 +501,7 @@ export default function EmbeddingSpacePanel() {
             <button
               type="button"
               onClick={() => setShowEpisode((v) => !v)}
-              className={`inline-flex items-center gap-gm-1 rounded-gm-sm border px-gm-2 py-gm-0.5 text-gm-xs transition-colors ${
+              className={`inline-flex items-center gap-gm-1 rounded-gm-sm border px-gm-2 py-gm-0.5 text-gm-xs transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] ${
                 showEpisode
                   ? "border-brand/50 bg-brand/10 text-brand"
                   : "border-border text-text-muted/60"
@@ -517,7 +517,7 @@ export default function EmbeddingSpacePanel() {
             <button
               type="button"
               onClick={() => setShowFact((v) => !v)}
-              className={`inline-flex items-center gap-gm-1 rounded-gm-sm border px-gm-2 py-gm-0.5 text-gm-xs transition-colors ${
+              className={`inline-flex items-center gap-gm-1 rounded-gm-sm border px-gm-2 py-gm-0.5 text-gm-xs transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] ${
                 showFact
                   ? "border-accent/50 bg-accent/10 text-accent"
                   : "border-border text-text-muted/60"
@@ -546,7 +546,7 @@ export default function EmbeddingSpacePanel() {
               <button
                 type="button"
                 onClick={() => setSearchTerm("")}
-                className="absolute right-gm-1 top-1/2 -translate-y-1/2 text-text-muted/60 hover:text-text-muted"
+                className="absolute right-gm-1 top-1/2 -translate-y-1/2 text-text-muted/60 hover:text-text-muted focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] rounded-gm-xs"
                 aria-label="清除搜索"
               >
                 <RiCloseLine className="w-3.5 h-3.5" />
@@ -580,7 +580,7 @@ export default function EmbeddingSpacePanel() {
           <div className="border-t border-border pt-gm-4">
             <div
               ref={containerRef}
-              className="relative w-full rounded-gm-sm overflow-hidden"
+              className="relative w-full rounded-gm-sm overflow-hidden focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] transition-transform"
               style={{ height: "420px", cursor: "grab" }}
               role="img"
               aria-label="嵌入空间 3D 可视化 — 拖拽旋转 · 滚轮缩放 · 右键平移"

@@ -226,7 +226,7 @@ export default function ExperimentComparePanel() {
       <div className="mt-gm-3">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="text-gm-xs text-brand hover:underline"
+          className="text-gm-xs text-brand hover:underline focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] rounded-gm-xs"
         >
           {expanded ? "收起回复" : "展开回复"}
         </button>
@@ -313,7 +313,7 @@ export default function ExperimentComparePanel() {
           <button
             onClick={() => setHistoryOpen(!historyOpen)}
             data-testid="history-toggle"
-            className="flex items-center gap-gm-2 text-gm-xs text-text-muted hover:text-text-secondary transition-colors w-full"
+            className="flex items-center gap-gm-2 text-gm-xs text-text-muted hover:text-text-secondary transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] w-full rounded-gm-sm"
           >
             <RiHistoryLine className="w-4 h-4 shrink-0" />
             <span className="font-medium">运行历史 ({history.length})</span>
@@ -355,7 +355,7 @@ export default function ExperimentComparePanel() {
                       }
                     }}
                     data-testid={`history-entry-${entry.id}`}
-                    className={`w-full text-left rounded-gm-sm border p-gm-2.5 transition-colors ${
+                    className={`w-full text-left rounded-gm-sm border p-gm-2.5 transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] ${
                       isActive
                         ? "border-warning bg-warning/5 ring-1 ring-warning/20"
                         : "border-border bg-surface hover:border-warning/30"
@@ -384,7 +384,7 @@ export default function ExperimentComparePanel() {
               <button
                 onClick={clearHistory}
                 data-testid="history-clear"
-                className="flex items-center gap-gm-1 text-gm-xs text-error/70 hover:text-error transition-colors mt-gm-1"
+                className="flex items-center gap-gm-1 text-gm-xs text-error/70 hover:text-error transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] mt-gm-1 rounded-gm-xs"
               >
                 <RiDeleteBinLine className="w-3 h-3" />
                 清空历史
@@ -418,7 +418,7 @@ export default function ExperimentComparePanel() {
                   onClick={() => setSelectedPreset(preset.id)}
                   data-testid={`preset-${preset.id}`}
                   aria-pressed={isSelected}
-                  className={`text-left rounded-gm-sm border p-gm-3 transition-all ${
+                  className={`text-left rounded-gm-sm border p-gm-3 transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] ${
                     isSelected
                       ? "border-warning bg-warning/5 ring-1 ring-warning/30"
                       : "border-border bg-surface hover:border-warning/40"
@@ -471,7 +471,7 @@ export default function ExperimentComparePanel() {
               onClick={handleRun}
               disabled={!canRun}
               data-testid="experiment-run-btn"
-              className="w-full rounded-gm-sm bg-warning px-gm-4 py-gm-1.5 text-gm-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-gm-sm bg-warning px-gm-4 py-gm-1.5 text-gm-sm font-medium text-white hover:opacity-90 transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isRunning ? (
                 <span className="inline-flex items-center gap-gm-2">

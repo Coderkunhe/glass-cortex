@@ -130,7 +130,7 @@ export default function StrategyComparePanel() {
           onClick={fetchCompare}
           disabled={state === "loading"}
           className="w-full rounded-gm-sm bg-brand px-gm-4 py-gm-2 text-gm-sm
-                     font-medium text-white hover:bg-brand-600 transition-colors
+                     font-medium text-white hover:bg-brand-600 transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]
                      disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {state === "loading" ? (

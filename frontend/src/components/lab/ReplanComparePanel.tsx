@@ -190,7 +190,7 @@ function PlanColumn({
                     onMouseEnter={(e) => setInterveneTooltip({ x: e.clientX, y: e.clientY, text: "接受此步骤" })}
                     onMouseMove={(e) => setInterveneTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
                     onMouseLeave={() => setInterveneTooltip(null)}
-                    className="p-gm-1 rounded-gm-xs text-success hover:bg-success/10 disabled:opacity-40"
+                    className="p-gm-1 rounded-gm-xs text-success hover:bg-success/10 disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] transition-transform"
                   >
                     <RiCheckLine className="w-4 h-4" />
                   </button>
@@ -201,7 +201,7 @@ function PlanColumn({
                     onMouseEnter={(e) => setInterveneTooltip({ x: e.clientX, y: e.clientY, text: "拒绝此步骤" })}
                     onMouseMove={(e) => setInterveneTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
                     onMouseLeave={() => setInterveneTooltip(null)}
-                    className="p-gm-1 rounded-gm-xs text-danger hover:bg-danger/10 disabled:opacity-40"
+                    className="p-gm-1 rounded-gm-xs text-danger hover:bg-danger/10 disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] transition-transform"
                   >
                     <RiCloseLine className="w-4 h-4" />
                   </button>
@@ -212,7 +212,7 @@ function PlanColumn({
                     onMouseEnter={(e) => setInterveneTooltip({ x: e.clientX, y: e.clientY, text: "跳过此步骤" })}
                     onMouseMove={(e) => setInterveneTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
                     onMouseLeave={() => setInterveneTooltip(null)}
-                    className="p-gm-1 rounded-gm-xs text-text-muted hover:bg-surface-alt disabled:opacity-40"
+                    className="p-gm-1 rounded-gm-xs text-text-muted hover:bg-surface-alt disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] transition-transform"
                   >
                     <RiSkipForwardLine className="w-4 h-4" />
                   </button>
@@ -471,7 +471,7 @@ export default function ReplanComparePanel() {
                         "接受全部修正",
                       )
                     }
-                    className="inline-flex items-center justify-center gap-gm-1 text-gm-xs font-medium px-gm-3 py-gm-1 rounded-gm-sm bg-success/10 text-success border border-success/20 hover:bg-success/20 disabled:opacity-40 transition-colors"
+                    className="inline-flex items-center justify-center gap-gm-1 text-gm-xs font-medium px-gm-3 py-gm-1 rounded-gm-sm bg-success/10 text-success border border-success/20 hover:bg-success/20 disabled:opacity-40 transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                   >
                     <RiCheckLine className="w-3.5 h-3.5" />
                     接受全部修正
@@ -485,7 +485,7 @@ export default function ReplanComparePanel() {
                         "拒绝全部修正",
                       )
                     }
-                    className="inline-flex items-center justify-center gap-gm-1 text-gm-xs font-medium px-gm-3 py-gm-1 rounded-gm-sm bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 disabled:opacity-40 transition-colors"
+                    className="inline-flex items-center justify-center gap-gm-1 text-gm-xs font-medium px-gm-3 py-gm-1 rounded-gm-sm bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 disabled:opacity-40 transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                   >
                     <RiCloseLine className="w-3.5 h-3.5" />
                     拒绝全部
@@ -544,7 +544,7 @@ export default function ReplanComparePanel() {
           <button
             type="button"
             onClick={loadPlans}
-            className="inline-flex items-center gap-gm-1 text-gm-xs text-brand hover:underline"
+            className="inline-flex items-center gap-gm-1 text-gm-xs text-brand hover:underline focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] rounded-gm-xs"
           >
             <RiRefreshLine className="w-3.5 h-3.5" />
             重试

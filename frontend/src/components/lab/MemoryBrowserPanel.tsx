@@ -211,7 +211,7 @@ export default function MemoryBrowserPanel() {
                 role="radio"
                 aria-checked={isActive}
                 onClick={() => setTierFilter(tier)}
-                className={`text-gm-xs px-gm-2 py-gm-0.5 rounded-gm-sm border transition-colors ${style} ${activeRing} ${
+                className={`text-gm-xs px-gm-2 py-gm-0.5 rounded-gm-sm border transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] ${style} ${activeRing} ${
                   isActive ? "opacity-100" : "opacity-60 hover:opacity-80"
                 }`}
               >
@@ -272,7 +272,7 @@ export default function MemoryBrowserPanel() {
                   className="rounded-gm-sm border border-border/50 hover:bg-surface-alt/50 transition-colors"
                 >
                   <div
-                    className="flex items-center gap-gm-2 p-gm-3 cursor-pointer"
+                    className="flex items-center gap-gm-2 p-gm-3 cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] transition-transform rounded-gm-sm"
                     onClick={() => toggleSetItem(setExpandedEpIds, ep.id)}
                     role="button"
                     tabIndex={0}
@@ -421,7 +421,7 @@ export default function MemoryBrowserPanel() {
                   className="rounded-gm-sm border border-border/50 hover:bg-surface-alt/50 transition-colors"
                 >
                   <div
-                    className="flex items-center gap-gm-2 p-gm-3 cursor-pointer"
+                    className="flex items-center gap-gm-2 p-gm-3 cursor-pointer focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] transition-transform rounded-gm-sm"
                     onClick={() => toggleSetItem(setExpandedFctIds, f.id)}
                     role="button"
                     tabIndex={0}
