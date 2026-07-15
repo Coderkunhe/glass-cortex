@@ -66,7 +66,7 @@ export default function Header({ onOpenMap, onOpenMobileSidebar }: HeaderProps) 
           {onOpenMobileSidebar && (
             <button
               onClick={onOpenMobileSidebar}
-              className="lg:hidden rounded-gm-md p-gm-2 text-text-secondary hover:bg-surface-alt transition-colors"
+              className="lg:hidden rounded-gm-md p-gm-2 text-text-secondary hover:bg-surface-alt transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
               aria-label="打开菜单"
               onMouseEnter={(e) => setMenuTooltip({ x: e.clientX, y: e.clientY })}
               onMouseMove={(e) => setMenuTooltip((prev) => prev ? { x: e.clientX, y: e.clientY } : null)}
@@ -90,7 +90,7 @@ export default function Header({ onOpenMap, onOpenMobileSidebar }: HeaderProps) 
           {onOpenMap && (
             <button
               onClick={onOpenMap}
-              className="rounded-gm-md p-gm-2 text-text-secondary hover:bg-surface-alt transition-colors"
+              className="rounded-gm-md p-gm-2 text-text-secondary hover:bg-surface-alt transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
               aria-label="项目地图"
               onMouseEnter={(e) => setMapTooltip({ x: e.clientX, y: e.clientY })}
               onMouseMove={(e) => setMapTooltip((prev) => prev ? { x: e.clientX, y: e.clientY } : null)}

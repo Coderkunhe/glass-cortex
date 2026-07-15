@@ -200,7 +200,7 @@ export default function Sidebar() {
                        rounded-gm-xs bg-danger/10 hover:bg-danger/20
                        border border-danger/30
                        px-gm-3 py-gm-1_5 text-gm-xs font-medium
-                       text-danger transition-colors
+                       text-danger transition-all active:scale-[0.98]
                        focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:outline-none"
           >
             <RiAlertLine size={14} />
@@ -220,7 +220,7 @@ export default function Sidebar() {
                 onClick={handleReset}
                 className="flex-1 rounded-gm-xs bg-danger hover:bg-danger/80
                            px-gm-2 py-gm-1_5 text-gm-xs font-semibold
-                           text-text-inverse transition-colors
+                           text-text-inverse transition-all active:scale-[0.98]
                            focus-visible:ring-2 focus-visible:ring-danger/50 focus-visible:outline-none"
               >
                 确认重置
@@ -231,7 +231,7 @@ export default function Sidebar() {
                 className="flex-1 rounded-gm-xs bg-surface-lowered
                            hover:bg-surface border border-border
                            px-gm-2 py-gm-1_5 text-gm-xs
-                           text-text-secondary transition-colors
+                           text-text-secondary transition-all active:scale-[0.98]
                            focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
               >
                 取消
@@ -256,7 +256,7 @@ export default function Sidebar() {
             <button
               type="button"
               onClick={() => setResetPhase("idle")}
-              className="ml-auto text-text-muted hover:text-text transition-colors
+              className="ml-auto text-text-muted hover:text-text transition-all active:scale-[0.98]
                          focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none rounded-gm-xs"
               aria-label="关闭"
             >
@@ -275,7 +275,7 @@ export default function Sidebar() {
               className="w-full rounded-gm-xs bg-surface-lowered
                          hover:bg-surface border border-border
                          px-gm-2 py-gm-1_5 text-gm-xs
-                         text-text-secondary transition-colors
+                         text-text-secondary transition-all active:scale-[0.98]
                          focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
             >
               关闭

@@ -111,7 +111,7 @@ export default function LogDetailModal({
             type="button"
             onClick={() => data?.prev_id && onNavigate(data.prev_id)}
             disabled={!data?.prev_id}
-            className="inline-flex items-center gap-gm-0_5 rounded-gm-sm border border-border bg-surface px-gm-2 py-gm-0.5 text-gm-xs text-text-secondary hover:text-text hover:bg-surface-alt disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-gm-0_5 rounded-gm-sm border border-border bg-surface px-gm-2 py-gm-0.5 text-gm-xs text-text-secondary hover:text-text hover:bg-surface-alt disabled:opacity-30 disabled:cursor-not-allowed transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
             onMouseEnter={(e) => setNavTooltip({ x: e.clientX, y: e.clientY, text: "上一条" })}
             onMouseMove={(e) => setNavTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
             onMouseLeave={() => setNavTooltip(null)}
@@ -123,7 +123,7 @@ export default function LogDetailModal({
             type="button"
             onClick={() => data?.next_id && onNavigate(data.next_id)}
             disabled={!data?.next_id}
-            className="inline-flex items-center gap-gm-0_5 rounded-gm-sm border border-border bg-surface px-gm-2 py-gm-0.5 text-gm-xs text-text-secondary hover:text-text hover:bg-surface-alt disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-gm-0_5 rounded-gm-sm border border-border bg-surface px-gm-2 py-gm-0.5 text-gm-xs text-text-secondary hover:text-text hover:bg-surface-alt disabled:opacity-30 disabled:cursor-not-allowed transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
             onMouseEnter={(e) => setNavTooltip({ x: e.clientX, y: e.clientY, text: "下一条" })}
             onMouseMove={(e) => setNavTooltip((prev) => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
             onMouseLeave={() => setNavTooltip(null)}
@@ -137,7 +137,7 @@ export default function LogDetailModal({
         <button
           type="button"
           onClick={onClose}
-          className="p-gm-1 rounded-gm-sm text-text-muted hover:text-text hover:bg-surface-alt transition-colors"
+          className="p-gm-1 rounded-gm-sm text-text-muted hover:text-text hover:bg-surface-alt transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
           aria-label="关闭详情"
         >
           <RiCloseLine className="w-5 h-5" />

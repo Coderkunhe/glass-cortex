@@ -216,7 +216,7 @@ export default function ProjectMapDrawer({
           </div>
           <button
             onClick={onClose}
-            className="rounded-gm-sm p-gm-1 text-text-muted hover:bg-surface-alt transition-colors"
+            className="rounded-gm-sm p-gm-1 text-text-muted hover:bg-surface-alt transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
             aria-label="关闭项目地图"
           >
             <RiCloseLine className="text-gm-icon" />
@@ -341,7 +341,7 @@ export default function ProjectMapDrawer({
                     {/* Category header — clickable accordion */}
                     <button
                       onClick={() => toggleFlowCat(cat)}
-                      className="flex w-full items-center justify-between gap-gm-2 px-gm-3 py-gm-2_5 transition-colors hover:bg-surface-alt/50"
+                      className="flex w-full items-center justify-between gap-gm-2 px-gm-3 py-gm-2_5 transition-all hover:bg-surface-alt/50 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.99]"
                     >
                       <span className="flex items-center gap-gm-2">
                         <RiFlowChart
@@ -425,7 +425,7 @@ export default function ProjectMapDrawer({
                       router.push(entry.href);
                       onClose();
                     }}
-                    className="gm-card-lift text-left rounded-gm-lg p-gm-3 transition-colors"
+                    className="gm-card-lift text-left rounded-gm-lg p-gm-3 transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
                     style={{
                       background: "var(--gm-surface-alt)",
                       border: "1px solid var(--gm-border)",
@@ -478,7 +478,7 @@ export default function ProjectMapDrawer({
                       {/* Category header — clickable accordion */}
                       <button
                         onClick={() => toggleCat(cat)}
-                        className="flex w-full items-center justify-between gap-gm-2 px-gm-3 py-gm-2_5 transition-colors hover:bg-surface-alt/50"
+                        className="flex w-full items-center justify-between gap-gm-2 px-gm-3 py-gm-2_5 transition-all hover:bg-surface-alt/50 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.99]"
                       >
                         <span
                           className="text-gm-sm font-medium"

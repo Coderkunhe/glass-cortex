@@ -126,7 +126,7 @@ export default function LogViewer() {
         key={`${entry.timestamp}-${idx}`}
         role="button"
         tabIndex={0}
-        className="flex gap-gm-3 px-gm-4 py-gm-1 border-b border-border/50 font-mono text-gm-xs leading-relaxed cursor-pointer hover:bg-surface-alt/50 transition-colors"
+        className="flex gap-gm-3 px-gm-4 py-gm-1 border-b border-border/50 font-mono text-gm-xs leading-relaxed cursor-pointer hover:bg-surface-alt/50 transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none focus-visible:ring-inset active:scale-[0.99]"
         onClick={() => setSelectedLogId(entry.id)}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -223,7 +223,7 @@ export default function LogViewer() {
               role="radio"
               aria-checked={level === lv}
               onClick={() => changeLevel(lv)}
-              className={`px-gm-3 py-gm-1 text-gm-xs font-medium transition-colors border-r border-border last:border-r-0 ${
+              className={`px-gm-3 py-gm-1 text-gm-xs font-medium transition-all border-r border-border last:border-r-0 focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98] ${
                 level === lv
                   ? "bg-brand text-text-on-brand"
                   : "bg-surface-elevated text-text-muted hover:text-text-secondary hover:bg-surface-alt"
@@ -261,7 +261,7 @@ export default function LogViewer() {
             <button
               type="button"
               onClick={() => changeKeyword("")}
-              className="absolute right-gm-1 p-0.5 text-text-muted hover:text-text"
+              className="absolute right-gm-1 p-0.5 text-text-muted hover:text-text focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none rounded-gm-xs active:scale-[0.98] transition-all"
               aria-label="清除搜索"
             >
               <RiCloseLine className="w-3.5 h-3.5" />
@@ -352,7 +352,7 @@ export default function LogViewer() {
               type="button"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="inline-flex items-center gap-gm-0_5 rounded-gm-sm border border-border bg-surface-elevated px-gm-2 py-gm-1 text-gm-xs text-text-secondary hover:text-text hover:bg-surface-alt disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center gap-gm-0_5 rounded-gm-sm border border-border bg-surface-elevated px-gm-2 py-gm-1 text-gm-xs text-text-secondary hover:text-text hover:bg-surface-alt disabled:opacity-40 disabled:cursor-not-allowed transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
             >
               <RiArrowLeftSLine className="w-4 h-4" />
               上一页
@@ -363,7 +363,7 @@ export default function LogViewer() {
               type="button"
               onClick={() => setPage((p) => p + 1)}
               disabled={page >= totalPages}
-              className="inline-flex items-center gap-gm-0_5 rounded-gm-sm border border-border bg-surface-elevated px-gm-2 py-gm-1 text-gm-xs text-text-secondary hover:text-text hover:bg-surface-alt disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center gap-gm-0_5 rounded-gm-sm border border-border bg-surface-elevated px-gm-2 py-gm-1 text-gm-xs text-text-secondary hover:text-text hover:bg-surface-alt disabled:opacity-40 disabled:cursor-not-allowed transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
             >
               下一页
               <RiArrowRightSLine className="w-4 h-4" />

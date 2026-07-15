@@ -113,7 +113,7 @@ export default function SidebarReflectionCard() {
           <button
             type="button"
             onClick={handleReset}
-            className="ml-auto text-gm-xs text-text-muted hover:text-text transition-colors"
+            className="ml-auto text-gm-xs text-text-muted hover:text-text transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none rounded-gm-xs"
             aria-label="重新触发反思"
           >
             <RiRefreshLine className="w-3.5 h-3.5" />
@@ -159,7 +159,7 @@ export default function SidebarReflectionCard() {
                        rounded-gm-xs bg-brand/10 hover:bg-brand/20
                        border border-brand/30
                        px-gm-3 py-gm-1_5 text-gm-xs font-medium
-                       text-brand transition-colors"
+                       text-brand transition-all active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
           >
             <RiLightbulbLine className="w-3.5 h-3.5" />
             触发反思
@@ -278,7 +278,7 @@ export default function SidebarReflectionCard() {
                 })
                 .catch(() => setPhase("error"));
             }}
-            className="inline-flex items-center gap-gm-1 text-gm-xs text-brand hover:underline"
+            className="inline-flex items-center gap-gm-1 text-gm-xs text-brand hover:underline focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none rounded-gm-xs active:scale-[0.98] transition-all"
           >
             <RiRefreshLine className="w-3.5 h-3.5" />
             重试

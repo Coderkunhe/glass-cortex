@@ -56,7 +56,7 @@ export default function MobileSidebarDrawer({
         </h2>
         <button
           onClick={onClose}
-          className="rounded-gm-sm p-gm-1 text-text-muted hover:bg-surface-alt transition-colors"
+          className="rounded-gm-sm p-gm-1 text-text-muted hover:bg-surface-alt transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
           aria-label="关闭菜单"
         >
           <RiCloseLine className="text-gm-icon" />
