@@ -211,7 +211,7 @@ svg{max-width:100%;max-height:100%;height:auto;width:auto}
           justify-content: center;
           background: rgba(0, 0, 0, 0.75);
           backdrop-filter: blur(4px);
-          animation: gm-iv-fade-in 0.2s ease-out;
+          animation: gm-iv-fade-in var(--gm-duration-base) ease-out;
         }
         @keyframes gm-iv-fade-in {
           from { opacity: 0; }
@@ -249,7 +249,7 @@ svg{max-width:100%;max-height:100%;height:auto;width:auto}
           transform-origin: 0 0;
           border-radius: 0;
           /* overflow 移除：放大后不裁剪平移/缩放内容 */
-          animation: gm-iv-zoom-in 0.2s ease-out;
+          animation: gm-iv-zoom-in var(--gm-duration-base) ease-out;
         }
         @keyframes gm-iv-zoom-in {
           from { opacity: 0; }
@@ -288,7 +288,7 @@ svg{max-width:100%;max-height:100%;height:auto;width:auto}
           background: var(--gm-bg, #fff);
           padding: var(--gm-space-4, 16px);
           cursor: default;
-          animation: gm-iv-zoom-in 0.2s ease-out;
+          animation: gm-iv-zoom-in var(--gm-duration-base) ease-out;
         }
       `}</style>
 

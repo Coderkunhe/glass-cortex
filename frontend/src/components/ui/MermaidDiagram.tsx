@@ -217,7 +217,7 @@ export default function MermaidDiagram({
             background: var(--gm-surface-alt);
             border-radius: var(--gm-radius-sm, 4px);
             border: 1px solid var(--gm-border);
-            animation: gm-md-pulse 1.5s ease-in-out infinite;
+            animation: gm-md-pulse var(--gm-duration-hero) ease-in-out infinite;
           }
           @keyframes gm-md-pulse {
             0%, 100% { opacity: 0.4; }

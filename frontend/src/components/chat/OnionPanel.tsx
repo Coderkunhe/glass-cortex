@@ -104,7 +104,7 @@ export default function OnionPanel({ response, onCollapse }: OnionPanelProps) {
                 {/* 进度条：冷→热 */}
                 <div className="mt-gm-1 h-1 rounded-full bg-bg-deep overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-brand transition-all duration-700"
+                    className="h-full rounded-full bg-brand transition-all duration-[var(--gm-duration-glacial)]"
                     style={{ width: `${Math.max(2, cold_start_profile.progression_pct)}%` }}
                   />
                 </div>

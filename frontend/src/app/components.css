@@ -793,7 +793,7 @@ body.gm-font-lg.immersive .answer-reading-mode .answer-l1-body {
   height: 2px;
   background: var(--gm-brand);
   z-index: var(--gm-z-modal);
-  transition: width 100ms linear;
+  transition: width var(--gm-duration-fast) linear;
   pointer-events: none;
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { RiVipCrownLine, RiDoorLine, RiQuillPenLine } from "@remixicon/react";
 import { api } from "@/lib/api/client";
 import ErrorDisplay from "@/components/ui/ErrorDisplay";
@@ -29,21 +29,28 @@ interface StrategyPersonaProps {
 export default function StrategyPersona({ activeStrategy }: StrategyPersonaProps) {
   const [personas, setPersonas] = useState<StrategyPersonaType[] | null>(null);
   const [error, setError] = useState<Error | string | null>(null);
+  const mountedRef = useRef(true);
 
   const fetchPersonas = useCallback(async () => {
     try {
       const data = await api.getStrategyPersonas();
-      setPersonas(data.personas);
-      setError(null);
+      if (mountedRef.current) {
+        setPersonas(data.personas);
+        setError(null);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("加载策略失败"));
+      if (mountedRef.current) {
+        setError(err instanceof Error ? err : new Error("加载策略失败"));
+      }
     }
   }, []);
 
   // 挂载时加载策略数据
   useEffect(() => {
+    mountedRef.current = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- fetchPersonas is async; all setState calls happen after await
     void fetchPersonas();
+    return () => { mountedRef.current = false; };
   }, [fetchPersonas]);
 
   // 按 activeStrategy 排序：激活的排最前

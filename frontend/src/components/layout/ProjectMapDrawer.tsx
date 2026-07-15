@@ -383,7 +383,7 @@ export default function ProjectMapDrawer({
                         opacity: isExpanded ? 1 : 0,
                         overflow: "hidden",
                         transition:
-                          "max-height 350ms ease-in-out, opacity 300ms ease-in-out",
+                          "max-height var(--gm-duration-slow) ease-in-out, opacity var(--gm-duration-base) ease-in-out",
                       }}
                     >
                       <div
@@ -514,7 +514,7 @@ export default function ProjectMapDrawer({
                           opacity: isExpanded ? 1 : 0,
                           overflow: "hidden",
                           transition:
-                            "max-height 350ms ease-in-out, opacity 300ms ease-in-out",
+                            "max-height var(--gm-duration-slow) ease-in-out, opacity var(--gm-duration-base) ease-in-out",
                         }}
                       >
                         <div

@@ -203,7 +203,7 @@ export default function CostWaterfallPanel() {
                     {/* 瀑布条 */}
                     <div className="flex-1 h-5 rounded-gm-xs overflow-hidden bg-surface-alt">
                       <div
-                        className="h-full rounded-gm-xs transition-all duration-500"
+                        className="h-full rounded-gm-xs transition-all duration-[var(--gm-duration-glacial)]"
                         style={{
                           width: `${barPct}%`,
                           backgroundColor: step.color,

@@ -110,7 +110,7 @@ export function ContentDashboard({
               cx="60" cy="60" r="52" fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round"
               strokeDasharray={CIRCUMFERENCE}
               strokeDashoffset={CIRCUMFERENCE * (1 - totalPct / 100)}
-              className="text-brand transition-all duration-700 ease-out"
+              className="text-brand transition-all duration-[var(--gm-duration-glacial)] ease-out"
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -185,7 +185,7 @@ export function ContentDashboard({
                 </div>
                 <div className="w-full h-2 bg-surface-alt rounded-full overflow-hidden" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label={`${ch.title} 完成进度 ${Math.round(pct)}%`}>
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${
+                    className={`h-full rounded-full transition-all duration-[var(--gm-duration-glacial)] ${
                       isComplete ? "bg-success-light" : isBlank ? "bg-border-strong" : "bg-brand"
                     }`}
                     style={{ width: `${pct}%` }}
