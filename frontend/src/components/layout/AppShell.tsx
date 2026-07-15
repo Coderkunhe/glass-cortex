@@ -59,6 +59,7 @@ export default function AppShell({ children, sidebar }: AppShellProps) {
           isOpen={mobileSidebarOpen}
           onClose={() => setMobileSidebarOpen(false)}
           pathname={pathname}
+          sidebarSlot={sidebar === false ? false : sidebar}
         />
         {/* 全局右侧抽屉单例 — 渲染在 DOM 顶层，脱离所有布局容器 */}
         <ProcessDrawer />

@@ -355,15 +355,20 @@ button:active,
 
 /* ═══ Batch 145 — Sidebar collapse toggle ═══ */
 
-/* 侧栏面板 — 动画折叠/展开 */
+/* 侧栏面板基础 — height 全端生效（移动端 Drawer 需要高度上下文） */
 .sidebar-panel {
-  width: var(--gm-sidebar-w);
   height: 100%;
-  transition: width var(--gm-duration-base) var(--gm-ease);
-  overflow: hidden;
 }
-.sidebar-panel--collapsed {
-  width: 0px;
+/* 桌面端专属：固定宽度 + 折叠动画 + overflow 裁剪 */
+@media (min-width: 1024px) {
+  .sidebar-panel {
+    width: var(--gm-sidebar-w);
+    transition: width var(--gm-duration-base) var(--gm-ease);
+    overflow: hidden;
+  }
+  .sidebar-panel--collapsed {
+    width: 0px;
+  }
 }
 
 /* 侧栏切换按钮 — 固定在内容区左上角 */

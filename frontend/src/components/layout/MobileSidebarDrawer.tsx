@@ -10,6 +10,12 @@ interface MobileSidebarDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   pathname: string;
+  /**
+   * 页面专属抽屉底部内容。
+   * - undefined（默认）：渲染全局 Sidebar（聊天参数/会话统计等）
+   * - ReactNode：替换 Sidebar，渲染页面专属内容（如 /learn 的 QuestionList）
+   */
+  sidebarSlot?: React.ReactNode;
 }
 
 /**
@@ -29,6 +35,7 @@ export default function MobileSidebarDrawer({
   isOpen,
   onClose,
   pathname,
+  sidebarSlot,
 }: MobileSidebarDrawerProps) {
   return (
     <Drawer
@@ -55,10 +62,10 @@ export default function MobileSidebarDrawer({
           <RiCloseLine className="text-gm-icon" />
         </button>
       </div>
-      {/* Sidebar 内容填充剩余空间 */}
-      <div className="flex-1 overflow-y-auto min-h-0">
+      {/* 内容区 — flex column：导航固定顶部，页面专属内容填充剩余空间 */}
+      <div className="flex-1 min-h-0 flex flex-col">
         {/* 页面导航 — 移动端抽屉内显示（核心 3 页面：聊天/文档/画像） */}
-        <nav className="flex flex-col gap-gm-1 px-gm-3 py-gm-3">
+        <nav className="shrink-0 flex flex-col gap-gm-1 px-gm-3 py-gm-3">
           {MOBILE_LINKS.map(({ href, label }) => (
             <Link
               key={href}
@@ -71,8 +78,11 @@ export default function MobileSidebarDrawer({
           ))}
         </nav>
         {/* 分隔线 */}
-        <hr className="mx-gm-3 appshell-drawer-divider" />
-        <Sidebar />
+        <hr className="shrink-0 mx-gm-3 appshell-drawer-divider" />
+        {/* 页面专属内容：flex-1 + min-h-0 提供高度上下文，子组件自行管理滚动 */}
+        <div className="flex-1 min-h-0">
+          {sidebarSlot !== undefined ? sidebarSlot : <Sidebar />}
+        </div>
       </div>
     </Drawer>
   );
