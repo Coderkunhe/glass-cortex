@@ -281,7 +281,7 @@ export default function QuestionList({
       </div>
 
       {/* 过滤芯片行 */}
-      <div className="flex flex-wrap items-center gap-1 px-gm-3 py-gm-1_5 border-b border-border">
+      <div className="flex flex-wrap items-center gap-0.5 lg:gap-1 px-gm-2 lg:px-gm-3 py-gm-1 lg:py-gm-1_5 border-b border-border">
         {/* 回答状态切换 */}
         <FilterChip
           active={answerFilter === "all"}
@@ -415,7 +415,7 @@ export default function QuestionList({
                         {questions.length}/{ch.questionCount}
                       </span>
                     </div>
-                    <div className="mt-gm-1 h-1 bg-surface-alt rounded-full overflow-hidden" role="progressbar" aria-valuenow={ch.questionCount > 0 ? Math.round((ch.answeredCount / ch.questionCount) * 100) : 0} aria-valuemin={0} aria-valuemax={100} aria-label={`${ch.title} 完成进度`}>
+                    <div className="hidden lg:block mt-gm-1 h-1 bg-surface-alt rounded-full overflow-hidden" role="progressbar" aria-valuenow={ch.questionCount > 0 ? Math.round((ch.answeredCount / ch.questionCount) * 100) : 0} aria-valuemin={0} aria-valuemax={100} aria-label={`${ch.title} 完成进度`}>
                       <div
                         className={`h-full rounded-full transition-all ${
                           ch.answeredCount > 0 &&
@@ -494,7 +494,7 @@ export default function QuestionList({
                         )}
                     </div>
                     {/* 章节进度条 */}
-                    <div className="mt-gm-1 h-1 bg-surface-alt rounded-full overflow-hidden" role="progressbar" aria-valuenow={ch.questionCount > 0 ? Math.round((ch.answeredCount / ch.questionCount) * 100) : 0} aria-valuemin={0} aria-valuemax={100} aria-label={`${ch.title} 完成进度`}>
+                    <div className="hidden lg:block mt-gm-1 h-1 bg-surface-alt rounded-full overflow-hidden" role="progressbar" aria-valuenow={ch.questionCount > 0 ? Math.round((ch.answeredCount / ch.questionCount) * 100) : 0} aria-valuemin={0} aria-valuemax={100} aria-label={`${ch.title} 完成进度`}>
                       <div
                         className={`h-full rounded-full transition-all ${
                           ch.answeredCount > 0 &&
@@ -546,7 +546,7 @@ export default function QuestionList({
 
       {/* 最近阅读 */}
       {visitHistory && visitHistory.length > 0 && (
-        <div className="border-t border-border px-gm-3 py-gm-2 bg-surface-lowered flex-shrink-0">
+        <div className="hidden lg:block border-t border-border px-gm-3 py-gm-2 bg-surface-lowered flex-shrink-0">
           <p className="text-gm-xs text-text-muted mb-gm-1">最近阅读</p>
           <div className="flex flex-col gap-gm-0_5">
             {visitHistory.map((a) => (
