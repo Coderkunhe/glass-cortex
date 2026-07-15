@@ -76,20 +76,15 @@ export function useCodeHighlight(
     // 清理：卸载已移出 DOM 的 <pre> 对应的 React root
     copyRootsRef.current.forEach((root, pre) => {
       if (!activePres.has(pre)) {
-        queueMicrotask(() => root.unmount());
+        root.unmount();
         copyRootsRef.current.delete(pre);
       }
     });
 
-    // 组件卸载时清理所有残留 root，防止 createRoot 泄漏
-    // queueMicrotask 避免 React 渲染期间同步 unmount 产生的竞态警告
-    const roots = copyRootsRef.current;
-    return () => {
-      roots.forEach((root) => {
-        queueMicrotask(() => root.unmount());
-      });
-      roots.clear();
-    };
+    // Strict Mode 双 effect 下不 unmount 也不清空 ref：
+    // re-run 时通过 ref 复用已有 root（调用 root.render() 更新），
+    // 避免 createRoot() 在已有 root 的容器上报错。
+    // 真正卸载时 DOM 容器随组件销毁，React root 随之 GC。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 }

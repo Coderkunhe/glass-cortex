@@ -215,23 +215,18 @@ export default function AnswerCard({
       }
     });
 
-    // 卸载已不在 DOM 中的容器对应的根（延迟到 commit 阶段结束后）
+    // 卸载已不在 DOM 中的容器对应的根
     rootsRef.current.forEach((root, c) => {
       if (!activeContainers.has(c)) {
-        const r = root;
-        queueMicrotask(() => r.unmount());
+        root.unmount();
         rootsRef.current.delete(c);
       }
     });
 
-    // 组件卸载时清理所有残留 root，防止 createRoot 泄漏
-    const roots = rootsRef.current;
-    return () => {
-      roots.forEach((root) => {
-        queueMicrotask(() => root.unmount());
-      });
-      roots.clear();
-    };
+    // Strict Mode 双 effect 下不 unmount 也不清空 ref：
+    // re-run 时通过 ref 复用已有 root（调用 root.render() 更新），
+    // 避免 createRoot() 在已有 root 的容器上报错。
+    // 真正卸载时 DOM 容器随组件销毁，React root 随之 GC。
   }, [answer.l1, answer.l2, answer.l3]);
 
   // ── Prism 语法高亮 + 行号 + 复制按钮 ──

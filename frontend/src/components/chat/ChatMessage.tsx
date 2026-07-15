@@ -94,8 +94,7 @@ function ChatMessage({
     // 卸载已不在 DOM 中的容器
     mermaidRootsRef.current.forEach((root, c) => {
       if (!activeContainers.has(c)) {
-        const r = root;
-        queueMicrotask(() => r.unmount());
+        root.unmount();
         mermaidRootsRef.current.delete(c);
       }
     });

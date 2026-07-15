@@ -293,7 +293,7 @@ export default function ProcessDrawer() {
     // Cleanup stale roots
     copyRoots.current.forEach((root, pre) => {
       if (!activePres.has(pre)) {
-        queueMicrotask(() => root.unmount());
+        root.unmount();
         copyRoots.current.delete(pre);
       }
     });
@@ -316,14 +316,9 @@ export default function ProcessDrawer() {
     requestAnimationFrame(() => enhanceCodeBlocks(container));
   }, [trace, isOpen, enhanceCodeBlocks]);
 
-  // Cleanup copy button roots on unmount
-  useEffect(() => {
-    const roots = copyRoots.current;
-    return () => {
-      roots.forEach((root) => queueMicrotask(() => root.unmount()));
-      roots.clear();
-    };
-  }, []);
+  // Strict Mode 双 effect 下不 unmount：re-run 时 ref 复用已有 root，
+  // 避免 createRoot() 在已有 root 的容器上报错。
+  // 真正卸载时 DOM 容器随组件销毁，React root 随之 GC。
 
   // ── 即时 tooltip state — 替代原生 title 1-2s 延迟 ──
   const [closeTooltip, setCloseTooltip] = useState<{ x: number; y: number } | null>(null);
