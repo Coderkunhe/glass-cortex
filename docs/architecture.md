@@ -1,6 +1,6 @@
 # 架构文档
 
-> 最后更新: 2026-07-09 (Phase 67 Batch 2 — 部署文档 + B1 缺口修补 · Windows Server 可交付化闭环)
+> 最后更新: 2026-07-15 (Phase 66 B119 + B120 — 移动端 Drawer sidebar slot 线程 + QuestionList 精简)
 
 ## 实现现状
 
@@ -238,6 +238,8 @@
 | 门禁全绿收官 (B120) | ✅ 完成 | 2026-07-08 | 补 2 条 L5 自检验证方式 → check-docs 146/146 · eslint 0e 0w · 日报追记 B115-B120 |
 | Windows Server 部署基础设施 | ✅ 完成 | 2026-07-09 | FAISS→usearch 替换 (消除 Windows 部署阻塞点) · Next.js standalone 构建 · Nginx 反向代理配置 · NSSM Windows Service 注册脚本 · 一键部署脚本 — Phase 67 Batch 1 |
 | Windows Server 部署文档 + B1 缺口修补 | ✅ 完成 | 2026-07-09 | 修 install-services.ps1 standalone bug (next start → node server.js) · deploy.ps1 补目录兜底 + 健康检查 · 新增 .env.example + deploy/README.md (7 章主手册) + deploy/offline-model.md (离线模型 SOP) — Phase 67 Batch 2 |
+| 移动端 Drawer sidebar slot 线程 | ✅ 完成 | 2026-07-15 | `MobileSidebarDrawer.tsx` — 新增 `sidebarSlot` prop · AppShell 透传 `sidebar` prop → 三态路由（undefined→默认/false→无/ReactNode→自定义）· `.sidebar-panel` CSS 拆为基础层 + 桌面专属层 (`@media (min-width: 1024px)`) · `/learn` 移动端 Drawer 从聊天参数面板切换为 QuestionList 目录 — Phase 66 B119 |
+| 移动端 QuestionList 精简 | ✅ 完成 | 2026-07-15 | `QuestionList.tsx` — 4 处 CSS 响应式 class：过滤芯片行 gap/px/py 收紧 · 章节进度条 ×2 `hidden lg:block` · 最近阅读 section `hidden lg:block` · 非目录 chrome 从 ~200px (40%) 降至 ~120px (25%)，目录可视面积 +~60% — Phase 66 B120 |
 
 ## 架构决策记录
 
