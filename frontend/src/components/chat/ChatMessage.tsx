@@ -68,9 +68,7 @@ function ChatMessage({
     );
     if (containers.length === 0) return;
 
-    const activeContainers = new Set<HTMLElement>();
     containers.forEach((container) => {
-      activeContainers.add(container);
       const base64 = container.getAttribute("data-chart");
       const title = container.getAttribute("data-title") || "流程图";
       if (!base64) return;
@@ -91,13 +89,12 @@ function ChatMessage({
       }
     });
 
-    // 卸载已不在 DOM 中的容器
-    mermaidRootsRef.current.forEach((root, c) => {
-      if (!activeContainers.has(c)) {
-        root.unmount();
-        mermaidRootsRef.current.delete(c);
-      }
-    });
+    // Strict Mode 双 effect 下不 unmount 也不清空 ref：
+    // re-run 时通过 ref 复用已有 root（调用 root.render() 更新），
+    // 避免 createRoot() 在已有 root 的容器上报错。
+    // 真正卸载时 DOM 容器随组件销毁，React root 随之 GC。
+    // ⚠️ 不在 effect body 中同步调 root.unmount()——React 18+ 不允许
+    // 在渲染阶段同步卸载另一个 root。
   }, [message.content]);
 
   // ── Prism 语法高亮 + 行号 + 复制按钮 ──

@@ -38,12 +38,9 @@ export function useCodeHighlight(
     );
     if (codeElements.length === 0) return;
 
-    const activePres = new Set<HTMLElement>();
-
     codeElements.forEach((code) => {
       const pre = code.parentElement;
       if (!pre || pre.tagName !== "PRE") return;
-      activePres.add(pre);
 
       // ① 行号：给 <pre> 添加 line-numbers class
       pre.classList.add("line-numbers");
@@ -73,18 +70,13 @@ export function useCodeHighlight(
       }
     });
 
-    // 清理：卸载已移出 DOM 的 <pre> 对应的 React root
-    copyRootsRef.current.forEach((root, pre) => {
-      if (!activePres.has(pre)) {
-        root.unmount();
-        copyRootsRef.current.delete(pre);
-      }
-    });
-
     // Strict Mode 双 effect 下不 unmount 也不清空 ref：
     // re-run 时通过 ref 复用已有 root（调用 root.render() 更新），
     // 避免 createRoot() 在已有 root 的容器上报错。
     // 真正卸载时 DOM 容器随组件销毁，React root 随之 GC。
+    // ⚠️ 不在 effect body 中同步调 root.unmount()——React 18+ 不允许
+    // 在渲染阶段同步卸载另一个 root，会抛"Attempted to synchronously
+    // unmount a root while React was already rendering"。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 }

@@ -192,9 +192,7 @@ export default function AnswerCard({
     );
     if (containers.length === 0) return;
 
-    const activeContainers = new Set<HTMLElement>();
     containers.forEach((container) => {
-      activeContainers.add(container);
       // 跳过隐藏容器（如移动端 AnswerCard 在桌面端被 lg:hidden 隐藏），
       // 避免在 display:none 的祖先内渲染出零尺寸 SVG。
       // getBoundingClientRect() 对隐藏元素返回 0×0。
@@ -219,18 +217,14 @@ export default function AnswerCard({
       }
     });
 
-    // 卸载已不在 DOM 中的容器对应的根
-    rootsRef.current.forEach((root, c) => {
-      if (!activeContainers.has(c)) {
-        root.unmount();
-        rootsRef.current.delete(c);
-      }
-    });
-
     // Strict Mode 双 effect 下不 unmount 也不清空 ref：
     // re-run 时通过 ref 复用已有 root（调用 root.render() 更新），
     // 避免 createRoot() 在已有 root 的容器上报错。
     // 真正卸载时 DOM 容器随组件销毁，React root 随之 GC。
+    // ⚠️ 不在 effect body 中同步调 root.unmount()——React 18+ 不允许
+    // 在渲染阶段同步卸载另一个 root，会抛"Attempted to synchronously
+    // unmount a root while React was already rendering"。内容切换时
+    // AnswerCard 整个卸载，roots 随 DOM 自然 GC，无需显式清理。
   }, [answer.l1, answer.l2, answer.l3]);
 
   // ── Prism 语法高亮 + 行号 + 复制按钮 ──

@@ -268,11 +268,9 @@ export default function ProcessDrawer() {
     );
     if (codeElements.length === 0) return;
 
-    const activePres = new Set<HTMLElement>();
     codeElements.forEach((code) => {
       const pre = code.parentElement;
       if (!pre || pre.tagName !== "PRE") return;
-      activePres.add(pre);
 
       // line-numbers — Prism plugin CSS adds gutter via pseudo-elements
       pre.classList.add("line-numbers");
@@ -290,13 +288,10 @@ export default function ProcessDrawer() {
       }
     });
 
-    // Cleanup stale roots
-    copyRoots.current.forEach((root, pre) => {
-      if (!activePres.has(pre)) {
-        root.unmount();
-        copyRoots.current.delete(pre);
-      }
-    });
+    // Strict Mode 双 effect 下不 unmount：re-run 时 ref 复用已有 root。
+    // ⚠️ 不在 requestAnimationFrame 回调中同步调 root.unmount()
+    // ——虽在 React render 之外，但 unmount 触发的同步更新可能与
+    // 下一次 React commit 冲突。
   }, []);
 
   // Add line-numbers + copy buttons on drawer open: callback ref fires when the
