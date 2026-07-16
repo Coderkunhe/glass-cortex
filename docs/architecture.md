@@ -1,8 +1,10 @@
 # 架构文档
 
-> 最后更新: 2026-07-16 (Phase 66 B127 — 新增系统架构 Mermaid 图)
+> 最后更新: 2026-07-16 (三张架构图完稿: System Architecture + Runtime Pipeline + Memory Timeline)
 
 ## 系统架构图
+
+### System Architecture ### 
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
@@ -54,7 +56,189 @@
 └─────────────────────────────┘
 ```
 
-> 前端 5 页面 → 8 个 API 路由 → 5 个引擎模块 → SQLite + FAISS 双存储。DeepSeek API 为唯一外部依赖。## 实现现状
+> 前端 5 页面 → 8 个 API 路由 → 5 个引擎模块 → SQLite + FAISS 双存储。DeepSeek API 为唯一外部依赖。
+
+## Runtime Pipeline — 一次请求的完整流转
+
+```
+用户输入: "Token 是什么？"
+│
+│  ┌─────────────────────────────────────────────────────────────────────┐
+│  │                    POST /api/chat                                   │
+│  │  {message, profile_id, model?, temperature?, max_tokens?}          │
+│  └──────────────┬──────────────────────────────────────────────────────┘
+│                 │
+│     ┌───────────▼──────────┐
+│     │ 1. Planner 意图分类   │  LLM 调用 → 五类意图: 提问/指令/分析/闲聊/规划
+│     │    IntentResult       │  含 confidence + rationale + complexity
+│     └───────────┬──────────┘
+│                 │
+│     ┌───────────▼──────────┐
+│     │ 2. Embedding 嵌入     │  MiniLM 本地模型 → message → [0.12, -0.34, ...]
+│     │    embed(message)     │  向量维度 384
+│     └───────────┬──────────┘
+│                 │
+│     ┌───────────▼──────────┐
+│     │ 3. FAISS 语义检索     │  FAISS.search(vector, k=20)
+│     │    粗筛 top-20        │  IndexFlatL2 → 欧氏距离排序
+│     └───────────┬──────────┘
+│                 │
+│     ┌───────────▼──────────┐         ┌────────────────────┐
+│     │ 4. 并行取回           │────────►│ SQLite: episodes   │
+│     │    fork-join          │         │ (id, content, ...  │
+│     │    by episode_id      │────────►│  strength, tier)   │
+│     └───────────┬──────────┘         └────────────────────┘
+│                 │
+│     ┌───────────▼──────────┐
+│     │ 5. 语义去重 + MMR    │  Dedup: FAISS ID + content 双键去重
+│     │    dedup → mmr_rerank│  MMR: 相关度×多样度 λ 权衡 → top_k=5
+│     └───────────┬──────────┘
+│                 │
+│     ┌───────────▼──────────┐
+│     │ 6. 艾宾浩斯强度计算   │  strength = e^(-λ × Δt)
+│     │    + 置信度评分       │  + recall_count 用进效应
+│     │    + 截断过滤         │  + composite score 阈值截断
+│     └───────────┬──────────┘
+│                 │
+│     ┌───────────▼──────────┐
+│     │ 7. System Prompt 组装 │  基础指令 + 召回记忆 + 事实
+│     │    _build_system_     │  → OverflowSim 溢出模拟
+│     │    prompt()           │  → 策略: truncate/prioritize/summarize
+│     └───────────┬──────────┘
+│                 │
+│     ┌───────────▼──────────┐
+│     │ 8. LLM 推理           │  POST DeepSeek API /chat/completions
+│     │    ChatEngine.generate│  {system, user, temperature, max_tokens}
+│     │                       │  ← response + usage (prompt/compl tokens)
+│     └───────────┬──────────┘
+│                 │
+│     ┌───────────▼──────────┐
+│     │ 9. Token 计量         │  token_ledger.record("chat",
+│     │    TokenLedger        │    prompt_tokens, completion_tokens)
+│     │                       │  → 计入 session + 全量统计
+│     └───────────┬──────────┘
+│                 │
+│     ┌───────────▼──────────┐
+│     │ 10. 事实抽取          │  FactExtractor (LLM 二次调用)
+│     │     extract_facts()   │  三元组 (s, r, o) + 实体归一化
+│     │                       │  + 冲突检测 + 去重
+│     └───────────┬──────────┘
+│                 │
+│     ┌───────────▼──────────┐
+│     │ 11. 双写存储           │  ┌─ SQLite: INSERT episode (user+assistant)
+│     │     store_response()  │  │  + INSERT facts (triples)
+│     │     + insert_facts()  │  └─ FAISS: add(embedding, metadata)
+│     └───────────┬──────────┘
+│                 │
+│     ┌───────────▼──────────┐
+│     │ 12. 管线 Trace 持久化  │  trace 表: step_name + elapsed_ms +
+│     │     insert_trace()    │  status + metrics
+│     └───────────┬──────────┘
+│                 │
+│  ┌──────────────▼──────────────────────────────────────────────────────┐
+│  │                    JSON Response → Next.js                          │
+│  │  {reply, episode_id, intent, context_meta, api_trace, trace_id}    │
+│  └──────────────┬──────────────────────────────────────────────────────┘
+│                 │
+│  ┌──────────────▼──────────────────────────────────────────────────────┐
+│  │  前端渲染: ChatMessage · OnionPanel 四层渐进披露                     │
+│  │  L1 意图 → L2 召回 → L3 上下文窗口 → L4/L5 模型推理                 │
+│  └─────────────────────────────────────────────────────────────────────┘
+```
+
+> 一次 `/chat` 请求经过 12 步管线：Planner → Embed → FAISS → 并行取回 → 去重+MMR → 评分截断 → Prompt 组装 → LLM → Token 计量 → 事实抽取 → 双写存储 → Trace 持久化。每一步均可通过 OnionPanel 展开查看细节。
+
+## Memory Timeline — 记忆生命周期
+
+```
+                        ┌──────────────────────────────────────────────┐
+                        │              记忆生命周期全景                  │
+                        └──────────────────────────────────────────────┘
+
+  ┌─────────┐    ┌─────────┐    ┌───────────┐    ┌──────────┐    ┌──────────┐
+  │  CREATION│───►│  STORAGE│───►│ RETRIEVAL │───►│ STRENGTH │───►│FORGETTING│
+  │  创造     │    │  存储    │    │  检索      │    │  强化     │    │  遗忘     │
+  └────┬─────┘    └────┬─────┘    └─────┬─────┘    └────┬─────┘    └────┬─────┘
+       │               │               │               │               │
+       ▼               ▼               ▼               ▼               ▼
+  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
+  │用户对话   │   │双写持久化 │   │语义召回   │   │艾宾浩斯   │   │慢降温     │
+  │& LLM 回复 │   │SQLite    │   │FAISS 搜索 │   │衰减曲线   │   │cooldown   │
+  │           │   │+ FAISS   │   │top_k=5   │   │strength   │   │importance │
+  └──────────┘   └──────────┘   └──────────┘   └──────────┘   │衰减       │
+                                                              └──────────┘
+  ════════════════════════════════════════════════════════════════════════════
+  详细时间线
+  ════════════════════════════════════════════════════════════════════════════
+
+  t=0  用户消息到达
+  │    ├─ ChatEngine.generate_and_store() 入口
+  │    │
+  │    ├─ [EXTRACT] FactExtractor
+  │    │   └─ LLM 调用 → (subject, relation, object) 三元组
+  │    │   └─ 实体归一化: "GPT" / "ChatGPT" → "GPT"
+  │    │   └─ 冲突检测: 同一 subject+relation 已有不同 object → 标记 conflict
+  │    │
+  │    ├─ [STORE] MemoryStore
+  │    │   ├─ episode: INSERT INTO episodes (session_id, role, content,
+  │    │   │           embedding, tier, strength=1.0, importance=1.0)
+  │    │   ├─ facts:   INSERT INTO facts (episode_id, subject, relation,
+  │    │   │           object, confidence, source_quote, ...)
+  │    │   └─ index:   FAISS.add(embedding, external_id=episode_id)
+  │    │
+  ├──── 同一会话后续消息继续累积 ────┤
+  │
+  t=会话结束 (session boundary detected)
+  │    │
+  │    ├─ [CONSOLIDATE] ConsolidationCore.consolidate_if_stale()
+  │    │   ├─ 扫描距上次召回超过 grace_period(24h) 的 episode
+  │    │   ├─ importance *= (1 - cooldown_rate): 慢降温
+  │    │   ├─ 下限保护: importance ≥ cooldown_min_importance(0.1)
+  │    │   └─ 持久化 last_consolidated_at
+  │    │
+  ├──── 下一次聊天请求 ────┤
+  │
+  │    ├─ [RECALL] RecallEngine.recall()
+  │    │   ├─ 1. embed(user_message) → query vector
+  │    │   ├─ 2. FAISS.search(query, k=20) → 候选 episode IDs
+  │    │   ├─ 3. SQLite: SELECT episodes + JOIN facts
+  │    │   ├─ 4. deduplicate_candidates(): FAISS ID + content 双键去重
+  │    │   ├─ 5. mmr_rerank(): 相关度 × 多样度 λ 权衡 → top_k
+  │    │   │   └─ 偏好向量注入: 用户兴趣方向偏置
+  │    │   ├─ 6. 艾宾浩斯 strength → composite score 整合
+  │    │   │   └─ strength = e^(-λ × Δt) × recall_boost
+  │    │   │   └─ recall_boost = 1.0 + recall_count × 0.05 (用进效应)
+  │    │   └─ 7. apply_truncation(): composite score 阈值截断
+  │    │       └─ 返回前 5 条最强记忆 + 截断分隔线可视化
+  │    │
+  │    ├─ [STRENGTHEN] 命中记忆自动强化
+  │    │   ├─ SQLite: UPDATE episodes SET strength = new_strength
+  │    │   ├─ SQLite: recall_count += 1, last_recalled_at = now
+  │    │   └─ 用进效应: 频繁召回的 episode 衰减更慢
+  │    │
+  │    ├─ [REFLECTION] 反思引擎 (周期性触发)
+  │    │   ├─ planner/reflection.py: 检测 plan 完成度
+  │    │   ├─ planner/replan.py: 偏离检测 → 重规划建议
+  │    │   └─ plan_history: 最近 N 次计划检索用于模式匹配
+  │    │
+  ├──── 日终 (24h 周期) ────┤
+  │
+  │    ├─ [FORGET] ForgettingEngine
+  │    │   ├─ decay_all(lambda): 全量 episode strength × e^(-λ × Δt)
+  │    │   │   └─ λ 可调 (默认 0.01, 通过 Settings.forgetting_lambda)
+  │    │   ├─ forget_session(session_id): 主动遗忘整个会话
+  │    │   │   └─ episodes 归档 + FAISS 索引联动清理
+  │    │   └─ 遗忘豁免: tier="core" 或 importance > 0.8 的记忆衰减减半
+  │    │
+  │    └─ [CONSOLIDATE] 日终固化 (tier 重分级)
+  │        ├─ TierClassifier: 基于 importance → 分入 hot/warm/cold/core 四层
+  │        │   └─ hot: 最近 7 天 · warm: 7-30 天 · cold: 30+ 天 · core: 豁免
+  │        └─ 存储策略差异: hot→全字段, cold→仅摘要, core→永久保留
+  │
+  ▼  时间 →
+```
+
+> **四阶段闭环**：创造（提取+双写）→ 检索（FAISS+MMR+评分）→ 强化（用进效应+反射）→ 遗忘（衰减+固化+tier 分级）。每一阶段均有可观测面板：MemoryBrowserPanel / DecayDistributionPanel / RecallRacePanel。
 
 > **编号说明**：Phase 28+（2026-06-22+）条目使用 `Phase N Batch M` 标准两层编号。Phase 1-22 条目（2026-06-15~06-22，日期标注）因编写时编号标准尚未建立，表内保留原始 Batch 编号作为历史记录，与 git log 交叉索引一致。旧编号→新编号映射可查 `docs/archive/roadmap-phase-1-18.md`。
 
