@@ -195,6 +195,10 @@ export default function AnswerCard({
     const activeContainers = new Set<HTMLElement>();
     containers.forEach((container) => {
       activeContainers.add(container);
+      // 跳过隐藏容器（如移动端 AnswerCard 在桌面端被 lg:hidden 隐藏），
+      // 避免在 display:none 的祖先内渲染出零尺寸 SVG。
+      // getBoundingClientRect() 对隐藏元素返回 0×0。
+      if (container.getBoundingClientRect().width === 0) return;
       const base64 = container.getAttribute("data-chart");
       const title = container.getAttribute("data-title") || "流程图";
       if (!base64) return;
