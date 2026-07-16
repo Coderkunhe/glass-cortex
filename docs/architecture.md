@@ -4,98 +4,57 @@
 
 ## 系统架构图
 
-![系统架构图](assets/architecture-overview.png)
-
-> **图层说明**：前端 5 页面 → 8 个 API 路由 → 5 个引擎模块 → SQLite + FAISS 双存储。DeepSeek API 为唯一外部依赖。
->
-> <details><summary>📝 Mermaid 源码（点击展开编辑）</summary>
->
-> ```mermaid
-graph TB
-    subgraph Browser["🖥 浏览器"]
-        direction LR
-        Chat["/ 聊天"]
-        Learn["/learn 知识库"]
-        Lab["/lab 实验台"]
-        Profile["/profile 画像"]
-        Obs["/observability 可观测"]
-    end
-
-    subgraph Frontend["Next.js 16 App Router"]
-        direction TB
-        Layout["AppShell 布局层"]
-        Components["共享组件层<br/>ChatMessage · AnswerCard · Drawer<br/>OnionPanel · ProcessDrawer<br/>ErrorBoundary · TabBar · DataState"]
-        Hooks["Hooks 层<br/>useChat · useFetchData<br/>useCodeHighlight · useLocalStorage"]
-        Lib["Lib 层<br/>API Client · renderMarkdown<br/>formatNum · formatTime · confidence"]
-    end
-
-    subgraph API["FastAPI REST API"]
-        direction LR
-        ChatR["/chat"]
-        MemoryR["/memory"]
-        ProfileR["/profiles"]
-        MetricsR["/metrics"]
-        TracesR["/traces"]
-        ContextR["/context"]
-        PlannerR["/planner"]
-        HealthR["/health"]
-    end
-
-    subgraph Engine["Python 引擎层"]
-        direction TB
-        ChatEngine["ChatEngine<br/>聊天管线 · model_router<br/>local_router · CLI"]
-        Memory["记忆系统 (7 modules)<br/>triple · fact · store · index<br/>recall · forget · consolidate"]
-        Planner["Planner (7 modules)<br/>intent · plan · plan_history<br/>reflection · replan"]
-        Context["上下文工程<br/>overflow_sim · partition<br/>budget · session_boundary"]
-        Ledger["TokenLedger<br/>全链路计量 · 归因"]
-    end
-
-    subgraph Data["数据层"]
-        SQLite[("SQLite<br/>episodes · facts<br/>recall_log · traces<br/>session_summaries")]
-        FAISS[("FAISS<br/>语义索引<br/>向量检索")]
-    end
-
-    External["DeepSeek API<br/>LLM 推理"]
-
-    Browser -->|"HTTP"| Frontend
-    Frontend -->|"fetch / JSON"| API
-    ChatR --> ChatEngine
-    MemoryR --> Memory
-    ProfileR --> Memory
-    MetricsR --> Ledger
-    TracesR --> ChatEngine
-    ContextR --> Context
-    PlannerR --> Planner
-    HealthR --> Data
-
-    ChatEngine --> Memory
-    ChatEngine --> Planner
-    ChatEngine --> Context
-    ChatEngine --> Ledger
-    ChatEngine --> External
-
-    Memory --> SQLite
-    Memory --> FAISS
-    Planner --> SQLite
-    Context --> SQLite
-    Ledger --> SQLite
-
-    classDef frontend fill:#61dafb,stroke:#333,color:#000
-    classDef api fill:#009688,stroke:#333,color:#fff
-    classDef engine fill:#764ba2,stroke:#333,color:#fff
-    classDef data fill:#ff6b6b,stroke:#333,color:#fff
-    classDef external fill:#ffa726,stroke:#333,color:#000
-
-    class Frontend,Layout,Components,Hooks,Lib frontend
-    class API,ChatR,MemoryR,ProfileR,MetricsR,TracesR,ContextR,PlannerR,HealthR api
-    class Engine,ChatEngine,Memory,Planner,Context,Ledger engine
-    class Data,SQLite,FAISS data
-    class External external
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                          🖥  浏览器                               │
+│   / 聊天    /learn 知识库    /lab 实验台    /profile    /obs      │
+└──────────────────────────┬───────────────────────────────────────┘
+                           │ HTTP
+┌──────────────────────────▼───────────────────────────────────────┐
+│                    Next.js 16 App Router                         │
+│                                                                  │
+│  AppShell 布局层    │ 共享组件层                                  │
+│                     │ ChatMessage · AnswerCard · Drawer          │
+│  Hooks 层           │ OnionPanel · ProcessDrawer                 │
+│  useChat            │ ErrorBoundary · TabBar · CollapsibleSection│
+│  useFetchData       │                                            │
+│  useCodeHighlight   │ Lib 层                                     │
+│  useLocalStorage    │ API Client · renderMarkdown · formatNum    │
+│                     │ formatTime · confidence · constants        │
+└──────────────────────────┬───────────────────────────────────────┘
+                           │ fetch / JSON
+┌──────────────────────────▼───────────────────────────────────────┐
+│                     FastAPI REST API                             │
+│  /chat  /memory  /profiles  /metrics  /traces  /context  /planner│
+│  /health                                                         │
+└───┬────────┬─────────┬──────────┬──────────┬────────────────────┘
+    │        │         │          │          │
+┌───▼────────▼─────────▼──────────▼──────────▼────────────────────┐
+│                       Python 引擎层                               │
+│                                                                  │
+│  ChatEngine          记忆系统(7)       Planner(7)    上下文工程   │
+│  聊天管线            triple·fact      intent·plan    overflow_sim│
+│  model_router        store·index      plan_history   partition   │
+│  local_router        recall·forget    reflection     budget      │
+│  CLI                 consolidate      replan         session_bnd │
+│                                                                  │
+│  TokenLedger — 全链路计量与归因                                  │
+│                                                                  │
+└───┬─────────┬────────────┬──────────────────────────────────────┘
+    │         │            │              ┌──────────────────┐
+┌───▼─────────▼────────────▼──┐           │   DeepSeek API   │
+│        数据层                │           │   LLM 推理       │
+│  ┌───────────┐ ┌──────────┐ │           └──────────────────┘
+│  │  SQLite   │ │  FAISS   │ │
+│  │  episodes │ │ 语义索引 │ │
+│  │  facts    │ │ 向量检索 │ │
+│  │  traces   │ │          │ │
+│  │  sessions │ │          │ │
+│  └───────────┘ └──────────┘ │
+└─────────────────────────────┘
 ```
 
-</details>
-
-## 实现现状
+> 前端 5 页面 → 8 个 API 路由 → 5 个引擎模块 → SQLite + FAISS 双存储。DeepSeek API 为唯一外部依赖。## 实现现状
 
 > **编号说明**：Phase 28+（2026-06-22+）条目使用 `Phase N Batch M` 标准两层编号。Phase 1-22 条目（2026-06-15~06-22，日期标注）因编写时编号标准尚未建立，表内保留原始 Batch 编号作为历史记录，与 git log 交叉索引一致。旧编号→新编号映射可查 `docs/archive/roadmap-phase-1-18.md`。
 
@@ -475,70 +434,61 @@ graph TB
 
 ## 端到端数据流（聊天请求生命周期）
 
-![聊天请求序列图](assets/chat-sequence.png)
-
-> 上图展示一次聊天请求的完整链路：语义检索 → 记忆召回 → LLM 生成 → 事实抽取 → 双写存储。聊天页 OnionPanel 可按四层渐进披露展开查看各阶段细节。
->
-> <details><summary>📝 Mermaid 源码（点击展开编辑）</summary>
->
-> ```mermaid
-sequenceDiagram
-    actor User as 👤 用户
-    participant FE as Next.js 前端
-    participant API as FastAPI /chat
-    participant Embed as Embedding 引擎
-    participant FAISS as FAISS 索引
-    participant SQLite as SQLite
-    participant CE as ChatEngine
-    participant DS as DeepSeek API
-    participant FE2 as FactExtractor
-
-    User->>FE: 输入问题
-    FE->>API: POST /chat {message, profile_id}
-    API->>Embed: embed(message) → vector
-    Embed-->>API: [0.12, -0.34, ...]
-    API->>FAISS: search(vector, k=20)
-    FAISS-->>API: [ep_42, ep_15, ...]
-
-    par 并行查询
-        API->>SQLite: 查 episodes (by ids)
-        SQLite-->>API: episode rows
-    and
-        API->>SQLite: 查 facts (by ids)
-        SQLite-->>API: fact rows
-    end
-
-    par 并行评分
-        Note over API: 艾宾浩斯强度计算
-    and
-        Note over API: Fact 置信度评分
-    end
-
-    Note over API: 综合排序 Merge → top_k=5
-
-    API->>CE: generate(message, context, recall)
-    CE->>DS: POST /chat/completions
-    DS-->>CE: assistant response
-    CE-->>API: reply
-
-    API->>FE2: extract_facts(message + reply)
-    FE2->>DS: POST /chat/completions
-    DS-->>FE2: extracted facts
-    FE2-->>API: facts + triples
-
-    par 并行写入
-        API->>FAISS: add(embedding, metadata)
-        FAISS-->>API: OK
-    and
-        API->>SQLite: INSERT episodes + facts
-        SQLite-->>API: OK
-    end
-
-    API-->>FE: JSON {reply, intent, trace, ...}
-    FE-->>User: 渲染回复 + 洋葱面板
+```
+ 👤 用户                Next.js            FastAPI         Embedding        FAISS+SQLite     ChatEngine      DeepSeek
+  │                      │                  │                │                 │               │               │
+  │  输入问题            │                  │                │                 │               │               │
+  ├─────────────────────►│                  │                │                 │               │               │
+  │                      │  POST /chat      │                │                 │               │               │
+  │                      ├─────────────────►│                │                 │               │               │
+  │                      │                  │  embed(text)   │                 │               │               │
+  │                      │                  ├───────────────►│                 │               │               │
+  │                      │                  │◄───────────────┤                 │               │               │
+  │                      │                  │  [0.12,...]    │                 │               │               │
+  │                      │                  │                                │               │               │
+  │                      │                  │  FAISS.search(k=20)            │               │               │
+  │                      │                  ├───────────────────────────────►│               │               │
+  │                      │                  │◄───────────────────────────────┤               │               │
+  │                      │                  │  [ep_42, ep_15, ...]           │               │               │
+  │                      │                  │                                │               │               │
+  │                      │                  │  ┌─ SQLite: 查 episodes ─┐    │               │               │
+  │                      │                  │  │  SQLite: 查 facts     │    │               │               │
+  │                      │                  │  └─ 并行查询 ────────────┘    │               │               │
+  │                      │                  │                                │               │               │
+  │                      │                  │  ┌─ 艾宾浩斯强度计算 ──┐      │               │               │
+  │                      │                  │  │  Fact 置信度评分     │      │               │               │
+  │                      │                  │  └─ 并行评分 ──────────┘      │               │               │
+  │                      │                  │                                │               │               │
+  │                      │                  │  综合排序 Merge → top_k=5     │               │               │
+  │                      │                  │                                │               │               │
+  │                      │                  │  generate(msg, ctx, recall)    │               │               │
+  │                      │                  ├───────────────────────────────────────────────►│               │
+  │                      │                  │                                                │  /completions │
+  │                      │                  │                                                ├──────────────►│
+  │                      │                  │                                                │◄──────────────┤
+  │                      │                  │                                                │  response     │
+  │                      │                  │◄───────────────────────────────────────────────┤               │
+  │                      │                  │  reply                                         │               │
+  │                      │                  │                                │               │               │
+  │                      │                  │  FactExtractor: 抽取事实+去重                  │               │
+  │                      │                  │                                                ├──────────────►│
+  │                      │                  │                                                │◄──────────────┤
+  │                      │                  │                                                │  facts        │
+  │                      │                  │                                │               │               │
+  │                      │                  │  ┌─ FAISS.add(embedding) ─┐   │               │               │
+  │                      │                  │  │  SQLite: INSERT ep+fact │   │               │               │
+  │                      │                  │  └─ 并行写入 ─────────────┘   │               │               │
+  │                      │                  │                                │               │               │
+  │                      │  JSON response   │                                │               │               │
+  │                      │◄─────────────────┤                                │               │               │
+  │                      │  {reply,intent,  │                                │               │               │
+  │                      │   trace,...}     │                                │               │               │
+  │  渲染回复+洋葱面板    │                  │                                │               │               │
+  │◄─────────────────────┤                  │                                │               │               │
 ```
 
-</details>
+> 一次聊天请求的完整链路：语义检索 → 并行查库 → 评分排序 → LLM 生成 → 事实抽取 → 双写存储。
+> 聊天页 OnionPanel 按四层渐进披露展开查看各阶段细节。
 
 ## 设计原则
 
