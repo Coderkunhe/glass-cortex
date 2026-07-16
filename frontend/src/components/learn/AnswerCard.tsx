@@ -407,6 +407,7 @@ export default function AnswerCard({
                      [&_code]:text-gm-sm [&_code]:bg-bg-subtle [&_code]:px-gm-1 [&_code]:rounded-gm-xs
                      [&_table]:w-full [&_table]:text-gm-sm [&_td]:border [&_td]:border-border [&_td]:p-gm-2
                      [&_th]:border [&_th]:border-border [&_th]:p-gm-2 [&_th]:text-text-secondary"
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.l1) }}
         />
       </div>
@@ -428,7 +429,7 @@ export default function AnswerCard({
             "[&_th]:border [&_th]:border-border [&_th]:p-gm-2 [&_th]:text-text-secondary"
           }
         >
-          <div dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.l2) }} />
+          <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.l2) }} />
         </CollapsibleSection>
       )}
 
@@ -446,7 +447,7 @@ export default function AnswerCard({
             "[&_code]:text-gm-xs [&_code]:bg-bg-subtle [&_code]:px-gm-1 [&_code]:rounded-gm-xs"
           }
         >
-          <div dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.l3) }} />
+          <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.l3) }} />
         </CollapsibleSection>
       )}
 

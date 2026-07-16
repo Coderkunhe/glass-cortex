@@ -130,6 +130,7 @@ function ChatMessage({
           <span
             ref={contentRef}
             className={`chat-prose text-gm-base ${isUser ? "text-text-inverse" : "text-text"}`}
+            suppressHydrationWarning
             dangerouslySetInnerHTML={{
               __html: renderMarkdown(message.content || ""),
             }}
