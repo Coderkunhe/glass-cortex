@@ -12,6 +12,38 @@
 
 import DOMPurify from "dompurify";
 
+// ── Server-side DOMPurify setup (lazy, jsdom-backed) ────────────────
+// jsdom 仅在 Node.js SSR 环境按需加载，避免客户端 bundle 膨胀。
+// Turbopack 树摇会在客户端剔除此分支（typeof window !== 'undefined' 判定）。
+type PurifyFn = (html: string) => string;
+
+let _purifyFn: PurifyFn | null = null;
+
+function getPurifyFn(): PurifyFn {
+  if (_purifyFn) return _purifyFn;
+
+  if (typeof window !== "undefined") {
+    // Browser: use native DOMPurify with real DOM
+    _purifyFn = (html: string) => DOMPurify.sanitize(html, PURIFY_CONFIG);
+  } else {
+    // Server: attempt jsdom window, fallback to identity
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { JSDOM } = require("jsdom");
+      const domWindow = new JSDOM("").window;
+      // jsdom Window 与 DOMPurify WindowLike 类型不完全匹配（jsdom 缺少 DocumentFragment
+      // 等属性的类型声明），但运行期完全兼容 — DOMPurify 仅使用 createElement 等核心 API。
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const purify = DOMPurify(domWindow as any);
+      _purifyFn = (html: string) => purify.sanitize(html, PURIFY_CONFIG);
+    } catch {
+      // jsdom unavailable (Edge runtime / unknown env) → skip purification
+      _purifyFn = (html: string) => html;
+    }
+  }
+  return _purifyFn;
+}
+
 /** 代码块语言名 → 显示名映射（小写 key → 首字母大写/专用名） */
 const LANG_DISPLAY_NAMES: Record<string, string> = {
   javascript: "JavaScript", js: "JavaScript",
@@ -411,24 +443,31 @@ export function renderMarkdown(md: string): string {
     return url; // 非媒体 URL，保持原样
   });
 
-  // ── 段落换行前保护 <pre> 块（防止 \n\n+ 匹配代码块内部空行）──
-  // 根因：代码块恢复后的内容含原始换行，段落正则 /\n\n+/g 会匹配到
-  // 代码块内部的空行（如两个函数之间的空行），注入 </p><p> 导致
-  // <pre> 被拆成 <pre><code>前半段</code><p><code>后半段</code></p></pre>
+  // ── 替换 mermaid sentinel 为实际 <div>，在段落包装和块元素清理之前完成 ──
+  // 修复 Issue #1：此前 sentinel 在段落清理后才替换，导致 <div> 嵌套在 <p> 内
+  // （sentinel \x00MMD0\x00 不匹配块级元素正则，不被清理，替换后
+  // <div class="gm-mermaid-block"> 卡在 <p> 内 → React 报 div inside p 警告）。
+  html = html.replace(/\x00MMD(\d+)\x00/g, (_m, idx) => {
+    const i = parseInt(idx, 10);
+    const chart = mermaidCharts[i];
+    if (!chart) return "";
+    const base64 = btoa(encodeURIComponent(chart));
+    const titleAttr = mermaidTitles[i]
+      ? ` data-title="${mermaidTitles[i]!.replace(/"/g, "&quot;")}"`
+      : "";
+    return `<div class="gm-mermaid-block" data-chart="${base64}"${titleAttr}></div>`;
+  });
+
+  // ── 段落换行前保护 <pre> 和 mermaid <div> 块（防止 \n\n+ 误匹配内部空行）──
   const preBlocks: string[] = [];
-  html = html.replace(/<pre[\s\S]*?<\/pre>/g, (match) => {
+  html = html.replace(/<(?:pre|div)\b[\s\S]*?<\/(?:pre|div)>/g, (match) => {
     const idx = preBlocks.length;
     preBlocks.push(match);
     return `\x00PRE${idx}\x00`;
   });
 
   // ── 段落换行前：确保块级元素前有双换行 ──
-  // 根因：文本行与 <ol>/<ul>/<pre>/<table> 等块元素间若仅单 \n 分隔，
-  // 段落包装器 /\n\n+/g 不会拆分，导致块元素卡在 <p> 内。
-  // 现有清理正则 /<p>(<ol...)/ 只匹配块元素紧邻 <p> 后，不处理 <p>text\n<ol>。
-  // 修复：在所有块级开放标签前补插入 \n\n，确保段落正确拆分。
   html = html.replace(/([^\n])\n(<(?:ol|ul|table|pre|hr|h[1-6]|blockquote|div)[> ])/g, "$1\n\n$2");
-  // 反向：确保块级闭合标签后也有双换行（防止后续文本粘在块元素同一 <p> 内）
   html = html.replace(/(<\/(?:ol|ul|table|pre|blockquote|div)>)\n([^\n])/g, "$1\n\n$2");
 
   // 段落：连续的非空行
@@ -441,34 +480,16 @@ export function renderMarkdown(md: string): string {
   html = html.replace(/<p>(<(?:table|pre|ul|ol|hr|h[1-6]|blockquote|div)[^>]*>)/g, "$1");
   html = html.replace(/(<\/(?:table|pre|ul|ol|hr|h[1-6]|blockquote|div)>)\s*<\/p>/g, "$1");
 
-  // ── 还原 <pre> 块 ──
+  // ── 还原 <pre> 和 mermaid <div> 块 ──
   html = html.replace(/\x00PRE(\d+)\x00/g, (_m, idx) => {
     return preBlocks[parseInt(idx, 10)] || "";
   });
-  // 还原后的 <pre> 仍在 <p> 中，需再次提取
-  html = html.replace(/<p>(<pre[^>]*>)/g, "$1");
-  html = html.replace(/(<\/pre>)\s*<\/p>/g, "$1");
-  // 修复：<pre> 前有文本内容时（char ≠ >），闭合前面的 <p>
-  // 根因：代码块 sentinel 恢复后，若前有文本（如 "Here is code:\n<pre>..."），
-  // <pre> 不紧邻 <p>，上述两个正则失配，导致 <pre> 留在 <p> 内产生布局异常
-  html = html.replace(/([^>])(<pre)/g, "$1</p>$2");
+  // 还原后的块元素仍在 <p> 中，需再次提取
+  html = html.replace(/<p>(<(?:pre|div)[^>]*>)/g, "$1");
+  html = html.replace(/(<\/(?:pre|div)>)\s*<\/p>/g, "$1");
+  // 修复：块元素前有文本内容时（char ≠ >），闭合前面的 <p>
+  html = html.replace(/([^>])(<(?:pre|div)\b)/g, "$1</p>$2");
 
-  // ── Final: Replace mermaid sentinels with base64-encoded placeholders ──
-  html = html.replace(/\x00MMD(\d+)\x00/g, (_m, idx) => {
-    const i = parseInt(idx, 10);
-    const chart = mermaidCharts[i];
-    if (!chart) return "";
-    const base64 = btoa(encodeURIComponent(chart));
-    const titleAttr = mermaidTitles[i]
-      ? ` data-title="${mermaidTitles[i]!.replace(/"/g, "&quot;")}"`
-      : "";
-    return `<div class="gm-mermaid-block" data-chart="${base64}"${titleAttr}></div>`;
-  });
-
-  // DOMPurify 依赖浏览器 DOM API，SSR 环境跳过。
-  // SSR/客户端输出差异通过 AnswerCard 上 suppressHydrationWarning 处理。
-  if (typeof window !== "undefined") {
-    return DOMPurify.sanitize(html, PURIFY_CONFIG);
-  }
-  return html;
+  // ── DOMPurify 消毒（SSR 通过 jsdom 窗口运行，客户端用浏览器原生 DOM）──
+  return getPurifyFn()(html);
 }
