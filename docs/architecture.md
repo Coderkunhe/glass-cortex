@@ -1,6 +1,93 @@
 # 架构文档
 
-> 最后更新: 2026-07-15 (Phase 66 B122 — UI 共享组件四态补齐)
+> 最后更新: 2026-07-16 (Phase 66 B127 — 新增系统架构 Mermaid 图)
+
+## 系统架构图
+
+```mermaid
+graph TB
+    subgraph Browser["🖥 浏览器"]
+        direction LR
+        Chat["/ 聊天"]
+        Learn["/learn 知识库"]
+        Lab["/lab 实验台"]
+        Profile["/profile 画像"]
+        Obs["/observability 可观测"]
+    end
+
+    subgraph Frontend["Next.js 16 App Router"]
+        direction TB
+        Layout["AppShell 布局层"]
+        Components["共享组件层<br/>ChatMessage · AnswerCard · Drawer<br/>OnionPanel · ProcessDrawer<br/>ErrorBoundary · TabBar · DataState"]
+        Hooks["Hooks 层<br/>useChat · useFetchData<br/>useCodeHighlight · useLocalStorage"]
+        Lib["Lib 层<br/>API Client · renderMarkdown<br/>formatNum · formatTime · confidence"]
+    end
+
+    subgraph API["FastAPI REST API"]
+        direction LR
+        ChatR["/chat"]
+        MemoryR["/memory"]
+        ProfileR["/profiles"]
+        MetricsR["/metrics"]
+        TracesR["/traces"]
+        ContextR["/context"]
+        PlannerR["/planner"]
+        HealthR["/health"]
+    end
+
+    subgraph Engine["Python 引擎层"]
+        direction TB
+        ChatEngine["ChatEngine<br/>聊天管线 · model_router<br/>local_router · CLI"]
+        Memory["记忆系统 (7 modules)<br/>triple · fact · store · index<br/>recall · forget · consolidate"]
+        Planner["Planner (7 modules)<br/>intent · plan · plan_history<br/>reflection · replan"]
+        Context["上下文工程<br/>overflow_sim · partition<br/>budget · session_boundary"]
+        Ledger["TokenLedger<br/>全链路计量 · 归因"]
+    end
+
+    subgraph Data["数据层"]
+        SQLite[("SQLite<br/>episodes · facts<br/>recall_log · traces<br/>session_summaries")]
+        FAISS[("FAISS<br/>语义索引<br/>向量检索")]
+    end
+
+    External["DeepSeek API<br/>LLM 推理"]
+
+    Browser -->|"HTTP"| Frontend
+    Frontend -->|"fetch / JSON"| API
+    ChatR --> ChatEngine
+    MemoryR --> Memory
+    ProfileR --> Memory
+    MetricsR --> Ledger
+    TracesR --> ChatEngine
+    ContextR --> Context
+    PlannerR --> Planner
+    HealthR --> Data
+
+    ChatEngine --> Memory
+    ChatEngine --> Planner
+    ChatEngine --> Context
+    ChatEngine --> Ledger
+    ChatEngine --> External
+
+    Memory --> SQLite
+    Memory --> FAISS
+    Planner --> SQLite
+    Context --> SQLite
+    Ledger --> SQLite
+
+    classDef frontend fill:#61dafb,stroke:#333,color:#000
+    classDef api fill:#009688,stroke:#333,color:#fff
+    classDef engine fill:#764ba2,stroke:#333,color:#fff
+    classDef data fill:#ff6b6b,stroke:#333,color:#fff
+    classDef external fill:#ffa726,stroke:#333,color:#000
+
+    class Frontend,Layout,Components,Hooks,Lib frontend
+    class API,ChatR,MemoryR,ProfileR,MetricsR,TracesR,ContextR,PlannerR,HealthR api
+    class Engine,ChatEngine,Memory,Planner,Context,Ledger engine
+    class Data,SQLite,FAISS data
+    class External external
+```
+
+> **图层说明**：前端 5 页面 → 8 个 API 路由 → 5 个引擎模块 → SQLite + FAISS 双存储。DeepSeek API 为唯一外部依赖。
 
 ## 实现现状
 
@@ -380,28 +467,66 @@
 
 **影响范围**：项目身份文件（pyproject.toml / README.md / CLAUDE.md）、代码标识符（logger 名 / 日志文件名 / UI 文本）、设计原则段重写。
 
-## 端到端数据流（Next.js + FastAPI）
+## 端到端数据流（聊天请求生命周期）
 
-```
-用户输入 (Next.js ChatInput) → POST /api/chat (FastAPI)
-  → Embedding(本地 MiniLM)
-  → FAISS.search(k=20)                         # 语义粗筛
-  → ┌─ SQLite 查 episodes ─┐                    # 并行: fork
-    └─ SQLite 查 facts ───┘
-  → ┌─ 艾宾浩斯强度计算 ──┐                     # 并行: fork
-    └─ Fact 置信度评分 ───┘
-  → 综合排序(Merge, top_k=5)                    # 汇聚: join
-  → ChatEngine(DeepSeek API)                   # 记忆上下文注入 + 生成回复
-  → FactExtractor(DeepSeek API)                # 事实抽取 + 去重 + 存储
-  → ┌─ FAISS 写入 ────────┐                    # 并行: store_dual
-    └─ SQLite 写入 ───────┘
-  → 回复写入 SQLite + FAISS                    # AI 回复也进入记忆系统
-  → JSON 响应 → Next.js ChatPanel              # 前端渲染
-  → 洋葱面板 (OnionPanel) 展开可查看           # 意图识别 → 记忆召回 → 上下文 → 模型调用
-    四层渐进披露
+```mermaid
+sequenceDiagram
+    actor User as 👤 用户
+    participant FE as Next.js 前端
+    participant API as FastAPI /chat
+    participant Embed as Embedding 引擎
+    participant FAISS as FAISS 索引
+    participant SQLite as SQLite
+    participant CE as ChatEngine
+    participant DS as DeepSeek API
+    participant FE2 as FactExtractor
+
+    User->>FE: 输入问题
+    FE->>API: POST /chat {message, profile_id}
+    API->>Embed: embed(message) → vector
+    Embed-->>API: [0.12, -0.34, ...]
+    API->>FAISS: search(vector, k=20)
+    FAISS-->>API: [ep_42, ep_15, ...]
+
+    par 并行查询
+        API->>SQLite: 查 episodes (by ids)
+        SQLite-->>API: episode rows
+    and
+        API->>SQLite: 查 facts (by ids)
+        SQLite-->>API: fact rows
+    end
+
+    par 并行评分
+        Note over API: 艾宾浩斯强度计算
+    and
+        Note over API: Fact 置信度评分
+    end
+
+    Note over API: 综合排序 Merge → top_k=5
+
+    API->>CE: generate(message, context, recall)
+    CE->>DS: POST /chat/completions
+    DS-->>CE: assistant response
+    CE-->>API: reply
+
+    API->>FE2: extract_facts(message + reply)
+    FE2->>DS: POST /chat/completions
+    DS-->>FE2: extracted facts
+    FE2-->>API: facts + triples
+
+    par 并行写入
+        API->>FAISS: add(embedding, metadata)
+        FAISS-->>API: OK
+    and
+        API->>SQLite: INSERT episodes + facts
+        SQLite-->>API: OK
+    end
+
+    API-->>FE: JSON {reply, intent, trace, ...}
+    FE-->>User: 渲染回复 + 洋葱面板
 ```
 
-**Streamlit 版已删除**（M4）。当前仅 FastAPI + Next.js。
+> 上图展示一次聊天请求的完整链路：语义检索 → 记忆召回 → LLM 生成 → 事实抽取 → 双写存储。聊天页 OnionPanel 可按四层渐进披露展开查看各阶段细节。
 
 ## 设计原则
 
