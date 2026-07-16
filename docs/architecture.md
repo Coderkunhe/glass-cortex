@@ -4,7 +4,13 @@
 
 ## 系统架构图
 
-```mermaid
+![系统架构图](assets/architecture-overview.png)
+
+> **图层说明**：前端 5 页面 → 8 个 API 路由 → 5 个引擎模块 → SQLite + FAISS 双存储。DeepSeek API 为唯一外部依赖。
+>
+> <details><summary>📝 Mermaid 源码（点击展开编辑）</summary>
+>
+> ```mermaid
 graph TB
     subgraph Browser["🖥 浏览器"]
         direction LR
@@ -87,7 +93,7 @@ graph TB
     class External external
 ```
 
-> **图层说明**：前端 5 页面 → 8 个 API 路由 → 5 个引擎模块 → SQLite + FAISS 双存储。DeepSeek API 为唯一外部依赖。
+</details>
 
 ## 实现现状
 
@@ -469,7 +475,13 @@ graph TB
 
 ## 端到端数据流（聊天请求生命周期）
 
-```mermaid
+![聊天请求序列图](assets/chat-sequence.png)
+
+> 上图展示一次聊天请求的完整链路：语义检索 → 记忆召回 → LLM 生成 → 事实抽取 → 双写存储。聊天页 OnionPanel 可按四层渐进披露展开查看各阶段细节。
+>
+> <details><summary>📝 Mermaid 源码（点击展开编辑）</summary>
+>
+> ```mermaid
 sequenceDiagram
     actor User as 👤 用户
     participant FE as Next.js 前端
@@ -526,7 +538,7 @@ sequenceDiagram
     FE-->>User: 渲染回复 + 洋葱面板
 ```
 
-> 上图展示一次聊天请求的完整链路：语义检索 → 记忆召回 → LLM 生成 → 事实抽取 → 双写存储。聊天页 OnionPanel 可按四层渐进披露展开查看各阶段细节。
+</details>
 
 ## 设计原则
 
