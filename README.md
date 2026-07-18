@@ -83,6 +83,7 @@ RAG（检索增强生成）和 MCP（Model Context Protocol）在路线图上标
 | `make dev` | 启动 FastAPI + Next.js 前端 |
 | `make check-all` | Python + 前端全栈门禁 |
 | `make lint-fix` | ruff 自动修复格式问题 |
+| `make ship` | 全栈门禁 → 推送 Gitee → 自动镜像 GitHub |
 
 运行 `make help` 查看全部可用命令。
 <!-- GITEE-ONLY-END -->

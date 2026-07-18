@@ -1,4 +1,4 @@
-.PHONY: help setup clean check check-safety check-comments check-docs check-contracts check-theme check-visual check-visual-update contract-snapshot hooks lint lint-fix type test api frontend-setup frontend-dev frontend-test frontend-lint frontend-check frontend-build
+.PHONY: help setup clean check check-safety check-comments check-docs check-contracts check-theme check-visual check-visual-update contract-snapshot hooks lint lint-fix type test api ship frontend-setup frontend-dev frontend-test frontend-lint frontend-check frontend-build
 
 # ── 命令列表（默认目标）────────────────────────────────────────
 help:
@@ -23,6 +23,7 @@ help:
 	@echo "  make dev        一键启动 API + 前端（开发模式）"
 	@echo "  make api        启动 FastAPI REST API (Phase 28 M1)"
 	@echo "  make hooks     安装 pre-commit hook"
+	@echo "  make ship      全栈门禁 → 推送 Gitee → 自动镜像 GitHub（唯一推送命令）"
 	@echo "  make frontend-setup  安装前端 npm 依赖"
 	@echo "  make frontend-dev    启动 Next.js 开发服务器"
 	@echo "  make frontend-test   运行前端测试"
@@ -232,6 +233,16 @@ check-all: check frontend-type frontend-lint check-theme check-visual check-shar
 # 已编写备用，迁库开源后即启用。详见 docs/ci-cd.md。
 ci: check check-all
 	@echo "✅ CI 全栈门禁通过 (lint + type + test + 前端 + 浏览器运行时)"
+
+# ── 推送与镜像 ──────────────────────────────────────────────────
+# 一条命令完成：全栈门禁 → 推送 Gitee → 脱敏镜像 GitHub
+ship: check-all
+	git push origin HEAD
+	@echo ""
+	@echo "=== 镜像到 GitHub 公开仓库 ==="
+	bash scripts/mirror-to-github.sh
+	@echo ""
+	@echo "✅ ship 完成 — Gitee + GitHub 双平台已同步"
 
 frontend-build:
 	cd frontend && npm run build

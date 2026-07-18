@@ -1,6 +1,6 @@
 .PHONY: help setup clean check lint lint-fix type test api dev \
         frontend-setup frontend-dev frontend-test frontend-lint frontend-type frontend-check frontend-build \
-        check-all hooks
+        check-all hooks ship
 
 # ── 命令列表 ────────────────────────────────────────────────────
 help:
@@ -22,6 +22,7 @@ help:
 	@echo "  make frontend-lint   运行 ESLint"
 	@echo "  make frontend-check  type + lint + test（前端门禁）"
 	@echo "  make frontend-build  生产构建"
+	@echo "  make ship      全栈门禁 → 推送（公开版，不含镜像脚本）"
 
 # ── 环境初始化 ─────────────────────────────────────────────────
 setup:
@@ -100,6 +101,11 @@ frontend-build:
 # ── 全栈门禁 ────────────────────────────────────────────────────
 check-all: check frontend-check
 	@echo "✅ check-all 全绿 (Python + 前端)"
+
+# ── 推送（公开版，不含镜像脚本）──────────────────────────────────
+ship: check-all
+	git push origin HEAD
+	@echo "✅ ship 完成"
 
 # ── 安装 git hooks ────────────────────────────────────────────
 hooks:
