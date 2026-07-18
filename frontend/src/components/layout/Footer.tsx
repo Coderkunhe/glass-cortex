@@ -1,4 +1,4 @@
-import { RiBrainLine, RiCodeLine } from "@remixicon/react";
+import { RiBrainLine, RiGithubFill } from "@remixicon/react";
 
 /**
  * 全局底栏——全宽背景条，内容区对齐主内容列。
@@ -24,13 +24,13 @@ export default function Footer() {
           <span>逐层解剖 AI Robot 工作原理</span>
         </div>
         <a
-          href="https://gitee.com/Coderkunhe/agent-instances"
+          href="https://github.com/Coderkunhe/glass-cortex"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-gm-1 hover:text-text transition-colors"
         >
-          <RiCodeLine size={14} />
-          <span>源码</span>
+          <RiGithubFill size={14} />
+          <span>GitHub</span>
         </a>
       </div>
     </footer>

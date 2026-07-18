@@ -16,9 +16,9 @@ describe("Footer", () => {
 
   it("renders source code link with correct security attributes", () => {
     render(<Footer />);
-    const link = screen.getByRole("link", { name: /源码/ });
+    const link = screen.getByRole("link", { name: /GitHub/ });
     expect(link).toBeInTheDocument();
-    expect(link.getAttribute("href")).toBe("https://gitee.com/Coderkunhe/agent-instances");
+    expect(link.getAttribute("href")).toBe("https://github.com/Coderkunhe/glass-cortex");
     expect(link.getAttribute("target")).toBe("_blank");
     expect(link.getAttribute("rel")).toBe("noopener noreferrer");
   });
@@ -41,9 +41,9 @@ describe("Footer", () => {
 
   it("renders source code link text inside the link", () => {
     render(<Footer />);
-    const link = screen.getByRole("link", { name: /源码/ });
+    const link = screen.getByRole("link", { name: /GitHub/ });
     const span = link.querySelector("span");
-    expect(span?.textContent).toBe("源码");
+    expect(span?.textContent).toBe("GitHub");
   });
 
   it("footer inner wrapper has flexbox layout classes", () => {
@@ -64,7 +64,7 @@ describe("Footer", () => {
 
   it("source code link has hover color transition class", () => {
     render(<Footer />);
-    const link = screen.getByRole("link", { name: /源码/ });
+    const link = screen.getByRole("link", { name: /GitHub/ });
     expect(link.className).toContain("hover:text-text");
     expect(link.className).toContain("transition-colors");
   });
