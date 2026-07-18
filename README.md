@@ -8,10 +8,13 @@ See How AI Remembers, Thinks, and Plans
 ## 30 秒快速体验
 
 ```bash
-git clone <repo-url> && cd glassmind
+# Gitee（国内用户推荐）
+git clone git@gitee.com:Coderkunhe/agent-instances.git && cd agent-instances/glasscortex
+# GitHub
+git clone git@github.com:Coderkunhe/glass-cortex.git && cd glass-cortex/glasscortex
 make setup                               # 创建环境 → 安装依赖
 export DEEPSEEK_API_KEY=sk-...           # DeepSeek API key（注册即送额度）
-make web                                 # 浏览器打开 → 开始对话
+make dev                                 # 浏览器打开 → 开始对话
 ```
 
 也可以用终端：
@@ -49,6 +52,17 @@ export DEEPSEEK_API_KEY=sk-your-key-here
 
 在 [DeepSeek 开放平台](https://platform.deepseek.com) 注册即送免费额度。
 
+## 为什么暂未做 RAG 和 MCP
+
+RAG（检索增强生成）和 MCP（Model Context Protocol）在路线图上标记为「远期」，暂未实现的原因：
+
+**领域聚焦优先**。GlassCortex 的定位是 AI Robot **认知层透明化**——记忆如何形成与遗忘、上下文如何组装与溢出、Token 如何计量与节省、意图如何识别与任务如何规划。这四大支柱已经构成完整的认知闭环，每个支柱都有独立的可视化面板、状态机、边界测试。RAG 和 MCP 属于 Agent **框架层**能力，解决的是「怎么调用外部工具/检索外部知识」——这与认知层透明化的分层边界不同。
+
+**认知层先行，框架层后至**。在四大支柱完全落地、透明化体验打磨到位之前，不扩展到新的技术领域。RAG 和 MCP 作为认知层的自然延伸，会在核心支柱成熟后加入——届时外部知识检索（RAG）和外部工具调用（MCP）将成为第五、第六支柱，同样带有完整的透明化面板。
+
+详见 [docs/architecture.md](docs/architecture.md) 项目边界定义。
+
+<!-- GITEE-ONLY-START -->
 ## 文档导航
 
 | 你想了解 | 看这里 |
@@ -66,8 +80,9 @@ export DEEPSEEK_API_KEY=sk-your-key-here
 | 命令 | 用途 |
 |------|------|
 | `make check` | lint + type + test 全量门禁 |
-| `make web` | 启动 Streamlit Web UI |
-| `make smoke` | Streamlit 冒烟测试（启动 → curl 200 → 退出） |
+| `make dev` | 启动 FastAPI + Next.js 前端 |
+| `make check-all` | Python + 前端全栈门禁 |
 | `make lint-fix` | ruff 自动修复格式问题 |
 
 运行 `make help` 查看全部可用命令。
+<!-- GITEE-ONLY-END -->
