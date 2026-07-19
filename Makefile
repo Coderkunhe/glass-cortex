@@ -38,7 +38,7 @@ setup:
 	./venv/bin/pip install -r requirements-lock.txt
 	./venv/bin/pre-commit install
 	@echo "→ 安装 post-commit hook（会话级 Batch 计数）"
-	@cp tools/post-commit.sh ../.git/hooks/post-commit && chmod +x ../.git/hooks/post-commit
+	@cp tools/post-commit.sh .git/hooks/post-commit && chmod +x .git/hooks/post-commit
 	@echo "✅ 环境就绪，运行 make check 验证"
 
 # ── 清理：回到 clone 状态 ─────────────────────────────────────
@@ -47,7 +47,7 @@ clean:
 
 # ── 重置 Batch 计数器 ─────────────────────────────────────
 reset-batch-counter:
-	@rm -f ../.git/batch-counter && echo "✅ Batch 计数器已重置"
+	@rm -f .git/batch-counter && echo "✅ Batch 计数器已重置"
 
 # ── 提交流程 ──────────────────────────────────────────────
 # 见 LRN-2026-061: frontend-lint + check-theme 在 pre-commit stash 沙箱中
