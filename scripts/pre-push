@@ -20,9 +20,9 @@ if [ "$REMOTE" != "origin" ]; then
   exit 0
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-MIRROR_SCRIPT="$SCRIPT_DIR/mirror-to-github.sh"
+# 使用 git rev-parse 定位项目根目录（hook 从 .git/hooks/ 运行，不能用 $0 推导）
+PROJECT_ROOT="$(git rev-parse --show-toplevel)"
+MIRROR_SCRIPT="$PROJECT_ROOT/scripts/mirror-to-github.sh"
 LOG_FILE="$PROJECT_ROOT/data/mirror-sync.log"
 
 # ── 读取 stdin: <local ref> <local sha1> <remote ref> <remote sha1> ──
