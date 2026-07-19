@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# ============================================================================
+# pre-push hook — push origin master 后自动触发 GitHub 镜像
+#
+# 机制: pre-push 无法直接 post-push，所以 spawn 后台进程：
+#       1. 等待 push 完成（Git 协议传输在 hook 退出后继续）
+#       2. 运行 mirror-to-github.sh 脱敏同步 GitHub
+#
+# 安装: make hooks（或 make setup 首次初始化）
+# 日志: data/mirror-sync.log
+# ============================================================================
+set -euo pipefail
+
+# ── 只处理 origin 的 push ────────────────────────────────────
+REMOTE="$1"
+REMOTE_URL="$2"
+
+# 非 origin → 跳过
+if [ "$REMOTE" != "origin" ]; then
+  exit 0
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+MIRROR_SCRIPT="$SCRIPT_DIR/mirror-to-github.sh"
+LOG_FILE="$PROJECT_ROOT/data/mirror-sync.log"
+
+# ── 读取 stdin: <local ref> <local sha1> <remote ref> <remote sha1> ──
+TRIGGER=false
+while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
+  # 删除操作 (local_sha 全零) → 跳过
+  if [ "$local_sha" = "0000000000000000000000000000000000000000" ]; then
+    continue
+  fi
+
+  # 推送 master 或 main 分支 → 触发镜像
+  case "$remote_ref" in
+    refs/heads/master|refs/heads/main)
+      TRIGGER=true
+      ;;
+  esac
+done
+
+if [ "$TRIGGER" != "true" ]; then
+  exit 0
+fi
+
+# ── 后台触发镜像（不阻塞 push）───────────────────────────────
+(
+  # 等待 push 传输完成（Git 在 hook 退出后继续传输，给足时间）
+  sleep 5
+
+  # 确保日志目录存在
+  mkdir -p "$(dirname "$LOG_FILE")"
+
+  echo "" >> "$LOG_FILE"
+  echo "=== $(date '+%Y-%m-%d %H:%M:%S') auto-sync trigger ===" >> "$LOG_FILE"
+
+  if [ -x "$MIRROR_SCRIPT" ]; then
+    bash "$MIRROR_SCRIPT" >> "$LOG_FILE" 2>&1 && \
+      echo "✅ auto-sync success" >> "$LOG_FILE" || \
+      echo "❌ auto-sync failed (exit=$?)" >> "$LOG_FILE"
+  else
+    echo "⚠️  mirror script not found: $MIRROR_SCRIPT" >> "$LOG_FILE"
+  fi
+) &
+disown
+
+echo ""
+echo "🔄 GitHub 镜像将在后台自动同步（不阻塞 push）"
+echo "   查看日志: cat data/mirror-sync.log"
+echo ""

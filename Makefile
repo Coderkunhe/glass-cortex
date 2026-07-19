@@ -22,7 +22,7 @@ help:
 	@echo "  make contract-snapshot  更新契约签名快照基线"
 	@echo "  make dev        一键启动 API + 前端（开发模式）"
 	@echo "  make api        启动 FastAPI REST API (Phase 28 M1)"
-	@echo "  make hooks     安装 pre-commit hook"
+	@echo "  make hooks     安装 git hooks（pre-commit + pre-push 自动镜像）"
 	@echo "  make ship      全栈门禁 → 推送 Gitee → 自动镜像 GitHub（唯一推送命令）"
 	@echo "  make frontend-setup  安装前端 npm 依赖"
 	@echo "  make frontend-dev    启动 Next.js 开发服务器"
@@ -39,6 +39,8 @@ setup:
 	./venv/bin/pre-commit install
 	@echo "→ 安装 post-commit hook（会话级 Batch 计数）"
 	@cp tools/post-commit.sh .git/hooks/post-commit && chmod +x .git/hooks/post-commit
+	@echo "→ 安装 pre-push hook（push master → 自动镜像 GitHub）"
+	@cp scripts/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
 	@echo "✅ 环境就绪，运行 make check 验证"
 
 # ── 清理：回到 clone 状态 ─────────────────────────────────────
@@ -253,3 +255,6 @@ contract-snapshot:
 
 # ── 安装 git hooks ────────────────────────────────────────
 hooks:
+	@cp tools/post-commit.sh .git/hooks/post-commit && chmod +x .git/hooks/post-commit
+	@cp scripts/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+	@echo "✅ git hooks 已安装（post-commit Batch 计数 + pre-push 自动镜像 GitHub）"
