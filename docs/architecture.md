@@ -242,7 +242,7 @@
 
 > **编号说明**：Phase 28+（2026-06-22+）条目使用 `Phase N Batch M` 标准两层编号。Phase 1-22 条目（2026-06-15~06-22，日期标注）因编写时编号标准尚未建立，表内保留原始 Batch 编号作为历史记录，与 git log 交叉索引一致。旧编号→新编号映射可查 `docs/archive/roadmap-phase-1-18.md`。
 
-| 组件 | 状态 | 日期
+| 组件 | 状态 | 日期 | 说明 |
 |------|------|----------|------|
 | 项目骨架 | ✅ 完成 | 2026-06-20 | CLAUDE.md / pyproject.toml / Makefile (web + web-debug + api) / docs/ |
 | FastAPI REST API | ✅ M1 完成 | 2026-06-22 | `api/main.py`（FastAPI + CORS + 3 层异常处理）+ `api/routers/`（8 路由）+ `api/schemas.py`（Pydantic v2，30+ 模型）— Phase 28 Batch 122-124 |

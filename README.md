@@ -9,9 +9,9 @@ See How AI Remembers, Thinks, and Plans
 
 ```bash
 # Gitee（国内用户推荐）
-git clone git@gitee.com:Coderkunhe/agent-instances.git && cd agent-instances/glasscortex
+git clone git@gitee.com:Coderkunhe/ai-glass-cortex.git && cd ai-glass-cortex
 # GitHub
-git clone git@github.com:Coderkunhe/glass-cortex.git && cd glass-cortex/glasscortex
+git clone git@github.com:Coderkunhe/glass-cortex.git && cd glass-cortex
 make setup                               # 创建环境 → 安装依赖
 export DEEPSEEK_API_KEY=sk-...           # DeepSeek API key（注册即送额度）
 make dev                                 # 浏览器打开 → 开始对话
