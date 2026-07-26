@@ -107,7 +107,7 @@ class EmbedConfig:
 class LLMConfig:
     """大语言模型配置——B77 从 Settings 扁平字段提取。"""
 
-    llm_model: str = "deepseek-chat"
+    llm_model: str = "deepseek-v4-flash"
     llm_base_url: str = "https://api.deepseek.com"
     llm_api_key_env: str = "DEEPSEEK_API_KEY"
     llm_max_tokens: int = 1024
@@ -115,7 +115,7 @@ class LLMConfig:
     llm_timeout: float = 60.0  # OpenAI 客户端请求超时（秒），默认 60s
     fact_extraction_max_tokens: int = 512
     # 可用模型列表 — 用于 Web UI 下拉选择
-    available_models: tuple[str, ...] = ("deepseek-chat", "deepseek-reasoner")
+    available_models: tuple[str, ...] = ("deepseek-v4-flash", "deepseek-v4-pro")
 
 
 @dataclass(frozen=True)
@@ -254,8 +254,8 @@ class RouterConfig:
     """模型路由配置——B80 从 Settings 扁平字段提取。"""
 
     routing_enabled: bool = False  # 模型路由总开关
-    simple_model: str = "deepseek-chat"  # 简单意图使用模型
-    complex_model: str = "deepseek-reasoner"  # 复杂意图使用模型
+    simple_model: str = "deepseek-v4-flash"  # 简单意图使用模型
+    complex_model: str = "deepseek-v4-pro"  # 复杂意图使用模型
     simple_intents: tuple[str, ...] = ("闲聊", "澄清")  # 简单意图标签
 
 

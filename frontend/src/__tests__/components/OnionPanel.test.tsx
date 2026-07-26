@@ -21,7 +21,7 @@ const baseContextMeta = {
 
 const baseApiTrace = {
   caller: "chat",
-  model: "deepseek-chat",
+  model: "deepseek-v4-flash",
   temperature: 0.7,
   max_tokens: 1024,
   elapsed_ms: 423,
@@ -224,7 +224,7 @@ describe("OnionPanel", () => {
 
   it("shows model name", () => {
     render(<OnionPanel response={buildResponse()} />);
-    expect(screen.getByText("deepseek-chat")).toBeInTheDocument();
+    expect(screen.getByText("deepseek-v4-flash")).toBeInTheDocument();
   });
 
   it("shows elapsed time in milliseconds", () => {

@@ -76,14 +76,14 @@ class TestModelRouterDisabled:
         """路由关闭时，decide() 返回 settings.llm_model。"""
         # 默认 Settings routing_enabled=False
         decision = router.decide("提问")
-        assert decision.model == "deepseek-chat"
+        assert decision.model == "deepseek-v4-flash"
         assert decision.reason == "路由未启用，使用默认模型"
         assert decision.complexity == "simple"
 
     def test_disabled_all_intents_same(self, router: ModelRouter) -> None:
         """路由关闭时，所有意图都返回默认模型。"""
         for intent in ("闲聊", "指令", "探索", "澄清", "提问"):
-            assert router.decide(intent).model == "deepseek-chat"
+            assert router.decide(intent).model == "deepseek-v4-flash"
 
 
 class TestModelRouterEnabled:
@@ -102,7 +102,7 @@ class TestModelRouterEnabled:
         )
         router = ModelRouter()
         decision = router.decide("闲聊")
-        assert decision.model == "deepseek-chat"  # simple_model
+        assert decision.model == "deepseek-v4-flash"  # simple_model
         assert decision.complexity == "simple"
         assert "简单任务" in decision.reason
 
@@ -115,17 +115,17 @@ class TestModelRouterEnabled:
         router = ModelRouter()
         decision = router.decide("澄清")
         assert decision.complexity == "simple"
-        assert decision.model == "deepseek-chat"
+        assert decision.model == "deepseek-v4-flash"
 
     def test_complex_intent_routes_to_complex_model(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """提问意图 → complex_model（deepseek-reasoner）。"""
+        """提问意图 → complex_model（deepseek-v4-pro）。"""
         monkeypatch.setattr(
             "src.chat.model_router.settings",
             Settings(router=RouterConfig(routing_enabled=True)),
         )
         router = ModelRouter()
         decision = router.decide("提问")
-        assert decision.model == "deepseek-reasoner"  # complex_model
+        assert decision.model == "deepseek-v4-pro"  # complex_model
         assert decision.complexity == "complex"
         assert "复杂任务" in decision.reason
 
@@ -138,7 +138,7 @@ class TestModelRouterEnabled:
         router = ModelRouter()
         decision = router.decide("指令")
         assert decision.complexity == "complex"
-        assert decision.model == "deepseek-reasoner"
+        assert decision.model == "deepseek-v4-pro"
 
     def test_explore_intent_is_complex(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """探索意图 → complex。"""
@@ -158,7 +158,7 @@ class TestModelRouterEnabled:
         )
         router = ModelRouter()
         decision = router.decide("指令")
-        assert decision.fallback_model == "deepseek-chat"
+        assert decision.fallback_model == "deepseek-v4-flash"
 
     def test_simple_has_complex_fallback(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """简单意图的回退模型是 complex_model。"""
@@ -168,7 +168,7 @@ class TestModelRouterEnabled:
         )
         router = ModelRouter()
         decision = router.decide("闲聊")
-        assert decision.fallback_model == "deepseek-reasoner"
+        assert decision.fallback_model == "deepseek-v4-pro"
 
     def test_custom_simple_intents(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """自定义 simple_intents 配置生效。"""
@@ -212,7 +212,7 @@ class TestModelRouterEdgeCases:
         router = ModelRouter()
         # routing_enabled=False 时总是默认模型
         decision = router.decide("未知类别")
-        assert decision.model == "deepseek-chat"
+        assert decision.model == "deepseek-v4-flash"
 
 
 # ── Phase 55 Batch 3: 失败回退 ──

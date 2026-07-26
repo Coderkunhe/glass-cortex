@@ -125,7 +125,7 @@ class TestGenerate:
         engine.generate("hi", [])
 
         call_kwargs = mock_client.chat.completions.create.call_args[1]
-        assert call_kwargs["model"] == "deepseek-chat"
+        assert call_kwargs["model"] == "deepseek-v4-flash"
         assert call_kwargs["temperature"] == 0.7
         assert call_kwargs["max_tokens"] == 1024
 

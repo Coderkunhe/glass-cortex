@@ -73,20 +73,20 @@ export interface SessionStats {
 // ── L5 模型推理参数 ────────────────────────────────────────────────
 
 /** L5 层支持的模型选项列表。 */
-export const L5_MODEL_OPTIONS = ["deepseek-chat", "deepseek-reasoner"] as const;
+export const L5_MODEL_OPTIONS = ["deepseek-v4-flash", "deepseek-v4-pro"] as const;
 
 /** L5 模型标识 — 从 L5_MODEL_OPTIONS 派生的联合类型。 */
 export type L5Model = (typeof L5_MODEL_OPTIONS)[number];
 
 /** L5 模型的人类可读标签，用于下拉选择器等 UI 展示。 */
 export const L5_MODEL_LABELS: Record<L5Model, string> = {
-  "deepseek-chat": "deepseek-chat — 日常对话",
-  "deepseek-reasoner": "deepseek-reasoner — 复杂推理",
+  "deepseek-v4-flash": "deepseek-v4-flash — 日常对话",
+  "deepseek-v4-pro": "deepseek-v4-pro — 复杂推理",
 };
 
 /** L5 模型推理参数 — 控制模型选择、温度与输出长度。 */
 export interface L5InferenceParams {
-  /** 模型名称 (deepseek-chat / deepseek-reasoner) */
+  /** 模型名称 (deepseek-v4-flash / deepseek-v4-pro) */
   model: L5Model;
   /** 采样温度 (0.0-2.0, step 0.1)，越高越有创造性 */
   temperature: number;
@@ -96,7 +96,7 @@ export interface L5InferenceParams {
 
 /** L5 模型推理参数的默认值。 */
 export const DEFAULT_L5_INFERENCE: L5InferenceParams = {
-  model: "deepseek-chat",
+  model: "deepseek-v4-flash",
   temperature: 0.7,
   max_tokens: 1024,
 };

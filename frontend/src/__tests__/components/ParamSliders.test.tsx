@@ -176,15 +176,15 @@ describe("ParamSliders", () => {
     // L3 select + L5 model select = 2 selects
     expect(selects.length).toBe(2);
     const modelSelect = selects[1] as HTMLSelectElement;
-    expect(modelSelect.value).toBe("deepseek-chat");
+    expect(modelSelect.value).toBe("deepseek-v4-flash");
   });
 
   it("calls onL5Change when model select changes", () => {
     render(<ParamSliders {...defaultProps} />);
     const selects = document.querySelectorAll("select");
     const modelSelect = selects[1];
-    fireEvent.change(modelSelect, { target: { value: "deepseek-reasoner" } });
-    expect(mockOnL5Change).toHaveBeenCalledWith({ model: "deepseek-reasoner" });
+    fireEvent.change(modelSelect, { target: { value: "deepseek-v4-pro" } });
+    expect(mockOnL5Change).toHaveBeenCalledWith({ model: "deepseek-v4-pro" });
   });
 
   it("calls onL5Change when temperature slider changes", () => {

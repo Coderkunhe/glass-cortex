@@ -263,7 +263,7 @@ export default function ParamSliders({
           value={l5.model}
           options={L5_MODEL_OPTIONS}
           labels={L5_MODEL_LABELS}
-          hint="deepseek-chat=日常对话 | deepseek-reasoner=复杂推理"
+          hint="deepseek-v4-flash=日常对话 | deepseek-v4-pro=复杂推理"
           onChange={(v) => onL5Change({ model: v })}
         />
         <SliderControl

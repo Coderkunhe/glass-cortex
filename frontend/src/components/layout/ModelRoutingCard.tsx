@@ -20,8 +20,8 @@ import { L5_MODEL_OPTIONS } from "@/lib/chatParams";
 
 /** 模型显示名称映射 */
 const MODEL_LABELS: Record<string, string> = {
-  "deepseek-chat": "DeepSeek V3",
-  "deepseek-reasoner": "DeepSeek R1",
+  "deepseek-v4-flash": "DeepSeek V4 Flash",
+  "deepseek-v4-pro": "DeepSeek V4 Pro",
 };
 
 /** 复杂度显示标签 */

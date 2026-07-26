@@ -172,6 +172,19 @@ GLM-5.2 适合**预算宽裕、重交付物质量与代码事实严谨**的内�
 
 ---
 
+## DeepSeek 模型 ID 别名映射
+
+> 2026-07-26 更新：DeepSeek API `/models` 端点返回 `deepseek-v4-flash` + `deepseek-v4-pro`。旧名 `deepseek-chat` / `deepseek-reasoner` 仍可用（服务端别名映射），响应正常（~200ms）。`src/config.py` 默认值已于 Phase 67 B16 升级为 v4 命名。
+
+| 旧别名（已弃用） | 当前 ID | 说明 |
+|:--|:--|:--|
+| `deepseek-chat` | `deepseek-v4-flash` | 轻量模型，适合简单意图 + 日常对话 |
+| `deepseek-reasoner` | `deepseek-v4-pro` | 强推理模型，适合复杂意图 + 代码生成 |
+
+> 风险：别名下线日期尚无官方公告。届时未升级的部署会直接断链。建议所有新部署使用 `deepseek-v4-*` 命名。
+
+---
+
 ## 改进抓手（供后续模型自查，非任一模型专属）
 
 1. **cwd 钉死** — 跨 frontend/项目根切换时，每个 Bash 命令显式 `cd`，不依赖持久化。

@@ -113,7 +113,7 @@ def _mock_api_trace() -> dict[str, object]:
     """Build minimal api_trace dict (conforms to ApiTrace model)."""
     return {
         "caller": "chat",
-        "model": "deepseek-chat",
+        "model": "deepseek-v4-flash",
         "temperature": 0.7,
         "max_tokens": 1024,
         "elapsed_ms": 100.0,

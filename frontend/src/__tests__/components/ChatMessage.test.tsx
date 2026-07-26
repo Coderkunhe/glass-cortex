@@ -40,7 +40,7 @@ function mockAssistantMsg(overrides: Partial<Message> = {}): Message {
       },
       api_trace: {
         caller: "chat",
-        model: "deepseek-chat",
+        model: "deepseek-v4-flash",
         temperature: 0.7,
         max_tokens: 1024,
         elapsed_ms: 350,
@@ -204,7 +204,7 @@ describe("ChatMessage", () => {
     const userMsg: Message = { id: "1", role: "user", content: "你好", createdAt: Date.now() };
     const trace = {
       caller: "chat",
-      model: "deepseek-chat",
+      model: "deepseek-v4-flash",
       temperature: 0.7,
       max_tokens: 1024,
       elapsed_ms: 350,

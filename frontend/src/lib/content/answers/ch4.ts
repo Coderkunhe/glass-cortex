@@ -638,10 +638,10 @@ $$\\text{CPU} = \\frac{\\text{input_tokens} \\times \\text{input_price} + \\text
 
 | 模型 | Input Tokens | Output Tokens | Input Price/1M | Output Price/1M | 成本 | 质量分 | CPU |
 |------|:-----------:|:------------:|:--------------:|:---------------:|:----:|:-----:|:---:|
-| deepseek-chat | 500 | 200 | ¥1 | ¥2 | ¥0.0009 | 0.85 | **¥0.00106** |
-| deepseek-reasoner | 300 | 150 | ¥4 | ¥16 | ¥0.0036 | 0.97 | ¥0.00371 |
+| deepseek-v4-flash | 500 | 200 | ¥1 | ¥2 | ¥0.0009 | 0.85 | **¥0.00106** |
+| deepseek-v4-pro | 300 | 150 | ¥4 | ¥16 | ¥0.0036 | 0.97 | ¥0.00371 |
 
-deepseek-chat 的 CPU 只有 reasoner 的 **28%**——对于这个事实抽取任务，用贵模型多花的钱买到的质量提升并不值。CPU 归一化指标让这种对比变成数学问题而非感觉问题（[^quality-score]）。
+deepseek-v4-flash 的 CPU 只有 v4-pro 的 **28%**——对于这个事实抽取任务，用贵模型多花的钱买到的质量提升并不值。CPU 归一化指标让这种对比变成数学问题而非感觉问题（[^quality-score]）。
 
 [^quality-score]: quality_score 怎么来？实践中用 proxy 指标：任务特定基准测试通过率、用户满意度评分、追问率（追问低 = 一次答对 = 质量高）、或 LLM-as-judge 打分。没有完美的单指标，但有多 proxy 加权后的实用方案。
 
@@ -651,19 +651,19 @@ deepseek-chat 的 CPU 只有 reasoner 的 **28%**——对于这个事实抽取�
 
 当前项目中模型路由的情况：
 
-- \`src/config.py\` 定义了 \`available_models = ("deepseek-chat", "deepseek-reasoner")\`，但**没有路由逻辑**——所有请求统一走 deepseek-chat
+- \`src/config.py\` 定义了 \`available_models = ("deepseek-v4-flash", "deepseek-v4-pro")\`，但**没有路由逻辑**——所有请求统一走 deepseek-v4-flash
 - 定价配置就绪：\`llm_input_price_per_1m\` / \`llm_output_price_per_1m\`
 - \`TokenLedger.record()\` 缺少 \`model_name\` 参数——即使将来有了路由，也无法在账本中回溯「这笔 token 是哪个模型花的」
 
-一个可行的入口点：Planner 的意图输出（chat / plan / extract / recall / copy）天然可作为复杂度信号——\`plan\` 类任务走 deepseek-reasoner，\`extract\` 和 \`copy\` 走 deepseek-chat。实现只需要一个配置映射层 + API dispatcher + TokenLedger model_name 扩展——不算大规模架构变更。
+一个可行的入口点：Planner 的意图输出（chat / plan / extract / recall / copy）天然可作为复杂度信号——\`plan\` 类任务走 deepseek-v4-pro，\`extract\` 和 \`copy\` 走 deepseek-v4-flash。实现只需要一个配置映射层 + API dispatcher + TokenLedger model_name 扩展——不算大规模架构变更。
 
 \`\`\`mermaid
 %% title: 图：GlassCortex 模型路由示意（设计方案）
 graph TD
     TASK["📝 用户请求"] --> PLAN["🧠 Planner 意图分类"]
-    PLAN -->|"extract / copy"| CHEAP["💨 DeepSeek-Chat<br/>¥1/¥2 per 1M<br/>质量余量 ★★★"]
-    PLAN -->|"chat / recall"| STANDARD["⚖️ DeepSeek-Chat<br/>(当前默认)<br/>质量余量 ★★★"]
-    PLAN -->|"plan"| EXPENSIVE["🧠 DeepSeek-Reasoner<br/>¥4/¥16 per 1M<br/>质量余量 ★★★★★"]
+    PLAN -->|"extract / copy"| CHEAP["💨 DeepSeek V4 Flash<br/>¥1/¥2 per 1M<br/>质量余量 ★★★"]
+    PLAN -->|"chat / recall"| STANDARD["⚖️ DeepSeek V4 Flash<br/>(当前默认)<br/>质量余量 ★★★"]
+    PLAN -->|"plan"| EXPENSIVE["🧠 DeepSeek V4 Pro<br/>¥4/¥16 per 1M<br/>质量余量 ★★★★★"]
     CHEAP --> RECORD["📒 TokenLedger v2<br/>+ model_name 记录"]
     STANDARD --> RECORD
     EXPENSIVE --> RECORD

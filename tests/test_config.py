@@ -37,7 +37,7 @@ class TestSettingsDefaults:
 
     def test_default_llm(self) -> None:
         s = Settings()
-        assert s.llm_model == "deepseek-chat"
+        assert s.llm_model == "deepseek-v4-flash"
         assert s.llm_base_url == "https://api.deepseek.com"
         assert s.llm_api_key_env == "DEEPSEEK_API_KEY"
         assert s.llm_max_tokens == 1024
@@ -164,8 +164,8 @@ class TestSettingsIntegration:
     def test_default_l5_model_inference(self) -> None:
         s = Settings()
         assert s.llm_temperature == 0.7
-        assert s.available_models == ("deepseek-chat", "deepseek-reasoner")
-        assert "deepseek-chat" in s.available_models
+        assert s.available_models == ("deepseek-v4-flash", "deepseek-v4-pro")
+        assert "deepseek-v4-flash" in s.available_models
 
     def test_l5_ab_experiment_two_instances(self) -> None:
         a = Settings()

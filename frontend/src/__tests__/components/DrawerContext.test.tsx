@@ -8,7 +8,7 @@ afterEach(cleanup);
 /** Minimal ApiTrace stub for testing */
 const mockTrace: ApiTrace = {
   caller: "chat",
-  model: "deepseek-chat",
+  model: "deepseek-v4-flash",
   temperature: 0.7,
   max_tokens: 1024,
   elapsed_ms: 500,

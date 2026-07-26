@@ -21,7 +21,7 @@ const baseContextMeta = {
 
 const baseApiTrace = {
   caller: "chat",
-  model: "deepseek-chat",
+  model: "deepseek-v4-flash",
   temperature: 0.7,
   max_tokens: 1024,
   elapsed_ms: 423,
@@ -325,7 +325,7 @@ describe("FourPillar", () => {
     render(<FourPillar response={buildResponse()} />);
     const cards = document.querySelectorAll('[role="button"]');
     fireEvent.click(cards[2]);
-    expect(screen.getByText("deepseek-chat")).toBeDefined();
+    expect(screen.getByText("deepseek-v4-flash")).toBeDefined();
     expect(screen.getByText("423ms")).toBeDefined();
   });
 

@@ -295,7 +295,7 @@ class TestChat:
                 resp = client.post("/chat", json={"user_input": "你好"})
                 assert resp.status_code == 200
                 call_model = chat_engine.generate_and_store.call_args[1]["model"]
-                assert call_model == "deepseek-chat"
+                assert call_model == "deepseek-v4-flash"
 
     def test_routing_user_override_takes_precedence(self) -> None:
         """User explicit model → routing bypassed."""
@@ -418,11 +418,11 @@ class TestChat:
                 assert "routing" in data
                 routing = data["routing"]
                 assert routing is not None
-                assert routing["model"] == "deepseek-chat"
+                assert routing["model"] == "deepseek-v4-flash"
                 assert routing["complexity"] == "simple"
                 assert routing["intent_category"] == "闲聊"
                 assert "简单任务" in routing["reason"]
-                assert routing["fallback_model"] == "deepseek-reasoner"
+                assert routing["fallback_model"] == "deepseek-v4-pro"
                 assert routing["fallback_triggered"] is False
                 assert routing["attempts"] == 1
 

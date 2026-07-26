@@ -102,6 +102,13 @@ frontend-build:
 check-all: check frontend-check
 	@echo "✅ check-all 全绿 (Python + 前端)"
 
+# ── 公开版跳过的门禁（tools/ 已剥离）──────────────────────────────
+check-theme:
+	@echo "⏭️  check-theme skipped (tools not available in public mirror)"
+
+check-visual:
+	@echo "⏭️  check-visual skipped (tools not available in public mirror)"
+
 # ── 推送（公开版，不含镜像脚本）──────────────────────────────────
 ship: check-all
 	git push origin HEAD

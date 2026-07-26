@@ -10,7 +10,7 @@ import type { ApiTrace } from "@/lib/api/types";
 /** 测试用 base trace */
 const baseTrace: ApiTrace = {
   caller: "chat",
-  model: "deepseek-chat",
+  model: "deepseek-v4-flash",
   temperature: 0.7,
   max_tokens: 1024,
   elapsed_ms: 423,
@@ -111,7 +111,7 @@ describe("ProcessDrawer", () => {
     renderDrawer();
     await waitForDrawer();
     // model 名同时出现在 header badge 和 KV 行中，至少出现 2 次
-    expect(screen.getAllByText("deepseek-chat").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("deepseek-v4-flash").length).toBeGreaterThanOrEqual(2);
   });
 
   it("shows temperature in KV", async () => {
@@ -292,7 +292,7 @@ describe("ProcessDrawer", () => {
     renderDrawer(minimalTrace);
     await waitForDrawer();
     // model 名同时出现在 header badge 和 KV 行
-    expect(screen.getAllByText("deepseek-chat").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("deepseek-v4-flash").length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText("1,280")).toBeInTheDocument();
     expect(screen.getByText("请求参数")).toBeInTheDocument();
   });

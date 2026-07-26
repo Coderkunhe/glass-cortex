@@ -21,7 +21,7 @@ const baseContextMeta = {
 
 const baseApiTrace = {
   caller: "chat",
-  model: "deepseek-chat",
+  model: "deepseek-v4-flash",
   temperature: 0.7,
   max_tokens: 1024,
   elapsed_ms: 423,
@@ -206,7 +206,7 @@ describe("JourneyCards", () => {
 
   it("shows model name on 回复 card", () => {
     render(<JourneyCards response={buildResponse()} />);
-    const summary = getByTagText("div", "deepseek-chat");
+    const summary = getByTagText("div", "deepseek-v4-flash");
     expect(summary).toBeInTheDocument();
   });
 

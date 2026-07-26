@@ -197,7 +197,7 @@
 **现状**：✅ 全链路交付——决策引擎 + 管线接入 + 失败回退 + 前端可见。4 Batch 闭环。
 
 **已交付**：
-- `ModelRouter.decide(intent)` — intent→complexity→model 规则链：简单意图（闲聊/澄清）→ `simple_model` (deepseek-chat)，复杂意图（提问/指令/探索）→ `complex_model` (deepseek-reasoner)
+- `ModelRouter.decide(intent)` — intent→complexity→model 规则链：简单意图（闲聊/澄清）→ `simple_model` (deepseek-v4-flash)，复杂意图（提问/指令/探索）→ `complex_model` (deepseek-v4-pro)
 - `is_retryable_error()` — 超时/4xx/5xx（除 401）自动触发回退
 - `execute_with_fallback()` — 主模型失败→回退模型，最多 1 次重试，不退化为无限循环
 - `RoutingInfo` Pydantic 模型 + `ChatResponse.routing` 字段 — API 响应显式携带路由决策
@@ -206,7 +206,7 @@
 
 **评估**：
 - 路由准确率：5 意图全分类正确（41 tests 覆盖）
-- 成本-质量帕累托：简单任务用 deepseek-chat (¥1/¥2)，复杂任务用 deepseek-reasoner (¥4/¥16)
+- 成本-质量帕累托：简单任务用 deepseek-v4-flash (¥1/¥2)，复杂任务用 deepseek-v4-pro (¥4/¥16)
 - 回退安全性：401 不回退 · 最多 1 次重试 · FallbackExhaustedError 含完整上下文
 
 ---

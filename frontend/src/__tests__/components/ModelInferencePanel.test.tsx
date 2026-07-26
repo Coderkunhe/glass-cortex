@@ -5,7 +5,7 @@ import type { ApiTrace } from "@/lib/api/types";
 
 const baseApiTrace: ApiTrace = {
   caller: "chat",
-  model: "deepseek-chat",
+  model: "deepseek-v4-flash",
   temperature: 0.7,
   max_tokens: 1024,
   elapsed_ms: 423,
@@ -30,7 +30,7 @@ describe("ModelInferencePanel", () => {
 
   it("renders model name in badge", () => {
     render(<ModelInferencePanel apiTrace={buildTrace()} />);
-    expect(screen.getByText("deepseek-chat")).toBeInTheDocument();
+    expect(screen.getByText("deepseek-v4-flash")).toBeInTheDocument();
   });
 
   it("renders elapsed time", () => {
