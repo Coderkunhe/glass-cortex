@@ -1,4 +1,4 @@
-.PHONY: help setup clean check check-safety check-comments check-docs check-contracts check-theme check-visual check-visual-update contract-snapshot hooks lint lint-fix type test api ship frontend-setup frontend-dev frontend-test frontend-lint frontend-check frontend-build
+.PHONY: help setup clean check check-repo check-safety check-comments check-docs check-contracts check-theme check-visual check-visual-update contract-snapshot hooks lint lint-fix type test api ship frontend-setup frontend-dev frontend-test frontend-lint frontend-check frontend-build
 
 # ── 命令列表（默认目标）────────────────────────────────────────
 help:
@@ -56,6 +56,7 @@ reset-batch-counter:
 # 修改文件后会与同仓库其他项目 (Synapse) 的 unstaged 变更冲突。
 # SKIP 的前提是先独立验证这两个 hook 通过。
 commit:
+	@$(MAKE) -s check-repo || exit 1
 	@echo "🔒 预检：Python 门禁..."
 	@$(MAKE) -s check || (echo "❌ make check 失败，拒接提交" && exit 1)
 	@echo "🔒 预检：文档门禁..."
@@ -77,6 +78,16 @@ commit-msg:
 # ── 质量门禁：lint + type + test ──────────────────────────────
 check: lint type test
 	@echo "✅ make check 全绿"
+
+# ── 仓库防呆：确保当前工作目录的 remote 是新库（非老 monorepo）─────────────────
+# LRN-2026-067: B126-B127 误提交到老库 agent-instances，本 check 机械阻断重犯
+check-repo:
+	@git remote get-url origin | grep -q "ai-glass-cortex" || \
+		(echo "❌ 仓库错误！当前 remote 不是 ai-glass-cortex，请切换到正确目录：" && \
+		 echo "   老库: /Users/hunter/projects/personal/ai/glasscortex (agent-instances — 只读)" && \
+		 echo "   新库: /Users/hunter/projects/personal/ai/ai-glass-cortex (ai-glasscortex — 开发主库)" && \
+		 exit 1)
+	@echo "✅ 仓库 remote 正确 (ai-glass-cortex)"
 
 lint:
 	./venv/bin/ruff check .
