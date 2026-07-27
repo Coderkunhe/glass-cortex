@@ -34,6 +34,7 @@ VERSION=""
 SKIP_BUILD=false
 SKIP_MODEL=false
 SKIP_WHEELS=false
+PY_VER="3.14"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -41,9 +42,10 @@ while [[ $# -gt 0 ]]; do
         -v|--version)    VERSION="$2"; shift 2 ;;
         --skip-build)    SKIP_BUILD=true; shift ;;
         --skip-model)    SKIP_MODEL=true; shift ;;
+	        --py-ver)        PY_VER="$2"; shift 2 ;;
         --skip-wheels)   SKIP_WHEELS=true; shift ;;
         -h|--help)
-            echo "Usage: $0 [-o <output-dir>] [-v <version>] [--skip-build] [--skip-model] [--skip-wheels]"
+            echo "Usage: $0 [-o <output-dir>] [-v <version>] [--py-ver 3.12|3.14] [--skip-build] [--skip-model] [--skip-wheels]"
             echo ""
             echo "Cross-platform build packaging for Windows Server deployment."
             echo "Run from project root or pass the path as first positional argument."
@@ -106,6 +108,7 @@ banner "  Output:    $ZIP_PATH"
 banner "  Version:   $VERSION"
 banner "  Platform:  macOS/Linux → Windows Server (cross)"
 banner "  Time:      $(date '+%Y-%m-%d %H:%M:%S')"
+  banner "  Python:    $PY_VER"
 banner "========================================"
 echo ""
 
@@ -183,6 +186,12 @@ done
 mkdir -p "$STAGING_DIR/data"
 mkdir -p "$STAGING_DIR/logs"
 
+t# 生成 Windows 专用 requirements（不含 Linux-only uvloop）
+
+	# 生成 Windows 专用 requirements（不含 Linux-only uvloop）
+	grep -v "uvloop" "$STAGING_DIR/requirements-lock.txt" > "$STAGING_DIR/requirements-win.txt"
+	info "Generated requirements-win.txt (excludes Linux-only uvloop)"
+
 ok "Source copy complete"
 
 # ═══════════════════════════════════════════════════════
@@ -209,7 +218,7 @@ if [[ "$SKIP_WHEELS" == false ]]; then
     fi
     info "Python: $PYTHON_CMD ($($PYTHON_CMD --version 2>&1))"
 
-    info "Cross-downloading wheels for win_amd64 / Python 3.14..."
+    info "Cross-downloading wheels for win_amd64 / Python $PY_VER..."
 	    info "  (uses --no-deps: lockfile already lists all transitive deps)"
 
 
@@ -227,7 +236,7 @@ if [[ "$SKIP_WHEELS" == false ]]; then
 	        -r "$WIN_REQ_FILE" \
 	        --dest "$WHEELS_DIR" \
 	        --platform win_amd64 \
-	        --python-version 3.14 \
+	        --python-version $PY_VER \
 	        --only-binary=:all: \
 	        2>&1 | while IFS= read -r line; do
 	            if echo "$line" | grep -qE "ERROR|Successfully downloaded|Saved|Could not find"; then
@@ -326,7 +335,9 @@ if [[ "$SKIP_BUILD" == false ]]; then
     mkdir -p "$STAGING_STANDALONE_DIR"
 
     info "Copying standalone output to staging..."
+    shopt -s dotglob   # * 不匹配 .next 隐藏目录，dotglob 开启后完整拷贝
     cp -R "$STANDALONE_DIR"/* "$STAGING_STANDALONE_DIR/"
+    shopt -u dotglob
 
     # 拷贝 static/ 到 standalone/.next/static/ (Next.js 16 standalone 从 ./.next/static 读取)
     if [[ -d ".next/static" ]]; then

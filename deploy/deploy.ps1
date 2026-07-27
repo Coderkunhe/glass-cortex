@@ -44,6 +44,8 @@ if (-not (Test-Path "$AppRoot\.git")) {
     }
 }
 
+$modeLabel = if ($isPackageMode) { "Package (offline)" } else { "Git (online)" }
+
 Write-Host @"
 ========================================
  GlassCortex Production Deployment
@@ -51,7 +53,7 @@ Write-Host @"
 ========================================
   Target:    $AppRoot
   Branch:    $Branch
-  Mode:      $(if ($isPackageMode) { "Package (offline)" } else { "Git (online)" })
+  Mode:      $modeLabel
   Time:      $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
 ========================================
 "@ -ForegroundColor Cyan
@@ -137,17 +139,24 @@ $pip = "$AppRoot\venv\Scripts\pip.exe"
 & $pip install --upgrade pip -q
 
 # 检测是否为打包部署模式（含预下载 wheels/ 目录）
+$reqFile = "$AppRoot\requirements-win.txt"
+if (-not (Test-Path $reqFile)) {
+    Write-Host "  Generating requirements-win.txt (filtering Linux-only uvloop)..." -ForegroundColor Yellow
+    Get-Content "$AppRoot\requirements-lock.txt" | Where-Object { $_ -notmatch "uvloop" } | Set-Content $reqFile
+}
+Write-Host "  Using: $(Split-Path $reqFile -Leaf)" -ForegroundColor Green
+
 $wheelsDir = "$AppRoot\wheels"
 if (Test-Path $wheelsDir) {
     Write-Host "  [Offline Package Mode] Installing from wheels/ (no PyPI access needed)..." -ForegroundColor Yellow
-    & $pip install --no-index --find-links="$wheelsDir" -r "$AppRoot\requirements-lock.txt"
+    & $pip install --no-index --find-links="$wheelsDir" -r $reqFile
     if ($LASTEXITCODE -ne 0) {
         Write-Warning "  Offline install from wheels/ failed — falling back to online pip install"
-        & $pip install -r requirements-lock.txt
+        & $pip install -r $reqFile
     }
 } else {
     Write-Host "  Installing Python dependencies (online)..." -ForegroundColor Yellow
-    & $pip install -r requirements-lock.txt
+    & $pip install -r $reqFile
 }
 
 # 验证关键依赖
