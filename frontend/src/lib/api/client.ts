@@ -157,12 +157,12 @@ export const api = {
   health: () => request<HealthResponse>("/health"),
 
   /** Send a chat message — full pipeline. Pass { signal } to enable abort.
-   *  Timeout: 120s (backend llm_timeout=60s, give 2x headroom). */
+   *  Timeout: 300s (aligned with nginx proxy_read_timeout, backend llm_timeout=120s). */
   chat: (body: ChatRequest, opts?: { signal?: AbortSignal }) =>
     request<ChatResponse>("/chat", {
       method: "POST",
       body: JSON.stringify(body),
-      signal: opts?.signal ?? AbortSignal.timeout(120_000),
+      signal: opts?.signal ?? AbortSignal.timeout(300_000),
     }),
 
   // ── Metrics ──────────────────────────────────────────────────────────

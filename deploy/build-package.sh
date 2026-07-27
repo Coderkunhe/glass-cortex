@@ -20,6 +20,13 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# 缓存在项目父目录，避免 /tmp 重启丢失
+CACHE_DIR="$PROJECT_ROOT/../.glasscortex-mirror-cache.git"
+WORKDIR="$(mktemp -d)"
+trap 'rm -rf "$WORKDIR"' EXIT
+
 # ── 参数解析 ──
 APP_ROOT=""
 OUTPUT_DIR=""
@@ -203,45 +210,38 @@ if [[ "$SKIP_WHEELS" == false ]]; then
     info "Python: $PYTHON_CMD ($($PYTHON_CMD --version 2>&1))"
 
     info "Cross-downloading wheels for win_amd64 / Python 3.14..."
-    info "  (packages without pre-built Windows wheels will fall back to source .tar.gz)"
+	    info "  (uses --no-deps: lockfile already lists all transitive deps)"
 
-    # 先尝试 only-binary，失败则下载源码包作为兜底
-    set +e
-    $PYTHON_CMD -m pip download \
-        -r "$APP_ROOT/requirements-lock.txt" \
-        --dest "$WHEELS_DIR" \
-        --platform win_amd64 \
-        --python-version 3.14 \
-        --only-binary=:all: \
-        2>&1 | while IFS= read -r line; do
-            if echo "$line" | grep -qE "ERROR|Successfully downloaded|Collecting|Saved"; then
-                echo -e "  ${GRAY}$line${NC}"
-            fi
-        done
 
-    PIP_EXIT=$?
-    if [[ $PIP_EXIT -ne 0 ]]; then
-        warn "Some packages lack pre-built wheels for win_amd64 — downloading source packages as fallback"
-        $PYTHON_CMD -m pip download \
-            -r "$APP_ROOT/requirements-lock.txt" \
-            --dest "$WHEELS_DIR" \
-            --platform win_amd64 \
-            --python-version 3.14 \
-            2>&1 | while IFS= read -r line; do
-                if echo "$line" | grep -qE "Successfully downloaded|Collecting|Saved"; then
-                    echo -e "  ${GRAY}$line${NC}"
-                fi
-            done
-    fi
-    set -e
+	    # ── 构建 Windows 专用 requirements 文件 ──
+	    # uvloop 是 Linux/macOS only（uvicorn[standard] 的传递依赖），
+	    # 在 Windows 上 sys_platform 会自动排除。但 pip download --platform
+	    # 不改变 sys_platform 标记解析，导致跨平台下载时 uvloop 阻断全量解析。
+	    # 解决：--no-deps 逐包下载（锁文件已是完整传递依赖列表，无需再解析）
+	    WIN_REQ_FILE="$WORKDIR/requirements-win.txt"
+	    grep -v "uvloop" "$APP_ROOT/requirements-lock.txt" > "$WIN_REQ_FILE"
+	    info "Filtered uvloop from Windows requirements (Linux/macOS only)"
 
-    WHEEL_COUNT=$(find "$WHEELS_DIR" -name "*.whl" -type f 2>/dev/null | wc -l | tr -d ' ')
-    TAR_COUNT=$(find "$WHEELS_DIR" -name "*.tar.gz" -type f 2>/dev/null | wc -l | tr -d ' ')
-    ok "Downloaded: ${WHEEL_COUNT} wheels, ${TAR_COUNT} source packages → $WHEELS_DIR"
+	    $PYTHON_CMD -m pip download \
+	        --no-deps \
+	        -r "$WIN_REQ_FILE" \
+	        --dest "$WHEELS_DIR" \
+	        --platform win_amd64 \
+	        --python-version 3.14 \
+	        --only-binary=:all: \
+	        2>&1 | while IFS= read -r line; do
+	            if echo "$line" | grep -qE "ERROR|Successfully downloaded|Saved|Could not find"; then
+	                echo -e "  ${GRAY}$line${NC}"
+	            fi
+	        done
 
-    if [[ "$TAR_COUNT" -gt 0 ]]; then
-        warn "Source packages (.tar.gz) detected — target Windows Server will need VC++ Build Tools to compile these"
-    fi
+	    WHEEL_COUNT=$(find "$WHEELS_DIR" -name "*.whl" -type f 2>/dev/null | wc -l | tr -d " ")
+	    TAR_COUNT=$(find "$WHEELS_DIR" -name "*.tar.gz" -type f 2>/dev/null | wc -l | tr -d " ")
+	    ok "Downloaded: ${WHEEL_COUNT} wheels, ${TAR_COUNT} source packages → $WHEELS_DIR"
+
+	    if [[ "$TAR_COUNT" -gt 0 ]]; then
+	        warn "Source packages (.tar.gz) detected — target Windows Server will need VC++ Build Tools to compile these"
+	    fi
 else
     echo ""
     echo -e "${YELLOW}[3/7] Skipping wheels download (--skip-wheels)${NC}"

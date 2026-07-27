@@ -112,7 +112,7 @@ class LLMConfig:
     llm_api_key_env: str = "DEEPSEEK_API_KEY"
     llm_max_tokens: int = 1024
     llm_temperature: float = 0.7
-    llm_timeout: float = 60.0  # OpenAI 客户端请求超时（秒），默认 60s
+    llm_timeout: float = 120.0  # OpenAI 客户端请求超时（秒），复杂 chat/plan 可 >60s
     fact_extraction_max_tokens: int = 512
     # 可用模型列表 — 用于 Web UI 下拉选择
     available_models: tuple[str, ...] = ("deepseek-v4-flash", "deepseek-v4-pro")
