@@ -8,7 +8,7 @@ from __future__ import annotations
 import os
 import re
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from typing import TYPE_CHECKING, cast
 
 import numpy as np
@@ -416,6 +416,137 @@ class ChatEngine:
                 },
             )
             raise RuntimeError(f"DeepSeek API 调用失败: {exc}") from exc
+
+    def generate_stream(
+        self,
+        user_input: str,
+        recalled: list[dict[str, object]],
+        context_window_size: int = 4096,
+        context_overflow_strategy: str = "prioritize",
+        model: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        two_stage: bool = False,
+    ) -> Generator[dict[str, object], None, None]:
+        """逐 token 流式生成 LLM 回复。
+
+        与 ``generate()`` 使用相同的 system prompt 构建逻辑，
+        但通过 ``client.chat.completions.create(stream=True)`` 返回生成器，
+        逐 chunk yield SSE 事件 dict。
+
+        Yields:
+            ``{"type": "token", "delta": "..."}`` — 增量文本。
+            ``{"type": "done", "response_text": "...", ...}`` — 流结束，携带完整元数据。
+            ``{"type": "error", "detail": "..."}`` — API 调用失败。
+        """
+        # ── Stage 1: 构建 system prompt（与同步路径 100% 一致）──
+        if two_stage:
+            system_prompt, context_meta, ref_map = self._build_two_stage_prompt(
+                recalled, context_window_size, context_overflow_strategy
+            )
+            self._last_ref_map = ref_map
+        else:
+            system_prompt, context_meta = self._build_system_prompt(
+                recalled, context_window_size, context_overflow_strategy
+            )
+            self._last_ref_map = None
+
+        user_tokens = estimate_tokens(user_input)
+        dropped = cast(list[str], context_meta.get("dropped_items", []))
+        dropped_token_sum = sum(estimate_tokens(d) for d in dropped)
+        context_meta["user_message_tokens"] = user_tokens
+        context_meta["total_estimated_tokens"] = (
+            cast(int, context_meta["base_tokens"])
+            + cast(int, context_meta["memories_token_before"])
+            - dropped_token_sum
+            + user_tokens
+        )
+        context_meta["system_prompt"] = system_prompt
+
+        # ── Stage 2: 流式 LLM 调用 ──
+        t0 = time.time()
+        try:
+            stream = self.client.chat.completions.create(
+                model=model if model else settings.llm_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_input},
+                ],
+                max_tokens=max_tokens if max_tokens is not None else settings.llm_max_tokens,
+                temperature=temperature if temperature is not None else settings.llm_temperature,
+                stream=True,
+                stream_options={"include_usage": True},
+            )
+
+            full_text = ""
+            prompt_tokens = 0
+            completion_tokens = 0
+
+            for chunk in stream:
+                # 最后一个 chunk (usage-only) 可能没有 choices
+                if chunk.choices:
+                    delta = chunk.choices[0].delta
+                    if delta.content:
+                        full_text += delta.content
+                        yield {"type": "token", "delta": delta.content}
+
+                # 流式 completion 的 token 统计在最后一个 chunk
+                if chunk.usage is not None:
+                    prompt_tokens = chunk.usage.prompt_tokens
+                    completion_tokens = chunk.usage.completion_tokens
+
+            elapsed_ms = round((time.time() - t0) * 1000, 1)
+
+            # Token 记录（与同步 generate() 同等行为）
+            if self._ledger is not None and (prompt_tokens or completion_tokens):
+                self._ledger.record("chat", prompt_tokens, completion_tokens)
+
+            reply_len = len(full_text)
+            logger.info(
+                "API 流式调用成功",
+                extra={
+                    "component": "chat",
+                    "elapsed_ms": elapsed_ms,
+                    "model": model if model else settings.llm_model,
+                    "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                    "reply_len": reply_len,
+                },
+            )
+
+            api_trace: dict[str, object] = {
+                "caller": "chat",
+                "model": model if model else settings.llm_model,
+                "system_prompt": system_prompt,
+                "user_prompt": user_input,
+                "temperature": temperature if temperature is not None else settings.llm_temperature,
+                "max_tokens": max_tokens if max_tokens is not None else settings.llm_max_tokens,
+                "raw_response": full_text,
+                "elapsed_ms": elapsed_ms,
+                "parsed_result": full_text,
+                "parse_error": None,
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+            }
+
+            yield {
+                "type": "done",
+                "response_text": full_text,
+                "context_meta": context_meta,
+                "api_trace": api_trace,
+            }
+
+        except (APIError, RuntimeError) as exc:
+            elapsed_ms = round((time.time() - t0) * 1000, 1)
+            logger.error(
+                "API 流式调用失败",
+                extra={
+                    "component": "chat",
+                    "elapsed_ms": elapsed_ms,
+                    "error": str(exc)[:200],
+                },
+            )
+            yield {"type": "error", "detail": str(exc)}
 
     def compress_message(self, content: str) -> tuple[str, dict[str, object]]:
         """将长文本调用 LLM 压缩为一句话摘要。

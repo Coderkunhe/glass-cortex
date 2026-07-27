@@ -130,6 +130,10 @@ class ChatRequest(BaseModel):
     recall_mmr_lambda: float | None = Field(
         None, ge=0.0, le=1.0, description="MMR λ 覆盖（None=使用默认 0.7）"
     )
+    stream: bool = Field(
+        False,
+        description="启用 SSE 流式输出（逐 token 返回）。缓存命中时自动降级为非流式。",
+    )
 
 
 class ContextMeta(BaseModel):

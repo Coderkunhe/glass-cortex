@@ -40,7 +40,7 @@ python_version = "3.14"
 strict = true
 warn_unused_ignores = true
 warn_redundant_casts = true
-exclude = ["backups/", "data/"]
+exclude = ["backups/", "data/", "deploy-package/"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

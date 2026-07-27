@@ -5,10 +5,13 @@
 
 from __future__ import annotations
 
+import json
 import logging
+from collections.abc import Generator
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from starlette.responses import StreamingResponse
 
 from api.dependencies import EnginesDep
 from api.schemas import (
@@ -45,7 +48,7 @@ def _route_recall_item(item: dict[str, object]) -> RecallItem:
 def chat(
     body: ChatRequest,
     engines: Any = EnginesDep,
-) -> ChatResponse:
+) -> ChatResponse | StreamingResponse:
     """发送用户消息并获取 AI 回复。
 
     完整管线：
@@ -59,6 +62,7 @@ def chat(
     from src.config import settings as _cfg
 
     _semantic_cache = None
+    cached_resp = None
     if _cfg.response_cache_enabled:
         from src.cache.semantic_cache import get_response_cache
 
@@ -203,6 +207,89 @@ def chat(
             fallback_model=decision.fallback_model,
             fallback_triggered=False,
             attempts=1,
+        )
+
+    # ── 流式分支：SSE 逐 token 返回 ──
+    if body.stream and cached_resp is None:
+        # 预计算流结束后需要的元数据（不依赖 response_text）
+        recall_items = [_route_recall_item(dict(item)) for item in recalled]
+        cold_start_profile = _compute_cold_start_profile(store)
+
+        pre_meta: dict[str, object] = {
+            "intent": intent_result.model_dump() if intent_result else None,
+            "recall_items": [item.model_dump() for item in recall_items],
+            "routing": routing_info.model_dump() if routing_info else None,
+            "cold_start_profile": (cold_start_profile.model_dump() if cold_start_profile else None),
+        }
+        if _degradation_trace:
+            pre_meta["degradation"] = _degradation_trace
+
+        def _sse_generator() -> Generator[str, None, None]:
+            """将 ChatEngine.generate_stream() 的事件转为 SSE 格式。"""
+            stream_events = chat_engine.generate_stream(
+                user_input=body.user_input,
+                recalled=recalled,
+                context_window_size=body.context_window_size,
+                context_overflow_strategy=body.context_overflow_strategy,
+                model=selected_model,
+                temperature=body.temperature,
+                max_tokens=body.max_tokens,
+                two_stage=False,
+            )
+
+            for event in stream_events:
+                evt_type = event.get("type")
+                if evt_type == "token":
+                    token_payload = json.dumps({"delta": event["delta"]}, ensure_ascii=False)
+                    yield f"event: token\ndata: {token_payload}\n\n"
+                elif evt_type == "done":
+                    response_text = str(event.get("response_text", ""))
+                    # 存储回复（<50ms，不阻塞流感知）
+                    try:
+                        eid = chat_engine.store_response(
+                            response_text,
+                            session_id=body.session_id or None,
+                        )
+                    except Exception:
+                        eid = -1  # 存储失败不阻断流
+
+                    # 组装完整 done payload
+                    done_payload: dict[str, object] = {
+                        "response_text": response_text,
+                        "episode_id": eid,
+                        "context_meta": event.get("context_meta", {}),
+                        "api_trace": event.get("api_trace", {}),
+                    }
+                    # 合并预计算元数据
+                    for key in (
+                        "intent",
+                        "recall_items",
+                        "routing",
+                        "cold_start_profile",
+                        "degradation",
+                    ):
+                        if key in pre_meta:
+                            done_payload[key] = pre_meta[key]
+
+                    yield (f"event: done\ndata: {json.dumps(done_payload, ensure_ascii=False)}\n\n")
+                elif evt_type == "error":
+                    err_payload = json.dumps(
+                        {
+                            "error": "llm_unavailable",
+                            "detail": str(event.get("detail", "")),
+                        },
+                        ensure_ascii=False,
+                    )
+                    yield f"event: error\ndata: {err_payload}\n\n"
+
+        return StreamingResponse(
+            _sse_generator(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",  # nginx 禁用缓冲
+            },
         )
 
     try:
