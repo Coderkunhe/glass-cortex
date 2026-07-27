@@ -35,6 +35,7 @@ SKIP_BUILD=false
 SKIP_MODEL=false
 SKIP_WHEELS=false
 PY_VER="3.14"
+PATCH_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -44,10 +45,13 @@ while [[ $# -gt 0 ]]; do
         --skip-model)    SKIP_MODEL=true; shift ;;
 	        --py-ver)        PY_VER="$2"; shift 2 ;;
         --skip-wheels)   SKIP_WHEELS=true; shift ;;
+        --patch)         PATCH_MODE=true; shift ;;
         -h|--help)
-            echo "Usage: $0 [-o <output-dir>] [-v <version>] [--py-ver 3.12|3.14] [--skip-build] [--skip-model] [--skip-wheels]"
+            echo "Usage: $0 [-o <output-dir>] [-v <version>] [--py-ver 3.12|3.14] [--patch] [--skip-build] [--skip-model] [--skip-wheels]"
             echo ""
             echo "Cross-platform build packaging for Windows Server deployment."
+            echo "  --patch  Incremental update: only src/ api/ frontend standalone + config files"
+            echo "           (skips tests docs models wheels — server already has deps installed)"
             echo "Run from project root or pass the path as first positional argument."
             exit 0
             ;;
@@ -65,6 +69,12 @@ if [[ -z "$OUTPUT_DIR" ]]; then
 fi
 if [[ -z "$VERSION" ]]; then
     VERSION="$(date +%Y%m%d)"
+fi
+
+# --patch: 增量更新模式，只打包运行时文件（免依赖免模型）
+if [[ "$PATCH_MODE" == true ]]; then
+    SKIP_WHEELS=true
+    SKIP_MODEL=true
 fi
 
 PACKAGE_NAME="glasscortex-deploy-$VERSION"
@@ -109,6 +119,7 @@ banner "  Version:   $VERSION"
 banner "  Platform:  macOS/Linux → Windows Server (cross)"
 banner "  Time:      $(date '+%Y-%m-%d %H:%M:%S')"
   banner "  Python:    $PY_VER"
+  banner "  Mode:      $(if [[ "$PATCH_MODE" == true ]]; then echo "Patch (incremental)"; else echo "Full"; fi)"
 banner "========================================"
 echo ""
 
@@ -147,7 +158,11 @@ done
 RSYNC_EXCLUDES+=(--exclude=".next")
 
 # 源码目录
-SOURCE_DIRS=("src" "api" "tests" "docs" "deploy")
+if [[ "$PATCH_MODE" == true ]]; then
+	    SOURCE_DIRS=("src" "api" "deploy")  # 增量模式：跳过 tests/ docs/
+	else
+	    SOURCE_DIRS=("src" "api" "tests" "docs" "deploy")
+	fi
 for dir in "${SOURCE_DIRS[@]}"; do
     if [[ -d "$dir" ]]; then
         info "Copying $dir/ ..."
@@ -186,7 +201,6 @@ done
 mkdir -p "$STAGING_DIR/data"
 mkdir -p "$STAGING_DIR/logs"
 
-t# 生成 Windows 专用 requirements（不含 Linux-only uvloop）
 
 	# 生成 Windows 专用 requirements（不含 Linux-only uvloop）
 	grep -v "uvloop" "$STAGING_DIR/requirements-lock.txt" > "$STAGING_DIR/requirements-win.txt"
