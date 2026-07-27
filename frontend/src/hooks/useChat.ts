@@ -16,7 +16,7 @@ export interface Message {
   response?: ChatResponse;
 }
 
-type SendStatus = "idle" | "loading" | "success" | "error";
+type SendStatus = "idle" | "loading" | "streaming" | "success" | "error";
 
 /** 认知参数获取器——每次发送消息时调用，读取最新参数值。
  *  使用 getter 而非传值，避免参数变化导致 sendMessage 重建。 */
@@ -66,7 +66,9 @@ export function useChat(getParams?: () => ChatParams) {
         if (prev[i].role === "user") { lastUserIdx = i; break; }
       }
       if (lastUserIdx === -1) return prev;
-      return [...prev.slice(0, lastUserIdx), ...prev.slice(lastUserIdx + 1)];
+      // B135: streaming appends assistant immediately after user;
+      // remove user AND everything after it (the incomplete assistant).
+      return prev.slice(0, lastUserIdx);
     });
     setStatus("idle");
     setError(null);
@@ -82,8 +84,17 @@ export function useChat(getParams?: () => ChatParams) {
       createdAt: Date.now(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setStatus("loading");
+    // Phase 66 B135 — 流式路径：预创建空的 assistant 消息，逐 token 填充
+    const assistantId = crypto.randomUUID();
+    const assistantMessage: Message = {
+      id: assistantId,
+      role: "assistant",
+      content: "",
+      createdAt: Date.now(),
+    };
+
+    setMessages((prev) => [...prev, userMessage, assistantMessage]);
+    setStatus("streaming");
     setError(null);
 
     // 创建新的 AbortController 供 abort() 取消
@@ -92,7 +103,7 @@ export function useChat(getParams?: () => ChatParams) {
 
     try {
       const params = getParamsRef.current?.() ?? {};
-      const response = await api.chat(
+      const response = await api.chatStream(
         {
           user_input: content,
           session_id: sessionIdRef.current,
@@ -103,18 +114,33 @@ export function useChat(getParams?: () => ChatParams) {
           max_tokens: params.max_tokens ?? undefined,
           include_system_prompt: true,
         },
+        (delta: string) => {
+          setMessages((prev) => {
+            const updated = [...prev];
+            // 从后向前找最后一条 assistant 消息（即当前流式消息）
+            for (let i = updated.length - 1; i >= 0; i--) {
+              if (updated[i].role === "assistant" && updated[i].id === assistantId) {
+                updated[i] = { ...updated[i], content: updated[i].content + delta };
+                break;
+              }
+            }
+            return updated;
+          });
+        },
         { signal: controller.signal },
       );
 
-      const assistantMessage: Message = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: response.response_text,
-        createdAt: Date.now(),
-        response,
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
+      // 流完成——用完整响应数据更新 assistant 消息
+      setMessages((prev) => {
+        const updated = [...prev];
+        for (let i = updated.length - 1; i >= 0; i--) {
+          if (updated[i].role === "assistant" && updated[i].id === assistantId) {
+            updated[i] = { ...updated[i], response };
+            break;
+          }
+        }
+        return updated;
+      });
       setStatus("success");
     } catch (err) {
       // 用户主动 abort 不视为错误 — 静默回 idle
@@ -122,6 +148,11 @@ export function useChat(getParams?: () => ChatParams) {
         setStatus("idle");
         return;
       }
+      // 流式/非流式错误：移除不完整的 assistant 消息，保留用户消息
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => m.id !== assistantId);
+        return filtered;
+      });
       setError(categorizeError(err));
       setStatus("error");
     } finally {

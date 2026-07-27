@@ -3,6 +3,7 @@ import { renderHook, act } from "@testing-library/react";
 import { useChat } from "@/hooks/useChat";
 
 const mockChat = vi.fn();
+const mockChatStream = vi.fn();
 const mockForgetSession = vi.fn();
 
 vi.mock("@/lib/api/client", () => {
@@ -22,14 +23,43 @@ vi.mock("@/lib/api/client", () => {
   return {
     api: {
       chat: (...args: unknown[]) => mockChat(...args),
+      chatStream: (...args: unknown[]) => mockChatStream(...args),
       forgetSession: (...args: unknown[]) => mockForgetSession(...args),
     },
     ApiClientError: MockApiClientError,
   };
 });
 
+/** 便捷工厂：创建 mockChatStream 的 resolved/rejected 实现 */
+function mockStreamResolve(response: Record<string, unknown>) {
+  mockChatStream.mockImplementationOnce(
+    async (_body: unknown, onToken: (delta: string) => void) => {
+      if (typeof response.response_text === "string" && response.response_text) {
+        onToken(response.response_text);
+      }
+      return response;
+    },
+  );
+}
+
+function mockStreamDeferred() {
+  let resolve: (value: unknown) => void;
+  const promise = new Promise((r) => { resolve = r; });
+  mockChatStream.mockImplementationOnce(
+    async (_body: unknown, onToken: (delta: string) => void) => {
+      const result: Record<string, unknown> = (await promise) as Record<string, unknown>;
+      if (typeof result.response_text === "string" && result.response_text) {
+        onToken(result.response_text);
+      }
+      return result;
+    },
+  );
+  return { promise, resolve: resolve! };
+}
+
 beforeEach(() => {
   mockChat.mockReset();
+  mockChatStream.mockReset();
   mockForgetSession.mockReset();
 });
 
@@ -62,12 +92,7 @@ describe("useChat", () => {
 
     it("appends user message immediately before API resolves", () => {
       // Defer the API resolution to observe the intermediate optimistic state
-      let resolveChat: (value: unknown) => void;
-      mockChat.mockReturnValueOnce(
-        new Promise((resolve) => {
-          resolveChat = resolve;
-        }),
-      );
+      const { resolve } = mockStreamDeferred();
 
       const { result } = renderHook(() => useChat());
 
@@ -75,14 +100,16 @@ describe("useChat", () => {
         result.current.sendMessage("hi");
       });
 
-      // After synchronous dispatch, user message is optimistically present
-      expect(result.current.messages).toHaveLength(1);
+      // After synchronous dispatch, user message AND empty assistant are optimistically present
+      expect(result.current.messages).toHaveLength(2);
       expect(result.current.messages[0].role).toBe("user");
       expect(result.current.messages[0].content).toBe("hi");
-      expect(result.current.status).toBe("loading");
+      expect(result.current.messages[1].role).toBe("assistant");
+      expect(result.current.messages[1].content).toBe("");
+      expect(result.current.status).toBe("streaming");
 
       // Cleanup: resolve the pending promise silently
-      resolveChat!({
+      resolve({
         response_text: "Hello!",
         episode_id: 1,
         intent: null,
@@ -92,14 +119,9 @@ describe("useChat", () => {
       });
     });
 
-    it("sets status to loading while waiting for API", async () => {
-      // Defer resolution so we can observe loading state
-      let resolveChat: (value: unknown) => void;
-      mockChat.mockReturnValueOnce(
-        new Promise((resolve) => {
-          resolveChat = resolve;
-        }),
-      );
+    it("sets status to streaming while waiting for API", async () => {
+      // Defer resolution so we can observe streaming state
+      const { resolve } = mockStreamDeferred();
 
       const { result } = renderHook(() => useChat());
 
@@ -107,12 +129,12 @@ describe("useChat", () => {
         result.current.sendMessage("test");
       });
 
-      expect(result.current.status).toBe("loading");
+      expect(result.current.status).toBe("streaming");
       expect(result.current.error).toBeNull();
 
       // Resolve
       await act(async () => {
-        resolveChat!({
+        resolve({
           response_text: "OK",
           episode_id: 1,
           intent: null,
@@ -159,7 +181,7 @@ describe("useChat", () => {
         ],
       };
 
-      mockChat.mockResolvedValueOnce(responseData);
+      mockStreamResolve(responseData);
 
       const { result } = renderHook(() => useChat());
 
@@ -167,6 +189,7 @@ describe("useChat", () => {
         await result.current.sendMessage("你好");
       });
 
+      // B135: user + assistant (content filled by onToken)
       expect(result.current.messages).toHaveLength(2);
       expect(result.current.messages[1].role).toBe("assistant");
       expect(result.current.messages[1].content).toBe("你好！有什么可以帮你的？");
@@ -176,7 +199,7 @@ describe("useChat", () => {
     });
 
     it("on error, stores categorized error and sets status to error", async () => {
-      mockChat.mockRejectedValueOnce(new Error("网络连接失败"));
+      mockChatStream.mockRejectedValueOnce(new Error("网络连接失败"));
 
       const { result } = renderHook(() => useChat());
 
@@ -188,13 +211,13 @@ describe("useChat", () => {
       expect(result.current.error).toBeTruthy();
       expect(result.current.error!.category).toBe("unknown");
       expect(result.current.error!.userMessage).toBe("出了点问题，请重试");
-      // User message still exists (optimistic update)
+      // B135: error handler removes incomplete assistant, keeps user message
       expect(result.current.messages).toHaveLength(1);
       expect(result.current.messages[0].role).toBe("user");
     });
 
     it("on error with non-Error object, categorizes to unknown", async () => {
-      mockChat.mockRejectedValueOnce("bare string error");
+      mockChatStream.mockRejectedValueOnce("bare string error");
 
       const { result } = renderHook(() => useChat());
 
@@ -210,7 +233,7 @@ describe("useChat", () => {
 
     it("clears previous error on new send attempt", async () => {
       // First call fails
-      mockChat.mockRejectedValueOnce(new Error("第一次失败"));
+      mockChatStream.mockRejectedValueOnce(new Error("第一次失败"));
       const { result } = renderHook(() => useChat());
 
       await act(async () => {
@@ -220,7 +243,7 @@ describe("useChat", () => {
       expect(result.current.error!.category).toBe("unknown");
 
       // Second call succeeds
-      mockChat.mockResolvedValueOnce({
+      mockStreamResolve({
         response_text: "OK",
         episode_id: 1,
         intent: null,
@@ -234,14 +257,14 @@ describe("useChat", () => {
 
       expect(result.current.error).toBeNull();
       expect(result.current.status).toBe("success");
-      // First send (error): 1 user msg. Second send (success): 1 user + 1 assistant = 2 more.
+      // B135: First send (error → assistant removed): 1 user msg.
+      // Second send (success): 1 user + 1 assistant = 2 more.
       expect(result.current.messages).toHaveLength(3);
     });
 
     it("preserves message ordering across multiple sends", async () => {
-      mockChat
-        .mockResolvedValueOnce({ response_text: "Response 1", episode_id: 1, intent: null, context_meta: {}, api_trace: {}, recall_items: [] })
-        .mockResolvedValueOnce({ response_text: "Response 2", episode_id: 2, intent: null, context_meta: {}, api_trace: {}, recall_items: [] });
+      mockStreamResolve({ response_text: "Response 1", episode_id: 1, intent: null, context_meta: {}, api_trace: {}, recall_items: [] });
+      mockStreamResolve({ response_text: "Response 2", episode_id: 2, intent: null, context_meta: {}, api_trace: {}, recall_items: [] });
 
       const { result } = renderHook(() => useChat());
 
@@ -266,7 +289,7 @@ describe("useChat", () => {
 
   describe("clearMessages", () => {
     it("resets messages, status, and error to initial state", async () => {
-      mockChat.mockResolvedValueOnce({
+      mockStreamResolve({
         response_text: "Hello",
         episode_id: 1,
         intent: null,
@@ -303,7 +326,7 @@ describe("useChat", () => {
     });
 
     it("passes session_id in chat request", async () => {
-      mockChat.mockResolvedValueOnce({
+      mockStreamResolve({
         response_text: "OK",
         episode_id: 1,
         intent: null,
@@ -318,17 +341,16 @@ describe("useChat", () => {
         await result.current.sendMessage("hello");
       });
 
-      expect(mockChat).toHaveBeenCalledTimes(1);
-      const chatArg = mockChat.mock.calls[0][0];
+      expect(mockChatStream).toHaveBeenCalledTimes(1);
+      const chatArg = mockChatStream.mock.calls[0][0];
       expect(chatArg.session_id).toBeDefined();
       expect(typeof chatArg.session_id).toBe("string");
       expect(chatArg.session_id.length).toBeGreaterThan(0);
     });
 
     it("uses the same session_id across multiple sends", async () => {
-      mockChat
-        .mockResolvedValueOnce({ response_text: "R1", episode_id: 1, intent: null, context_meta: {}, api_trace: {}, recall_items: [] })
-        .mockResolvedValueOnce({ response_text: "R2", episode_id: 2, intent: null, context_meta: {}, api_trace: {}, recall_items: [] });
+      mockStreamResolve({ response_text: "R1", episode_id: 1, intent: null, context_meta: {}, api_trace: {}, recall_items: [] });
+      mockStreamResolve({ response_text: "R2", episode_id: 2, intent: null, context_meta: {}, api_trace: {}, recall_items: [] });
 
       const { result } = renderHook(() => useChat());
 
@@ -339,8 +361,8 @@ describe("useChat", () => {
         await result.current.sendMessage("msg2");
       });
 
-      const sid1 = mockChat.mock.calls[0][0].session_id;
-      const sid2 = mockChat.mock.calls[1][0].session_id;
+      const sid1 = mockChatStream.mock.calls[0][0].session_id;
+      const sid2 = mockChatStream.mock.calls[1][0].session_id;
       expect(sid1).toBe(sid2);
     });
   });
@@ -348,7 +370,7 @@ describe("useChat", () => {
   describe("forgetSession", () => {
     it("calls API with current session_id and returns result", async () => {
       // First send a message to trigger session_id generation
-      mockChat.mockResolvedValueOnce({
+      mockStreamResolve({
         response_text: "OK",
         episode_id: 1,
         intent: null,
@@ -378,7 +400,7 @@ describe("useChat", () => {
 
       expect(mockForgetSession).toHaveBeenCalledTimes(1);
       expect(mockForgetSession.mock.calls[0][0]).toEqual({
-        session_id: mockChat.mock.calls[0][0].session_id,
+        session_id: mockChatStream.mock.calls[0][0].session_id,
       });
       expect(returnedResult).toEqual(forgetResponse);
       expect(result.current.forgetResult).toEqual(forgetResponse);
@@ -427,15 +449,11 @@ describe("useChat", () => {
   describe("B31 — state management fixes", () => {
     describe("C5: AbortController race condition (rapid sequential sends)", () => {
       it("second send can still be aborted after first resolves", async () => {
-        // send 1: deferred, never resolves during test
-        let resolve1: (value: unknown) => void;
-        const p1 = new Promise((resolve) => { resolve1 = resolve; });
-        mockChat.mockReturnValueOnce(p1);
+        // send 1: deferred chatStream — resolves with onToken call
+        const { resolve: resolve1 } = mockStreamDeferred();
 
-        // send 2: also deferred, never resolves
-        let resolve2: (value: unknown) => void;
-        const p2 = new Promise((resolve) => { resolve2 = resolve; });
-        mockChat.mockReturnValueOnce(p2);
+        // send 2: also deferred
+        const { resolve: resolve2 } = mockStreamDeferred();
 
         const { result } = renderHook(() => useChat());
 
@@ -443,13 +461,13 @@ describe("useChat", () => {
         act(() => { result.current.sendMessage("msg1"); });
         act(() => { result.current.sendMessage("msg2"); });
 
-        // Both user messages optimistically appended
-        expect(result.current.messages).toHaveLength(2);
-        expect(result.current.status).toBe("loading");
+        // B135: each send creates user + empty assistant = 4 messages
+        expect(result.current.messages).toHaveLength(4);
+        expect(result.current.status).toBe("streaming");
 
         // Now resolve send 1 — its finally must NOT clear send 2's controller
         await act(async () => {
-          resolve1!({
+          resolve1({
             response_text: "R1",
             episode_id: 1,
             intent: null,
@@ -459,10 +477,10 @@ describe("useChat", () => {
           });
         });
 
-        // send 2 is still loading, abort should work
+        // send 2 is still streaming, abort should work
         act(() => { result.current.abort(); });
 
-        // M10: abort removes send 2's orphan user message
+        // M10: abort removes send 2's orphan user message AND trailing assistant
         // Only send 1's exchange remains (user + assistant)
         expect(result.current.messages).toHaveLength(2);
         expect(result.current.messages[0].content).toBe("msg1");
@@ -471,7 +489,7 @@ describe("useChat", () => {
         expect(result.current.error).toBeNull();
 
         // Cleanup: resolve send 2 silently
-        resolve2!({
+        resolve2({
           response_text: "R2",
           episode_id: 2,
           intent: null,
@@ -485,16 +503,16 @@ describe("useChat", () => {
     describe("C7: abort on component unmount", () => {
       it("aborts in-flight request when hook unmounts", async () => {
         // Deferred promise that never resolves — we only care about the signal
-        mockChat.mockReturnValueOnce(new Promise(() => {}));
+        mockChatStream.mockReturnValueOnce(new Promise(() => {}));
 
         const { result, unmount } = renderHook(() => useChat());
 
         act(() => { result.current.sendMessage("hello"); });
 
-        // Verify the signal was passed to mockChat
-        const callArgs = mockChat.mock.calls[0];
-        // mockChat(reChat eqBody, options)) — 2nd arg has signal
-        const options = callArgs[1] as { signal?: AbortSignal } | undefined;
+        // Verify the signal was passed to mockChatStream
+        const callArgs = mockChatStream.mock.calls[0];
+        // mockChatStream(body, onToken, opts) — 3rd arg has signal
+        const options = callArgs[2] as { signal?: AbortSignal } | undefined;
         expect(options?.signal).toBeDefined();
 
         const signal = options!.signal!;
@@ -510,18 +528,18 @@ describe("useChat", () => {
 
     describe("M10: abort removes orphan user message", () => {
       it("removes the last user message and resets status to idle", async () => {
-        let resolveChat: (value: unknown) => void;
-        const deferredPromise = new Promise((resolve) => { resolveChat = resolve; });
-        mockChat.mockReturnValueOnce(deferredPromise);
+        let resolveStream: (value: unknown) => void;
+        const deferredPromise = new Promise((resolve) => { resolveStream = resolve; });
+        mockChatStream.mockReturnValueOnce(deferredPromise);
 
         const { result } = renderHook(() => useChat());
 
         act(() => { result.current.sendMessage("hello"); });
 
-        // Optimistic user message present, status loading
-        expect(result.current.messages).toHaveLength(1);
+        // B135: user + empty assistant, status streaming
+        expect(result.current.messages).toHaveLength(2);
         expect(result.current.messages[0].role).toBe("user");
-        expect(result.current.status).toBe("loading");
+        expect(result.current.status).toBe("streaming");
 
         // Abort
         act(() => { result.current.abort(); });
@@ -532,7 +550,7 @@ describe("useChat", () => {
         expect(result.current.error).toBeNull();
 
         // Cleanup
-        resolveChat!({
+        resolveStream!({
           response_text: "OK",
           episode_id: 1,
           intent: null,
@@ -554,7 +572,7 @@ describe("useChat", () => {
 
     describe("M9: removeLastUserMessage", () => {
       it("removes the last user message from the array", async () => {
-        mockChat.mockResolvedValueOnce({
+        mockStreamResolve({
           response_text: "R1",
           episode_id: 1,
           intent: null,
@@ -563,7 +581,7 @@ describe("useChat", () => {
           recall_items: [],
         });
         // Second send fails
-        mockChat.mockRejectedValueOnce(new Error("fail"));
+        mockChatStream.mockRejectedValueOnce(new Error("fail"));
 
         const { result } = renderHook(() => useChat());
 
@@ -571,7 +589,7 @@ describe("useChat", () => {
         await act(async () => { await result.current.sendMessage("msg1"); });
         expect(result.current.messages).toHaveLength(2);
 
-        // Failed send: user2 only (no assistant)
+        // B135: failed send → error handler removes incomplete assistant → only user2
         await act(async () => { await result.current.sendMessage("msg2"); });
         expect(result.current.messages).toHaveLength(3); // user1, asst1, user2
         expect(result.current.status).toBe("error");
@@ -593,7 +611,7 @@ describe("useChat", () => {
 
       it("removeLastUserMessage is a no-op with only assistant messages", async () => {
         // This shouldn't happen in practice, but test edge case
-        mockChat.mockResolvedValueOnce({
+        mockStreamResolve({
           response_text: "R1",
           episode_id: 1,
           intent: null,
@@ -615,7 +633,7 @@ describe("useChat", () => {
 
     describe("C6: stats reset regression guard", () => {
       it("clearMessages resets status and error, ready for next send", async () => {
-        mockChat.mockRejectedValueOnce(new Error("fail"));
+        mockChatStream.mockRejectedValueOnce(new Error("fail"));
         const { result } = renderHook(() => useChat());
 
         await act(async () => { await result.current.sendMessage("msg1"); });
@@ -628,7 +646,7 @@ describe("useChat", () => {
         expect(result.current.error).toBeNull();
 
         // After clear, can send again normally
-        mockChat.mockResolvedValueOnce({
+        mockStreamResolve({
           response_text: "OK",
           episode_id: 1,
           intent: null,

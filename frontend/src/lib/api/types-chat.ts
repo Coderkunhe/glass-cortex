@@ -18,6 +18,8 @@ export interface ChatRequest {
   recall_threshold?: number;
   /** MMR λ 覆盖（null=使用默认 0.7） */
   recall_mmr_lambda?: number | null;
+  /** 是否启用 SSE 流式输出（Phase 66 — B134 后端已支持，B135 前端消费） */
+  stream?: boolean;
 }
 
 /** 意图分类结果 — 与后端 src/planner.py INTENT_CATEGORIES 保持一致。

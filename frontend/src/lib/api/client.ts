@@ -165,6 +165,130 @@ export const api = {
       signal: opts?.signal ?? AbortSignal.timeout(300_000),
     }),
 
+  /** Phase 66 B135 — SSE 流式聊天。
+   *
+   *  始终发送 `stream: true`。后端在缓存命中时自动降级为非流式（返回 JSON），
+   *  此方法检测 Content-Type 自适应处理两种响应。
+   *
+   *  @param body — 聊天请求体（stream 字段由此方法自动设为 true）
+   *  @param onToken — 每收到一个 token delta 时回调
+   *  @param opts.signal — 用于 abort 取消流
+   *  @returns 完整的 ChatResponse（来自 done 事件或缓存命中 JSON） */
+  chatStream: async (
+    body: ChatRequest,
+    onToken: (delta: string) => void,
+    opts?: { signal?: AbortSignal },
+  ): Promise<ChatResponse> => {
+    const url = `${BASE_URL}/chat`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...body, stream: true }),
+      signal: opts?.signal,
+    });
+
+    if (!res.ok) {
+      let apiErr: ApiError;
+      try {
+        apiErr = await res.json();
+      } catch {
+        apiErr = { error: "unknown", detail: res.statusText };
+      }
+      throw new ApiClientError(res.status, apiErr);
+    }
+
+    const contentType = res.headers.get("Content-Type") || "";
+
+    // ── 缓存命中：后端返回 JSON 而非 SSE ──
+    if (contentType.includes("application/json")) {
+      const json = (await res.json()) as ChatResponse;
+      // 一次性推送全部文本，模拟流式体验
+      if (json.response_text) {
+        onToken(json.response_text);
+      }
+      return json;
+    }
+
+    // ── SSE 流式解析 ──
+    if (!res.body) {
+      throw new Error("浏览器不支持 ReadableStream 流式读取");
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    return new Promise<ChatResponse>((resolve, reject) => {
+      const read = () => {
+        reader
+          .read()
+          .then(({ done, value }) => {
+            if (done) {
+              reject(new Error("SSE 流意外结束——未收到 done 事件"));
+              return;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+
+            // 按双换行切分完整 SSE 事件
+            const parts = buffer.split("\n\n");
+            buffer = parts.pop() || ""; // 保留不完整的事件尾部
+
+            for (const part of parts) {
+              if (!part.trim()) continue;
+
+              let eventType = "";
+              let dataStr = "";
+
+              for (const line of part.split("\n")) {
+                if (line.startsWith("event: ")) {
+                  eventType = line.slice(7).trim();
+                } else if (line.startsWith("data: ")) {
+                  dataStr = line.slice(6);
+                }
+              }
+
+              if (!dataStr) continue;
+
+              try {
+                const data = JSON.parse(dataStr);
+
+                if (eventType === "token") {
+                  if (typeof data.delta === "string" && data.delta) {
+                    onToken(data.delta);
+                  }
+                } else if (eventType === "done") {
+                  resolve(data as ChatResponse);
+                  return;
+                } else if (eventType === "error") {
+                  reject(
+                    new ApiClientError(503, {
+                      error: data.error || "stream_error",
+                      detail: data.detail || "流式生成失败",
+                    }),
+                  );
+                  return;
+                }
+              } catch {
+                // JSON 解析失败——跳过此事件，继续读取
+              }
+            }
+
+            read(); // 继续读取下一块
+          })
+          .catch((err) => {
+            // AbortError → 静默返回（用户主动取消）
+            if (err instanceof DOMException && err.name === "AbortError") {
+              return;
+            }
+            reject(err);
+          });
+      };
+
+      read();
+    });
+  },
+
   // ── Metrics ──────────────────────────────────────────────────────────
 
   /** Token usage by call point */

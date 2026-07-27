@@ -33,6 +33,7 @@ describe("ChatPanel", () => {
   it("sends message and displays response", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
+      headers: new Headers({ "Content-Type": "application/json" }),
       json: () =>
         Promise.resolve({
           response_text: "这是 AI 的回复",
@@ -81,6 +82,7 @@ describe("ChatPanel", () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 503,
+      headers: new Headers({ "Content-Type": "application/json" }),
       json: () =>
         Promise.resolve({ error: "llm_unavailable", detail: "API 不可用" }),
     });
@@ -100,8 +102,8 @@ describe("ChatPanel", () => {
 
   // ── Loading state ──
 
-  it("shows loading indicator while waiting for API response", async () => {
-    // Promise that never resolves — loading state persists
+  it("shows streaming state while waiting for API response", async () => {
+    // B135: streaming — no loading spinner, but input disabled + stop button visible
     mockFetch.mockImplementationOnce(() => new Promise(() => {}));
 
     renderChatPanel();
@@ -111,7 +113,10 @@ describe("ChatPanel", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /发送/ }));
 
-    expect(await screen.findByText("正在理解问题…")).toBeInTheDocument();
+    // 用户消息立即可见
+    expect(await screen.findByText("你好")).toBeInTheDocument();
+    // 停止按钮可见（流式进行中），不再有加载指示器
+    expect(screen.getByRole("button", { name: /停止/ })).toBeInTheDocument();
   });
 
   // ── Enter key submit ──
@@ -119,6 +124,7 @@ describe("ChatPanel", () => {
   it("sends message on Enter key press", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
+      headers: new Headers({ "Content-Type": "application/json" }),
       json: () =>
         Promise.resolve({
           response_text: "Enter 发送的回复",
@@ -191,6 +197,7 @@ describe("ChatPanel", () => {
   it("handles malformed API response without crashing", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
+      headers: new Headers({ "Content-Type": "application/json" }),
       json: () =>
         Promise.resolve({
           // response_text intentionally missing — tests rendering without text
@@ -249,6 +256,7 @@ describe("ChatPanel", () => {
     // Mock chat API
     mockFetch.mockResolvedValueOnce({
       ok: true,
+      headers: new Headers({ "Content-Type": "application/json" }),
       json: () =>
         Promise.resolve({
           response_text: "AI 回复",

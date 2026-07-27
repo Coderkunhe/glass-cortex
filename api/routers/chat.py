@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import Generator
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, HTTPException
 from starlette.responses import StreamingResponse
@@ -260,16 +260,20 @@ def chat(
                         "context_meta": event.get("context_meta", {}),
                         "api_trace": event.get("api_trace", {}),
                     }
-                    # 合并预计算元数据
+                    # 合并预计算元数据（degradation 注入 api_trace 与非流式路径对齐）
                     for key in (
                         "intent",
                         "recall_items",
                         "routing",
                         "cold_start_profile",
-                        "degradation",
                     ):
                         if key in pre_meta:
                             done_payload[key] = pre_meta[key]
+                    # L5: degradation 必须嵌套在 api_trace 内——
+                    # ProcessDrawer.tsx 从 trace['degradation'] 读取
+                    if "degradation" in pre_meta:
+                        api_trace_dict = cast(dict[str, object], done_payload["api_trace"])
+                        api_trace_dict["degradation"] = pre_meta["degradation"]
 
                     yield (f"event: done\ndata: {json.dumps(done_payload, ensure_ascii=False)}\n\n")
                 elif evt_type == "error":

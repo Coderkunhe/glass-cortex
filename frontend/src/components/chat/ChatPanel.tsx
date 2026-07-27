@@ -224,6 +224,8 @@ export default function ChatPanel() {
   const { setLastRouting, routingOverrideModel } = useModelRouting();
   const { messages, status, error, sendMessage, abort, forgetSession, removeLastUserMessage } = useChat(() => toChatParams(routingOverrideModel));
   const isLoading = status === "loading";
+  const isStreaming = status === "streaming";
+  const isBusy = isLoading || isStreaming;
   const isEmpty = messages.length === 0 && status === "idle";
 
   // Phase 66 B22 — 清除对话 ConfirmModal 状态
@@ -491,7 +493,7 @@ export default function ChatPanel() {
       </div>
 
       {/* 输入区 */}
-      <ChatInput onSend={sendMessage} disabled={isLoading} onAbort={abort} />
+      <ChatInput onSend={sendMessage} disabled={isBusy} onAbort={abort} />
     </div>
   );
 }
