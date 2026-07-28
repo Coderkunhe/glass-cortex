@@ -126,15 +126,25 @@ export default function IntentPill({ category, confidence, rationale, complexity
           </span>
         </>
       )}
-      {/* Phase 66 B23 — rationale info icon + popover */}
+      {/* Phase 66 B23 — rationale info icon + popover.
+           * 使用 span[role=button] 而非 button — 父元素 Tag 在 clickable 模式
+           * 下为 <button>，嵌套 button 是非法 HTML（hydration error）。 */}
       {rationale && (
         <>
-          <button
-            type="button"
+          <span
+            role="button"
+            tabIndex={0}
             ref={(node) => { fRefs.setReference(node); }}
             onClick={(e) => {
               e.stopPropagation(); // 不触发父 button/span 的 onClick
               setPopoverOpen((v) => !v);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                setPopoverOpen((v) => !v);
+              }
             }}
             className="inline-flex items-center justify-center
                        rounded-full p-px
@@ -145,7 +155,7 @@ export default function IntentPill({ category, confidence, rationale, complexity
             aria-expanded={popoverOpen}
           >
             <RiInformationLine className="w-3.5 h-3.5" />
-          </button>
+          </span>
           {popoverOpen && (
             <div
               ref={(node) => {
