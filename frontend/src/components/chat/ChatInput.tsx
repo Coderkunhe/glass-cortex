@@ -9,7 +9,7 @@
 
 "use client";
 
-import { RiLoader4Line, RiSendPlaneFill, RiStopFill, RiSpeedLine } from "@remixicon/react";
+import { RiLoader4Line, RiSendPlaneFill, RiStopFill } from "@remixicon/react";
 import { useState, useRef, useEffect, type KeyboardEvent } from "react";
 
 /** ChatInput 组件的 props 契约 */
@@ -78,28 +78,36 @@ export default function ChatInput({ onSend, disabled = false, onAbort, streamEna
                    focus:outline-none focus:ring-2 focus:ring-brand/50
                    disabled:opacity-50 disabled:cursor-not-allowed"
       />
-      {/* B136 — 流式开关：发送中禁用切换，避免状态不一致 */}
+      {/* B136 — 流式开关：pill toggle，发送中禁用 */}
       {onToggleStream && (
-        <button
-          type="button"
-          onClick={onToggleStream}
-          disabled={disabled}
-          title={streamEnabled ? "流式输出已开启 — 点击关闭" : "流式输出已关闭 — 点击开启"}
-          aria-label={streamEnabled ? "关闭流式输出" : "开启流式输出"}
-          aria-pressed={streamEnabled}
-          className={`shrink-0 rounded-gm-md px-gm-2_5 py-gm-2
-                     text-gm-sm font-medium
-                     focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none
-                     active:scale-[0.98] transition-all cursor-pointer
-                     disabled:opacity-50 disabled:cursor-not-allowed
-                     ${streamEnabled
-                       ? "bg-brand/10 text-brand border border-brand/30 hover:bg-brand/15"
-                       : "bg-surface-alt text-text-muted border border-border hover:text-text hover:border-text-muted"
-                     }`}
+        <label
+          className={`shrink-0 inline-flex items-center gap-gm-2 cursor-pointer select-none
+                     rounded-gm-full px-gm-2 py-gm-1_5
+                     transition-colors
+                     focus-within:ring-2 focus-within:ring-brand/50 focus-within:outline-none
+                     ${disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-surface-alt"}`}
         >
-          <RiSpeedLine className="text-gm-icon" />
-          <span className="ml-gm-1 hidden sm:inline">流式</span>
-        </button>
+          <span className="text-gm-xs text-text-muted font-medium">流式</span>
+          {/* pill track */}
+          <span
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors
+                       ${streamEnabled ? "bg-brand" : "bg-text-muted/30"}`}
+          >
+            {/* knob */}
+            <span
+              className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-gm-sm transition-transform
+                         ${streamEnabled ? "translate-x-[18px]" : "translate-x-[3px]"}`}
+            />
+          </span>
+          <input
+            type="checkbox"
+            checked={streamEnabled}
+            onChange={onToggleStream}
+            disabled={disabled}
+            className="sr-only"
+            aria-label="流式输出开关"
+          />
+        </label>
       )}
       {disabled && onAbort ? (
         /* 发送中 → 显示停止按钮 */
