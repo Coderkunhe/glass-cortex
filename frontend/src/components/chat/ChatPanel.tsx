@@ -9,7 +9,7 @@
 
 "use client";
 
-import { useMemo, useEffect, useRef, useState } from "react";
+import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 import {
   RiArchiveStackLine,
   RiBarChart2Line,
@@ -30,6 +30,7 @@ import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import { extractMermaidFromAnswer } from "@/lib/content/extractMermaid";
 import { CH7_ANSWERS } from "@/lib/content/answers/ch7";
 import { useChat } from "@/hooks/useChat";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { ApiTrace, IntentResult, RoutingInfo } from "@/lib/api/types";
 import ChatInput from "./ChatInput";
 import ContentPreloader from "./ContentPreloader";
@@ -222,7 +223,15 @@ export default function ChatPanel() {
   const { toChatParams, resetToDefaults } = useParamState();
   const { setMemoryCount, incrementMessageCount, setSessionTokens } = useSessionStats();
   const { setLastRouting, routingOverrideModel } = useModelRouting();
-  const { messages, status, error, sendMessage, abort, forgetSession, removeLastUserMessage } = useChat(() => toChatParams(routingOverrideModel));
+
+  // B136 — 流式开关状态（持久化到 localStorage）
+  const [streamEnabled, setStreamEnabled] = useLocalStorage("gm-stream-enabled", true);
+  const toggleStream = useCallback(() => setStreamEnabled((prev: boolean) => !prev), [setStreamEnabled]);
+
+  const { messages, status, error, sendMessage, abort, forgetSession, removeLastUserMessage } = useChat(
+    () => toChatParams(routingOverrideModel),
+    streamEnabled,
+  );
   const isLoading = status === "loading";
   const isStreaming = status === "streaming";
   const isBusy = isLoading || isStreaming;
@@ -493,7 +502,7 @@ export default function ChatPanel() {
       </div>
 
       {/* 输入区 */}
-      <ChatInput onSend={sendMessage} disabled={isBusy} onAbort={abort} />
+      <ChatInput onSend={sendMessage} disabled={isBusy} onAbort={abort} streamEnabled={streamEnabled} onToggleStream={toggleStream} />
     </div>
   );
 }

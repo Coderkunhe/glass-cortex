@@ -9,7 +9,7 @@
 
 "use client";
 
-import { RiLoader4Line, RiSendPlaneFill, RiStopFill } from "@remixicon/react";
+import { RiLoader4Line, RiSendPlaneFill, RiStopFill, RiSpeedLine } from "@remixicon/react";
 import { useState, useRef, useEffect, type KeyboardEvent } from "react";
 
 /** ChatInput 组件的 props 契约 */
@@ -20,12 +20,16 @@ interface ChatInputProps {
   disabled?: boolean;
   /** 停止生成回调 — 提供后发送中显示停止按钮 */
   onAbort?: () => void;
+  /** B136 — 流式输出是否启用 */
+  streamEnabled?: boolean;
+  /** B136 — 切换流式开关回调 */
+  onToggleStream?: () => void;
 }
 
 const MAX_TEXTAREA_HEIGHT_PX = 200;
 
 /** Chat input area with auto-resizing textarea, Enter-to-send, and disabled state. */
-export default function ChatInput({ onSend, disabled = false, onAbort }: ChatInputProps) {
+export default function ChatInput({ onSend, disabled = false, onAbort, streamEnabled = true, onToggleStream }: ChatInputProps) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const prevHeightRef = useRef(0);
@@ -74,6 +78,29 @@ export default function ChatInput({ onSend, disabled = false, onAbort }: ChatInp
                    focus:outline-none focus:ring-2 focus:ring-brand/50
                    disabled:opacity-50 disabled:cursor-not-allowed"
       />
+      {/* B136 — 流式开关：发送中禁用切换，避免状态不一致 */}
+      {onToggleStream && (
+        <button
+          type="button"
+          onClick={onToggleStream}
+          disabled={disabled}
+          title={streamEnabled ? "流式输出已开启 — 点击关闭" : "流式输出已关闭 — 点击开启"}
+          aria-label={streamEnabled ? "关闭流式输出" : "开启流式输出"}
+          aria-pressed={streamEnabled}
+          className={`shrink-0 rounded-gm-md px-gm-2_5 py-gm-2
+                     text-gm-sm font-medium
+                     focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none
+                     active:scale-[0.98] transition-all cursor-pointer
+                     disabled:opacity-50 disabled:cursor-not-allowed
+                     ${streamEnabled
+                       ? "bg-brand/10 text-brand border border-brand/30 hover:bg-brand/15"
+                       : "bg-surface-alt text-text-muted border border-border hover:text-text hover:border-text-muted"
+                     }`}
+        >
+          <RiSpeedLine className="text-gm-icon" />
+          <span className="ml-gm-1 hidden sm:inline">流式</span>
+        </button>
+      )}
       {disabled && onAbort ? (
         /* 发送中 → 显示停止按钮 */
         <button
