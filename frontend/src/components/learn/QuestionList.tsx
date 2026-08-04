@@ -8,6 +8,7 @@ import {
   RiStarFill,
 } from "@remixicon/react";
 import type { Answer, Chapter } from "@/lib/content/types";
+import type { ChapterProgress } from "@/lib/constants";
 import type { MatchSnippet } from "@/lib/content/search";
 import {
   createSearchIndex,
@@ -41,6 +42,8 @@ export interface QuestionListProps {
   visitHistory?: Answer[];
   /** 已收藏的问题 ID 列表 */
   bookmarks?: string[];
+  /** 用户学习进度（按章节汇总）。提供时优先用于进度条展示，否则 fallback 到 chapter.answeredCount。 */
+  userProgress?: Record<string, ChapterProgress>;
 }
 
 /**
@@ -64,6 +67,7 @@ export default function QuestionList({
   onCollapsedChange,
   visitHistory,
   bookmarks,
+  userProgress,
 }: QuestionListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [answerFilter, setAnswerFilter] = useState<
@@ -72,6 +76,13 @@ export default function QuestionList({
   const [bookmarkFilter, setBookmarkFilter] = useState(false);
   const [internalCollapsed, setInternalCollapsed] = useState<Set<string>>(
     new Set(),
+  );
+
+  /** 某章的用户已读数，无 userProgress 时 fallback 到内容 answeredCount。 */
+  const chapterViewed = useCallback(
+    (ch: Chapter): number =>
+      userProgress?.[ch.id]?.viewed ?? ch.answeredCount,
+    [userProgress],
   );
 
   // 受控 vs 非受控折叠状态：外部提供 prop 时使用外部状态，否则内部管理
@@ -415,20 +426,20 @@ export default function QuestionList({
                         {questions.length}/{ch.questionCount}
                       </span>
                     </div>
-                    <div className="hidden lg:block mt-gm-1 h-1 bg-surface-alt rounded-full overflow-hidden" role="progressbar" aria-valuenow={ch.questionCount > 0 ? Math.round((ch.answeredCount / ch.questionCount) * 100) : 0} aria-valuemin={0} aria-valuemax={100} aria-label={`${ch.title} 完成进度`}>
+                    <div className="hidden lg:block mt-gm-1 h-1 bg-surface-alt rounded-full overflow-hidden" role="progressbar" aria-valuenow={ch.questionCount > 0 ? Math.round((chapterViewed(ch) / ch.questionCount) * 100) : 0} aria-valuemin={0} aria-valuemax={100} aria-label={`${ch.title} 完成进度`}>
                       <div
                         className={`h-full rounded-full transition-all ${
-                          ch.answeredCount > 0 &&
-                          ch.answeredCount === ch.questionCount
+                          chapterViewed(ch) > 0 &&
+                          chapterViewed(ch) === ch.questionCount
                             ? "bg-success-light"
-                              : ch.answeredCount > 0
+                              : chapterViewed(ch) > 0
                               ? "bg-brand"
                               : "bg-border-strong"
                         }`}
                         style={{
                           width: `${
                             ch.questionCount > 0
-                              ? (ch.answeredCount / ch.questionCount) * 100
+                              ? (chapterViewed(ch) / ch.questionCount) * 100
                               : 0
                           }%`,
                         }}
@@ -484,30 +495,30 @@ export default function QuestionList({
                         {ch.title}
                       </span>
                       <span className="chapter-tree-header-count">
-                        {ch.answeredCount}/{ch.questionCount}
+                        {chapterViewed(ch)}/{ch.questionCount}
                       </span>
-                      {ch.answeredCount > 0 &&
-                        ch.answeredCount === ch.questionCount && (
+                      {chapterViewed(ch) > 0 &&
+                        chapterViewed(ch) === ch.questionCount && (
                           <svg className="w-4 h-4 text-success-light flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-label="全部完成">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         )}
                     </div>
                     {/* 章节进度条 */}
-                    <div className="hidden lg:block mt-gm-1 h-1 bg-surface-alt rounded-full overflow-hidden" role="progressbar" aria-valuenow={ch.questionCount > 0 ? Math.round((ch.answeredCount / ch.questionCount) * 100) : 0} aria-valuemin={0} aria-valuemax={100} aria-label={`${ch.title} 完成进度`}>
+                    <div className="hidden lg:block mt-gm-1 h-1 bg-surface-alt rounded-full overflow-hidden" role="progressbar" aria-valuenow={ch.questionCount > 0 ? Math.round((chapterViewed(ch) / ch.questionCount) * 100) : 0} aria-valuemin={0} aria-valuemax={100} aria-label={`${ch.title} 完成进度`}>
                       <div
                         className={`h-full rounded-full transition-all ${
-                          ch.answeredCount > 0 &&
-                          ch.answeredCount === ch.questionCount
+                          chapterViewed(ch) > 0 &&
+                          chapterViewed(ch) === ch.questionCount
                             ? "bg-success-light"
-                              : ch.answeredCount > 0
+                              : chapterViewed(ch) > 0
                               ? "bg-brand"
                               : "bg-border-strong"
                         }`}
                         style={{
                           width: `${
                             ch.questionCount > 0
-                              ? (ch.answeredCount / ch.questionCount) * 100
+                              ? (chapterViewed(ch) / ch.questionCount) * 100
                               : 0
                           }%`,
                         }}

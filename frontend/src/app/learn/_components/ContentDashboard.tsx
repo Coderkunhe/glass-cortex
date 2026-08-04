@@ -14,6 +14,7 @@ import {
   RiMentalHealthLine,
 } from "@remixicon/react";
 import type { Answer, Chapter } from "@/lib/content/types";
+import type { ChapterProgress } from "@/lib/constants";
 import { getAnswerById } from "@/lib/content/questions";
 
 const CHAPTER_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -29,7 +30,7 @@ const CHAPTER_ICON_MAP: Record<string, React.ComponentType<{ className?: string 
 
 /**
  * 内容进度仪表盘 — 当未选中问题时展示。
- * 用 chapters 元数据的 answeredCount/questionCount 渲染总进度条 + 每章进度行。
+ * 优先使用 userProgress（用户学习进度），fallback 到 chapters 元数据的 answeredCount。
  * 有阅读记录时优先推荐"继续阅读"；无记录时推荐完成率最高的章节。
  */
 export function ContentDashboard({
@@ -38,6 +39,7 @@ export function ContentDashboard({
   lastReadId,
   onNavigate,
   visitHistory,
+  userProgress,
 }: {
   chapters: Chapter[];
   questionsByChapter: Record<string, Answer[]>;
@@ -45,11 +47,17 @@ export function ContentDashboard({
   onNavigate?: (answer: Answer) => void;
   /** 最近阅读的问题列表（最多 5 条），用于仪表盘"最近阅读"区域。 */
   visitHistory?: Answer[];
+  /** 用户学习进度（按章节汇总）。提供时优先用于进度展示，否则 fallback 到 chapter.answeredCount。 */
+  userProgress?: Record<string, ChapterProgress>;
 }) {
-  const totalAnswered = chapters.reduce((s, c) => s + c.answeredCount, 0);
+  /** 某章的用户已读数，无 userProgress 时 fallback 到内容 answeredCount。 */
+  const chapterViewed = (ch: Chapter): number =>
+    userProgress?.[ch.id]?.viewed ?? ch.answeredCount;
+
+  const totalViewed = chapters.reduce((s, c) => s + chapterViewed(c), 0);
   const totalQuestions = chapters.reduce((s, c) => s + c.questionCount, 0);
   const totalPct =
-    totalQuestions > 0 ? (totalAnswered / totalQuestions) * 100 : 0;
+    totalQuestions > 0 ? (totalViewed / totalQuestions) * 100 : 0;
 
   // ── 推荐阅读：优先"继续阅读" ──
 
@@ -79,13 +87,13 @@ export function ContentDashboard({
   const bestChapter = useMemo(
     () =>
       chapters
-        .filter((c) => c.answeredCount > 0)
+        .filter((c) => chapterViewed(c) > 0)
         .sort((a, b) => {
-          const ra = a.answeredCount / a.questionCount;
-          const rb = b.answeredCount / b.questionCount;
-          return rb - ra || b.answeredCount - a.answeredCount;
+          const ra = chapterViewed(a) / a.questionCount;
+          const rb = chapterViewed(b) / b.questionCount;
+          return rb - ra || chapterViewed(b) - chapterViewed(a);
         })[0] ?? null,
-    [chapters],
+    [chapters, userProgress], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   /** 推荐章节的第一个可读问题（优先未答，全答完则取第一个） */
@@ -123,7 +131,7 @@ export function ContentDashboard({
             {chapters.length} 章 · {totalQuestions} 问
           </p>
           <p className="text-gm-sm text-text-secondary">
-            已完成 <strong className="text-text">{totalAnswered}</strong> / {totalQuestions}
+            已阅读 <strong className="text-text">{totalViewed}</strong> / {totalQuestions}
           </p>
         </div>
       </div>
@@ -151,13 +159,14 @@ export function ContentDashboard({
       {/* ── 各章节进度 ── */}
       <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gm-3">
         {chapters.map((ch) => {
+          const viewed = chapterViewed(ch);
           const pct =
             ch.questionCount > 0
-              ? (ch.answeredCount / ch.questionCount) * 100
+              ? (viewed / ch.questionCount) * 100
               : 0;
           const isComplete =
-            ch.answeredCount > 0 && ch.answeredCount === ch.questionCount;
-          const isBlank = ch.answeredCount === 0;
+            viewed > 0 && viewed === ch.questionCount;
+          const isBlank = viewed === 0;
 
           return (
             <button
@@ -180,7 +189,7 @@ export function ContentDashboard({
                 <div className="flex items-center justify-between mb-gm-1">
                   <span className="text-gm-sm font-medium text-text truncate">{ch.title}</span>
                   <span className="text-gm-xs text-text-muted tabular-nums ml-gm-2 flex-shrink-0">
-                    {ch.answeredCount}/{ch.questionCount}
+                    {viewed}/{ch.questionCount}
                   </span>
                 </div>
                 <div className="w-full h-2 bg-surface-alt rounded-full overflow-hidden" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label={`${ch.title} 完成进度 ${Math.round(pct)}%`}>
@@ -220,9 +229,9 @@ export function ContentDashboard({
             <span className="text-gm-sm text-brand">→</span>
           </div>
           <p className="mt-gm-1 text-gm-sm text-text">
-            {bestChapter.title} · {bestChapter.answeredCount === bestChapter.questionCount
+            {bestChapter.title} · {chapterViewed(bestChapter) === bestChapter.questionCount
               ? `${bestChapter.questionCount} 问全部完成`
-              : `已完成 ${bestChapter.answeredCount}/${bestChapter.questionCount} 问`}
+              : `已阅读 ${chapterViewed(bestChapter)}/${bestChapter.questionCount} 问`}
           </p>
         </button>
       )}

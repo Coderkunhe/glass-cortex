@@ -30,6 +30,23 @@ export const LEARN_SCROLL_POSITIONS_KEY = "gm-learn-scroll-positions";
 /** Learn 页阅读字号偏好 — "sm" | "md" | "lg"（默认 "md"）。 */
 export const LEARN_FONT_SIZE_KEY = "gm-learn-font-size";
 
+/** Learn 页用户学习进度存储 key — Record<questionId, LearnProgressEntry>。 */
+export const LEARN_PROGRESS_KEY = "gm-learn-progress";
+
+// ── 学习进度类型 ──────────────────────────────────────────────
+
+/** 单条问题的用户学习进度。 */
+export interface LearnProgressEntry {
+  /** 首次阅读时间戳 (Date.now())。标记后不更新，保留首次阅读时刻。 */
+  viewedAt: number;
+}
+
+/** 单章用户进度汇总（供 UI 组件消费）。 */
+export interface ChapterProgress {
+  viewed: number;
+  total: number;
+}
+
 // ── 笔记类型 ──────────────────────────────────────────────────
 
 /** 用户划词笔记 */

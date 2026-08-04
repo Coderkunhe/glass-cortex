@@ -24,7 +24,8 @@ import QuestionList from "@/components/learn/QuestionList";
 import AnswerCard from "@/components/learn/AnswerCard";
 import NotesPanel from "@/components/learn/NotesPanel";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import type { LearnNote } from "@/lib/constants";
+import { useLearnProgress, computeAllChapterProgress } from "@/hooks/useLearnProgress";
+import type { LearnNote, ChapterProgress } from "@/lib/constants";
 import {
   LEARN_LAST_READ_KEY,
   LEARN_COLLAPSED_KEY,
@@ -131,6 +132,15 @@ export default function LearnClientShell({
   const [notesMap] = useLocalStorage<Record<string, LearnNote[]>>(
     LEARN_NOTES_KEY,
     {},
+  );
+
+  /** 用户学习进度 — 基于 localStorage 持久化的问题阅读记录。 */
+  const { progress: userProgress, markViewed } = useLearnProgress();
+
+  /** 按章节汇总的用户进度（供 ContentDashboard / QuestionList 消费）。 */
+  const chapterProgressMap = useMemo<Record<string, ChapterProgress>>(
+    () => computeAllChapterProgress(userProgress, questionsByChapter),
+    [userProgress, questionsByChapter],
   );
 
   /** 划词选中待记文本 — 非空时触发 NotesPanel 自动进入创建模式 */
@@ -252,6 +262,7 @@ export default function LearnClientShell({
         saveCurrentScrollPosition();
       }
       setSelectedId(answer.id);
+      markViewed(answer.id);
       setVisitHistoryIds((prev) => {
         // 滑动窗口：去重后追加到队首，最多 5 条
         const next = [answer.id, ...prev.filter((id) => id !== answer.id)].slice(
@@ -261,7 +272,7 @@ export default function LearnClientShell({
         return next;
       });
     },
-    [setSelectedId, setVisitHistoryIds, selectedAnswer, saveCurrentScrollPosition],
+    [setSelectedId, setVisitHistoryIds, selectedAnswer, saveCurrentScrollPosition, markViewed],
   );
 
   /** 切换收藏状态 */
@@ -465,6 +476,7 @@ export default function LearnClientShell({
           onCollapsedChange={setCollapsedIds}
           visitHistory={visitHistoryAnswers}
           bookmarks={bookmarks}
+          userProgress={chapterProgressMap}
         />
       </div>
     ) : false;
@@ -662,7 +674,7 @@ export default function LearnClientShell({
                 )}
               </>
             ) : (
-          <ContentDashboard chapters={chapters} questionsByChapter={questionsByChapter} lastReadId={storedId} onNavigate={handleSelect} visitHistory={visitHistoryAnswers} />
+          <ContentDashboard chapters={chapters} questionsByChapter={questionsByChapter} lastReadId={storedId} onNavigate={handleSelect} visitHistory={visitHistoryAnswers} userProgress={chapterProgressMap} />
             )}
           </div>
 
@@ -735,6 +747,7 @@ export default function LearnClientShell({
               lastReadId={storedId}
               onNavigate={handleSelect}
               visitHistory={visitHistoryAnswers}
+              userProgress={chapterProgressMap}
             />
           )}
         </div>
