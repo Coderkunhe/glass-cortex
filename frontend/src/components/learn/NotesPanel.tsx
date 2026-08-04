@@ -9,7 +9,7 @@ import {
   RiCheckLine,
   RiCloseLine,
 } from "@remixicon/react";
-import type { LearnNote } from "@/lib/constants";
+import type { NoteRecord } from "@/lib/db/notesDb";
 import { useNotesDb } from "@/hooks/useNotesDb";
 import { formatRelativeTime } from "@/lib/formatTime";
 import ConfirmModal from "@/components/ui/ConfirmModal";
@@ -42,7 +42,7 @@ export default function NotesPanel({
 }: NotesPanelProps) {
   const { notesMap, addNote, updateNote, deleteNote } = useNotesDb();
 
-  const currentNotes: LearnNote[] = notesMap[questionId] || [];
+  const currentNotes: NoteRecord[] = notesMap[questionId] || [];
 
   // ── 创建态 ─────────────────────────────────────────────────
   const [isCreating, setIsCreating] = useState(false);
@@ -81,7 +81,7 @@ export default function NotesPanel({
     const trimmed = createText.trim();
     if (!trimmed) return;
 
-    const newNote: LearnNote = {
+    const newNote: NoteRecord = {
       id: crypto.randomUUID(),
       questionId,
       selectedText: initialSelectedText || "", // B66 划词创建时填充
@@ -102,7 +102,7 @@ export default function NotesPanel({
     onNoteCreated?.();
   }
 
-  function startEdit(note: LearnNote) {
+  function startEdit(note: NoteRecord) {
     setEditingId(note.id);
     setEditingText(note.noteText);
   }

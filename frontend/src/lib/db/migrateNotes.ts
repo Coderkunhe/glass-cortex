@@ -1,5 +1,5 @@
 import { notesDb, type NoteRecord } from "./notesDb";
-import { LEARN_NOTES_KEY, type LearnNote } from "@/lib/constants";
+import { LEARN_NOTES_KEY } from "@/lib/constants";
 
 /** localStorage 迁移标记 — 写入此 key 后不再重复迁移。 */
 const MIGRATED_FLAG = "gm-notes-migrated";
@@ -7,7 +7,7 @@ const MIGRATED_FLAG = "gm-notes-migrated";
 /**
  * 一次性将 localStorage 笔记数据迁移到 IndexedDB。
  *
- * - 读取 `LEARN_NOTES_KEY`（`Record<questionId, LearnNote[]>`）
+ * - 读取 `LEARN_NOTES_KEY`（`Record<questionId, NoteRecord[]>`）
  * - 展平为 `NoteRecord[]` 写入 Dexie `notes` 表
  * - 写入 `gm-notes-migrated` 标记防止重复迁移
  * - 幂等：已迁移 / localStorage 无数据 → 直接 resolve
@@ -50,7 +50,7 @@ export async function migrateNotesToIndexedDB(): Promise<void> {
 
   // 解析 + 迁移
   try {
-    const data = JSON.parse(raw) as Record<string, LearnNote[]>;
+    const data = JSON.parse(raw) as Record<string, NoteRecord[]>;
     const records: NoteRecord[] = [];
 
     for (const notes of Object.values(data)) {

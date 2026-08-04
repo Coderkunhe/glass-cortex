@@ -49,7 +49,10 @@ export interface ChapterProgress {
 
 // ── 笔记类型 ──────────────────────────────────────────────────
 
-/** 用户划词笔记 */
+/** 用户划词笔记
+ * @deprecated B143 — 笔记已迁移至 IndexedDB。请使用 {@link import('@/lib/db/notesDb').NoteRecord} 替代。
+ * 此类型保留仅用于 migrateNotes 迁移函数的旧数据解析兼容，新代码请使用 NoteRecord。
+ */
 export interface LearnNote {
   /** 唯一 ID（crypto.randomUUID()） */
   id: string;
