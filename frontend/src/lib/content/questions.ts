@@ -38,19 +38,6 @@ export function getAnswerById(id: string): Answer | undefined {
   return ALL_ANSWERS.find((a) => a.id === id);
 }
 
-/** 按章节 ID 查找章节元数据 */
-export function getChapterById(id: string): Chapter | undefined {
-  return CHAPTERS.find((c) => c.id === id);
-}
-
-/** 获取有已完成答案的章节 ID 列表 */
-export function getAnsweredChapterIds(): string[] {
-  const answered = new Set(
-    ALL_ANSWERS.filter((a) => a.l0 !== "").map((a) => a.chapter)
-  );
-  return Array.from(answered);
-}
-
 // ── 并行管线：动态 import + Promise.all 章节答案 ─────────
 
 /** 章节动态加载器（代码分割点） */
@@ -94,7 +81,3 @@ export async function loadAllChaptersParallel(): Promise<Record<string, Answer[]
   return map;
 }
 
-/** 清空章节缓存（测试用） */
-export function clearChapterCache(): void {
-  _chapterCache.clear();
-}

@@ -15,8 +15,6 @@ export type {
   ContextMeta,
   ApiTrace,
   RecallItem,
-  EpisodeRecallItem,
-  FactRecallItem,
   RoutingInfo,
   ChatResponse,
   PlannerClassifyRequest,

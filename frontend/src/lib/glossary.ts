@@ -507,11 +507,6 @@ export function getTerm(id: string): GlossaryTerm | undefined {
   return GLOSSARY[id];
 }
 
-/** 按分类获取术语列表 */
-export function getTermsByCategory(category: GlossaryCategory): GlossaryTerm[] {
-  return Object.values(GLOSSARY).filter((t) => t.category === category);
-}
-
 /** 按分类分组获取全部术语 */
 export function getTermsGrouped(): Record<GlossaryCategory, GlossaryTerm[]> {
   const groups: Record<GlossaryCategory, GlossaryTerm[]> = {
@@ -527,15 +522,6 @@ export function getTermsGrouped(): Record<GlossaryCategory, GlossaryTerm[]> {
   return groups;
 }
 
-/** 按关键词搜索术语（匹配 term 名，不区分大小写的简单子串匹配） */
-export function searchTerms(query: string): GlossaryTerm[] {
-  const q = query.toLowerCase();
-  return Object.values(GLOSSARY).filter(
-    (t) =>
-      t.term.toLowerCase().includes(q) ||
-      t.shortDef.toLowerCase().includes(q),
-  );
-}
 
 /** 分类显示标签映射 */
 export const CATEGORY_LABELS: Record<GlossaryCategory, string> = {

@@ -7,16 +7,6 @@
  * 使用方式：`import { API_BASE_URL } from "@/lib/constants";`
  */
 
-/** FastAPI 后端基地址。开发环境默认 localhost:8000，生产通过 NEXT_PUBLIC_API_URL 注入。 */
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-/** 默认上下文窗口 token 上限 (L3 层)。 */
-export const DEFAULT_CONTEXT_WINDOW_SIZE = 4096;
-
-/** 默认上下文溢出策略 — 按优先级保留高得分记忆。 */
-export const DEFAULT_OVERFLOW_STRATEGY = "prioritize" as const;
-
 // ── localStorage 键名 ────────────────────────────────────────
 
 /** Learn 页最后阅读的问题 ID。 */
