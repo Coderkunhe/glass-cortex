@@ -78,11 +78,22 @@ export default function ImageViewer({
   // ── Build iframe srcdoc ──
   // 将 SVG 嵌入最小 HTML 文档，body 使用 flex 居中，
   // SVG 自适应视口（max-width/max-height: 100%）
+  //
+  // CSS 自定义属性不跨 document 边界 — srcdoc 内的样式无法访问父文档的
+  // var(--gm-surface-elevated)。因此读取已解析的实际颜色值，硬编码到
+  // srcdoc body 背景，确保 lightbox 全屏时背景与主题色匹配。
+  const surfaceBg =
+    typeof document !== "undefined"
+      ? getComputedStyle(document.body)
+          .getPropertyValue("--gm-surface-elevated")
+          .trim() || "#ffffff"
+      : "#ffffff";
+
   const srcdoc = svgHtml
     ? `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:transparent}
-svg{max-width:100%;max-height:100%;height:auto;width:auto}
+html,body{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${surfaceBg}}
+svg{max-width:100%;max-height:100%;height:auto;width:auto;background-color:transparent}
 </style></head><body>${svgHtml}</body></html>`
     : undefined;
 
@@ -259,7 +270,7 @@ svg{max-width:100%;max-height:100%;height:auto;width:auto}
           width: 100%;
           height: 100%;
           border: none;
-          background: var(--gm-bg, #fff);
+          background: var(--gm-surface-elevated);
           /* iframe 不接收指针事件 — overlay 层捕获所有交互 */
           pointer-events: none;
         }
@@ -285,7 +296,7 @@ svg{max-width:100%;max-height:100%;height:auto;width:auto}
           max-height: 100vh;
           object-fit: contain;
           border-radius: var(--gm-radius-sm, 4px);
-          background: var(--gm-bg, #fff);
+          background: var(--gm-surface-elevated);
           padding: var(--gm-space-4, 16px);
           cursor: default;
           animation: gm-iv-zoom-in var(--gm-duration-base) ease-out;

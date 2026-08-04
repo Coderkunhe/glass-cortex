@@ -224,42 +224,258 @@ button:active,
   border-radius: var(--gm-radius-lg);
   box-shadow: var(--gm-shadow-sm);
   padding: var(--gm-space-5);
+  /* 舒适阅读宽度 — 约 75 个中文字符 */
+  max-width: 78ch;
 }
 
+/* ═══ 标题层级 — 6 级独立档位 ═══
+ *
+ * 设计原则：
+ * - h1 ≈ 正文 2×，每级递减 ~15-20%
+ * - h4 = 正文字号，通过 weight + color 区分
+ * - h5/h6 < 正文，用于嵌套小节
+ * - margin-top 提供呼吸感，margin-bottom 控制标题-内容亲密性
+ * - line-height 紧凑 — 标题通常不超过 2 行
+ */
 .answer-l1-body h1 {
-  font-size: var(--gm-text-md);
+  font-size: var(--gm-text-2xl);          /* ~24-32px */
   font-weight: 700;
   color: var(--gm-text);
-  margin-bottom: var(--gm-space-4);
+  line-height: 1.25;
+  margin-top: var(--gm-space-6);          /* 32px — 与前文拉开 */
+  margin-bottom: var(--gm-space-3);       /* 12px — 标题-内容亲密 */
 }
 .answer-l1-body h2 {
-  font-size: var(--gm-text-sm);
-  font-weight: 600;
-  color: var(--gm-text-secondary);
-  margin-bottom: var(--gm-space-3);
+  font-size: var(--gm-text-xl);           /* ~20-24px */
+  font-weight: 700;
+  color: var(--gm-text);
+  line-height: 1.3;
+  margin-top: var(--gm-space-5);          /* 24px */
+  margin-bottom: var(--gm-space-2);       /* 8px */
 }
 .answer-l1-body h3 {
-  font-size: var(--gm-text-sm);
+  font-size: var(--gm-text-lg);           /* ~16-18px */
   font-weight: 600;
   color: var(--gm-text);
-  margin-bottom: var(--gm-space-2);
+  line-height: 1.35;
+  margin-top: var(--gm-space-4);          /* 16px */
+  margin-bottom: var(--gm-space-2);       /* 8px */
 }
 .answer-l1-body h4 {
+  font-size: var(--gm-text-base);         /* ~14-16px — 与正文同号 */
+  font-weight: 600;
+  color: var(--gm-text-secondary);
+  line-height: 1.4;
+  margin-top: var(--gm-space-3);          /* 12px */
+  margin-bottom: var(--gm-space-1);       /* 4px */
+}
+.answer-l1-body h5 {
+  font-size: var(--gm-text-sm);           /* ~12-13px */
+  font-weight: 600;
+  color: var(--gm-text-secondary);
+  line-height: 1.45;
+  margin-top: var(--gm-space-3);          /* 12px */
+  margin-bottom: var(--gm-space-1);       /* 4px */
+}
+.answer-l1-body h6 {
+  font-size: var(--gm-text-xs);           /* ~10-11px */
+  font-weight: 600;
+  color: var(--gm-text-muted);
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: var(--gm-space-2);          /* 8px */
+  margin-bottom: var(--gm-space-1);       /* 4px */
+}
+
+/* 首个标题不额外加顶部间距 — 避免卡片顶部空白 */
+.answer-l1-body > h1:first-child,
+.answer-l1-body > h2:first-child,
+.answer-l1-body > h3:first-child,
+.answer-l1-body > h4:first-child,
+.answer-l1-body > h5:first-child,
+.answer-l1-body > h6:first-child {
+  margin-top: 0;
+}
+
+/* ── .prose 内标题（特异性 0,2,1 > :is(.chat-prose,.prose) 的 0,1,1）── */
+.answer-l1-body .prose h1 {
+  font-size: var(--gm-text-2xl);
+  font-weight: 700;
+  color: var(--gm-text);
+  line-height: 1.25;
+  margin-top: var(--gm-space-6);
+  margin-bottom: var(--gm-space-3);
+}
+.answer-l1-body .prose h2 {
+  font-size: var(--gm-text-xl);
+  font-weight: 700;
+  color: var(--gm-text);
+  line-height: 1.3;
+  margin-top: var(--gm-space-5);
+  margin-bottom: var(--gm-space-2);
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid var(--gm-border);
+}
+.answer-l1-body .prose h3 {
+  font-size: var(--gm-text-lg);
+  font-weight: 600;
+  color: var(--gm-text);
+  line-height: 1.35;
+  margin-top: var(--gm-space-4);
+  margin-bottom: var(--gm-space-2);
+}
+.answer-l1-body .prose h4 {
+  font-size: var(--gm-text-base);
+  font-weight: 600;
+  color: var(--gm-text-secondary);
+  line-height: 1.4;
+  margin-top: var(--gm-space-3);
+  margin-bottom: var(--gm-space-1);
+}
+.answer-l1-body .prose h5 {
   font-size: var(--gm-text-sm);
   font-weight: 600;
   color: var(--gm-text-secondary);
-  margin-bottom: var(--gm-space-2);
-}
-.answer-l1-body h5 {
-  font-size: var(--gm-text-xs);
-  font-weight: 600;
-  color: var(--gm-text-secondary);
+  line-height: 1.45;
+  margin-top: var(--gm-space-3);
   margin-bottom: var(--gm-space-1);
 }
-.answer-l1-body h6 {
+.answer-l1-body .prose h6 {
   font-size: var(--gm-text-xs);
-  font-weight: 500;
+  font-weight: 600;
   color: var(--gm-text-muted);
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: var(--gm-space-2);
+  margin-bottom: var(--gm-space-1);
+}
+.answer-l1-body .prose h1:first-child,
+.answer-l1-body .prose h2:first-child,
+.answer-l1-body .prose h3:first-child,
+.answer-l1-body .prose h4:first-child,
+.answer-l1-body .prose h5:first-child,
+.answer-l1-body .prose h6:first-child {
+  margin-top: 0;
+}
+
+/* ═══ L2/L3 折叠区标题 — 与 L1 相同层级档位 ═══
+ *
+ * 设计原则：L2/L3 正文为 --gm-text-sm（比 L1 小一号），
+ * 但标题字号与 L1 保持一致 — 更大的正-标对比度提升次级内容可读性。
+ */
+.answer-fold-content h1 {
+  font-size: var(--gm-text-2xl);
+  font-weight: 700;
+  color: var(--gm-text);
+  line-height: 1.25;
+  margin-top: var(--gm-space-5);
+  margin-bottom: var(--gm-space-3);
+}
+.answer-fold-content h2 {
+  font-size: var(--gm-text-xl);
+  font-weight: 700;
+  color: var(--gm-text);
+  line-height: 1.3;
+  margin-top: var(--gm-space-4);
+  margin-bottom: var(--gm-space-2);
+}
+.answer-fold-content h3 {
+  font-size: var(--gm-text-lg);
+  font-weight: 600;
+  color: var(--gm-text);
+  line-height: 1.35;
+  margin-top: var(--gm-space-4);
+  margin-bottom: var(--gm-space-2);
+}
+.answer-fold-content h4 {
+  font-size: var(--gm-text-base);
+  font-weight: 600;
+  color: var(--gm-text-secondary);
+  line-height: 1.4;
+  margin-top: var(--gm-space-3);
+  margin-bottom: var(--gm-space-1);
+}
+.answer-fold-content h5 {
+  font-size: var(--gm-text-sm);
+  font-weight: 600;
+  color: var(--gm-text-secondary);
+  line-height: 1.45;
+  margin-top: var(--gm-space-2);
+  margin-bottom: var(--gm-space-1);
+}
+.answer-fold-content h6 {
+  font-size: var(--gm-text-xs);
+  font-weight: 600;
+  color: var(--gm-text-muted);
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: var(--gm-space-2);
+  margin-bottom: var(--gm-space-1);
+}
+
+.answer-fold-content > h1:first-child,
+.answer-fold-content > h2:first-child,
+.answer-fold-content > h3:first-child,
+.answer-fold-content > h4:first-child,
+.answer-fold-content > h5:first-child,
+.answer-fold-content > h6:first-child {
+  margin-top: 0;
+}
+
+/* ── .prose 内标题（fold-content 版，特异性 0,2,1）── */
+.answer-fold-content.prose h1 {
+  font-size: var(--gm-text-2xl);
+  font-weight: 700;
+  color: var(--gm-text);
+  line-height: 1.25;
+  margin-top: var(--gm-space-5);
+  margin-bottom: var(--gm-space-3);
+}
+.answer-fold-content.prose h2 {
+  font-size: var(--gm-text-xl);
+  font-weight: 700;
+  color: var(--gm-text);
+  line-height: 1.3;
+  margin-top: var(--gm-space-4);
+  margin-bottom: var(--gm-space-2);
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid var(--gm-border);
+}
+.answer-fold-content.prose h3 {
+  font-size: var(--gm-text-lg);
+  font-weight: 600;
+  color: var(--gm-text);
+  line-height: 1.35;
+  margin-top: var(--gm-space-4);
+  margin-bottom: var(--gm-space-2);
+}
+.answer-fold-content.prose h4 {
+  font-size: var(--gm-text-base);
+  font-weight: 600;
+  color: var(--gm-text-secondary);
+  line-height: 1.4;
+  margin-top: var(--gm-space-3);
+  margin-bottom: var(--gm-space-1);
+}
+.answer-fold-content.prose h5 {
+  font-size: var(--gm-text-sm);
+  font-weight: 600;
+  color: var(--gm-text-secondary);
+  line-height: 1.45;
+  margin-top: var(--gm-space-2);
+  margin-bottom: var(--gm-space-1);
+}
+.answer-fold-content.prose h6 {
+  font-size: var(--gm-text-xs);
+  font-weight: 600;
+  color: var(--gm-text-muted);
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: var(--gm-space-2);
   margin-bottom: var(--gm-space-1);
 }
 
@@ -700,7 +916,11 @@ body.gm-immersive footer {
 
 /* ═══ Batch 147 — WeRead 风格排版精调 ═══ */
 
-/* 沉浸模式阅读排版（微信读书风格：大行高、舒适字号、宽松间距） */
+/* 沉浸模式阅读排版（微信读书风格：大行高、舒适字号、宽松间距）
+ *
+ * 标题字号由 .answer-l1-body h1-h6 基础规则控制（6 级独立档位），
+ * 阅读模式仅调整行高、段间距和标题上下间距。
+ */
 .answer-reading-mode .answer-l1-body {
   line-height: 1.8;
   font-size: var(--gm-text-md);
@@ -708,21 +928,33 @@ body.gm-immersive footer {
 .answer-reading-mode .answer-l1-body p {
   margin-bottom: 1.2em;
 }
-.answer-reading-mode .answer-l1-body h3,
-.answer-reading-mode .answer-l1-body h4,
-.answer-reading-mode .answer-l1-body h5,
-.answer-reading-mode .answer-l1-body h6 {
-  margin-top: 1.8em;
-  margin-bottom: 0.6em;
-}
+
+/* 阅读模式标题间距 — 比基础模式更宽松 */
 .answer-reading-mode .answer-l1-body h1 {
   margin-top: 2em;
   margin-bottom: 0.8em;
 }
 .answer-reading-mode .answer-l1-body h2 {
   margin-top: 1.8em;
+  margin-bottom: 0.7em;
+}
+.answer-reading-mode .answer-l1-body h3 {
+  margin-top: 1.6em;
   margin-bottom: 0.6em;
 }
+.answer-reading-mode .answer-l1-body h4 {
+  margin-top: 1.4em;
+  margin-bottom: 0.5em;
+}
+.answer-reading-mode .answer-l1-body h5 {
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+}
+.answer-reading-mode .answer-l1-body h6 {
+  margin-top: 1em;
+  margin-bottom: 0.4em;
+}
+
 .answer-reading-mode .answer-l0-card {
   line-height: 1.7;
 }
@@ -736,21 +968,33 @@ body.gm-immersive footer {
 .answer-reading-mode .answer-fold-content p {
   margin-bottom: 1em;
 }
-.answer-reading-mode .answer-fold-content h3,
-.answer-reading-mode .answer-fold-content h4,
-.answer-reading-mode .answer-fold-content h5,
-.answer-reading-mode .answer-fold-content h6 {
-  margin-top: 1.6em;
-  margin-bottom: 0.6em;
-}
+
+/* L2/L3 折叠区阅读模式标题间距 */
 .answer-reading-mode .answer-fold-content h1 {
   margin-top: 2em;
   margin-bottom: 0.8em;
 }
 .answer-reading-mode .answer-fold-content h2 {
   margin-top: 1.6em;
+  margin-bottom: 0.7em;
+}
+.answer-reading-mode .answer-fold-content h3 {
+  margin-top: 1.4em;
   margin-bottom: 0.6em;
 }
+.answer-reading-mode .answer-fold-content h4 {
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+}
+.answer-reading-mode .answer-fold-content h5 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+.answer-reading-mode .answer-fold-content h6 {
+  margin-top: 0.8em;
+  margin-bottom: 0.4em;
+}
+
 .answer-reading-mode .answer-l1-body,
 .answer-reading-mode .answer-fold-content {
   background: transparent;
@@ -1137,43 +1381,52 @@ pre:focus-within .gm-code-copy-btn {
   margin: 0.15em 0;
 }
 
+/* ── 标题层级（6 级独立档位，chat-prose 与 prose 共享）── */
 :is(.chat-prose, .prose) h1 {
-  font-size: var(--gm-text-md);
+  font-size: var(--gm-text-2xl);
   font-weight: 700;
   margin: 0.8em 0 0.4em;
   color: var(--gm-text);
+  line-height: 1.25;
 }
 :is(.chat-prose, .prose) h2 {
-  font-size: var(--gm-text-md);
-  font-weight: 600;
+  font-size: var(--gm-text-xl);
+  font-weight: 700;
   margin: 0.7em 0 0.35em;
   color: var(--gm-text);
+  line-height: 1.3;
   padding-bottom: 0.25em;
   border-bottom: 1px solid var(--gm-border);
 }
 :is(.chat-prose, .prose) h3 {
-  font-size: var(--gm-text-sm);
+  font-size: var(--gm-text-lg);
   font-weight: 600;
   margin: 0.6em 0 0.3em;
   color: var(--gm-text);
+  line-height: 1.35;
 }
 :is(.chat-prose, .prose) h4 {
+  font-size: var(--gm-text-base);
+  font-weight: 600;
+  margin: 0.5em 0 0.25em;
+  color: var(--gm-text-secondary);
+  line-height: 1.4;
+}
+:is(.chat-prose, .prose) h5 {
   font-size: var(--gm-text-sm);
   font-weight: 600;
   margin: 0.5em 0 0.25em;
   color: var(--gm-text-secondary);
-}
-:is(.chat-prose, .prose) h5 {
-  font-size: var(--gm-text-xs);
-  font-weight: 600;
-  margin: 0.5em 0 0.25em;
-  color: var(--gm-text-secondary);
+  line-height: 1.45;
 }
 :is(.chat-prose, .prose) h6 {
   font-size: var(--gm-text-xs);
-  font-weight: 500;
+  font-weight: 600;
   margin: 0.4em 0 0.2em;
   color: var(--gm-text-muted);
+  line-height: 1.5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 :is(.chat-prose, .prose) hr {

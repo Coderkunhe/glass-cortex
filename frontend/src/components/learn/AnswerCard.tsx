@@ -400,8 +400,7 @@ export default function AnswerCard({
         <h2>核心解释</h2>
         <div
           className="prose text-gm-base text-text leading-relaxed
-                     [&_h3]:text-gm-lg [&_h3]:font-semibold [&_h3]:text-text [&_h3]:mt-gm-5 [&_h3]:mb-gm-3
-                     [&_p]:mb-gm-3 [&_ul]:mb-gm-3 [&_li]:mb-gm-1_5
+                     [&_p]:mb-gm-4 [&_ul]:mb-gm-3 [&_ol]:mb-gm-3 [&_li]:mb-gm-1_5
                      [&_strong]:text-text [&_a]:text-brand [&_a]:underline
                      [&_code]:text-gm-sm [&_code]:bg-bg-subtle [&_code]:px-gm-1 [&_code]:rounded-gm-xs
                      [&_table]:w-full [&_table]:text-gm-sm [&_td]:border [&_td]:border-border [&_td]:p-gm-2
@@ -433,8 +432,7 @@ export default function AnswerCard({
           headerClassName="answer-l2-header"
           contentClassName={
             "answer-fold-content prose text-gm-sm text-text leading-relaxed " +
-            "[&_h3]:text-gm-lg [&_h3]:font-semibold [&_h3]:text-text [&_h3]:mt-gm-4 [&_h3]:mb-gm-2 " +
-            "[&_p]:mb-gm-2 [&_ul]:mb-gm-2 [&_li]:mb-gm-1_5 " +
+            "[&_p]:mb-gm-3 [&_ul]:mb-gm-2 [&_ol]:mb-gm-2 [&_li]:mb-gm-1_5 " +
             "[&_strong]:text-text [&_a]:text-brand [&_a]:underline " +
             "[&_code]:text-gm-xs [&_code]:bg-bg-subtle [&_code]:px-gm-1 [&_code]:rounded-gm-xs " +
             "[&_pre]:bg-bg-subtle [&_pre]:p-gm-3 [&_pre]:rounded-gm-md [&_pre]:overflow-x-auto [&_pre]:text-gm-xs " +
@@ -468,8 +466,7 @@ export default function AnswerCard({
           headerClassName="answer-l3-header"
           contentClassName={
             "answer-fold-content prose text-gm-sm text-text leading-relaxed " +
-            "[&_h3]:text-gm-lg [&_h3]:font-semibold [&_h3]:text-text [&_h3]:mt-gm-4 [&_h3]:mb-gm-2 " +
-            "[&_p]:mb-gm-2 [&_ul]:mb-gm-2 [&_li]:mb-gm-1_5 " +
+            "[&_p]:mb-gm-3 [&_ul]:mb-gm-2 [&_ol]:mb-gm-2 [&_li]:mb-gm-1_5 " +
             "[&_strong]:text-text [&_a]:text-brand [&_a]:underline " +
             "[&_code]:text-gm-xs [&_code]:bg-bg-subtle [&_code]:px-gm-1 [&_code]:rounded-gm-xs"
           }

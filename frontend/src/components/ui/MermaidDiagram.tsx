@@ -133,8 +133,21 @@ export default function MermaidDiagram({
         const cleanChart = stripEmoji(chart);
         const { svg } = await mermaid.render(mermaidId, cleanChart);
 
+        // 剥离 SVG 根元素的 background-color，让容器背景色透出。
+        // mermaid theme (neutral/dark) 会在 <svg style="background-color:...">
+        // 中硬编码背景色，lightbox 全屏时与主题色不匹配。
+        const transparentSvg = svg.replace(
+          /(<svg\b[^>]*?)\s*style\s*=\s*"([^"]*)"/,
+          (_, before: string, styles: string) => {
+            const cleaned = styles
+              .replace(/background-color:\s*[^;"]+;?\s*/g, "")
+              .trim();
+            return cleaned ? `${before} style="${cleaned}"` : before;
+          },
+        );
+
         if (!cancelled) {
-          setSvgHtml(svg);
+          setSvgHtml(transparentSvg);
           setInitializing(false);
         }
       } catch (err) {
