@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
+import "fake-indexeddb/auto";
+import { notesDb } from "@/lib/db/notesDb";
 
 // ── mock functions must be hoisted above the vi.mock call ──
 const {
@@ -863,7 +865,7 @@ describe("LearnPage", () => {
   describe("B66 — NotesPanel integration", () => {
     let mockStore: Record<string, string>;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       mockStore = {};
       const mockLS = {
         getItem: vi.fn((key: string) => mockStore[key] ?? null),
@@ -882,6 +884,7 @@ describe("LearnPage", () => {
         key: vi.fn((i: number) => Object.keys(mockStore)[i] ?? null),
       };
       vi.stubGlobal("localStorage", mockLS);
+      await notesDb.notes.clear();
     });
 
     afterEach(() => {
@@ -889,7 +892,6 @@ describe("LearnPage", () => {
     });
 
     it("renders NotesPanel when a question is selected", async () => {
-      mockStore["gm-learn-notes"] = JSON.stringify({});
       await renderPage(Promise.resolve({ q: "q1.1" }));
 
       // NotesPanel 应可见（桌面 + 移动端各一个）
@@ -905,13 +907,10 @@ describe("LearnPage", () => {
     });
 
     it("shows existing notes count for current question", async () => {
-      const notes = {
-        "q1.1": [
-          { id: "n1", questionId: "q1.1", selectedText: "溢出策略", noteText: "笔记一", createdAt: 1700000000000, updatedAt: 1700000000000 },
-          { id: "n2", questionId: "q1.1", selectedText: "FIFO", noteText: "笔记二", createdAt: 1700000000000, updatedAt: 1700000000000 },
-        ],
-      };
-      mockStore["gm-learn-notes"] = JSON.stringify(notes);
+      await notesDb.notes.bulkPut([
+        { id: "n1", questionId: "q1.1", selectedText: "溢出策略", noteText: "笔记一", createdAt: 1700000000000, updatedAt: 1700000000000 },
+        { id: "n2", questionId: "q1.1", selectedText: "FIFO", noteText: "笔记二", createdAt: 1700000000000, updatedAt: 1700000000000 },
+      ]);
 
       await renderPage(Promise.resolve({ q: "q1.1" }));
 
@@ -924,12 +923,9 @@ describe("LearnPage", () => {
     });
 
     it("passes noteHighlights to AnswerCard for saved notes", async () => {
-      const notes = {
-        "q1.1": [
-          { id: "n1", questionId: "q1.1", selectedText: "三种策略", noteText: "笔记", createdAt: 1700000000000, updatedAt: 1700000000000 },
-        ],
-      };
-      mockStore["gm-learn-notes"] = JSON.stringify(notes);
+      await notesDb.notes.put(
+        { id: "n1", questionId: "q1.1", selectedText: "三种策略", noteText: "笔记", createdAt: 1700000000000, updatedAt: 1700000000000 },
+      );
 
       await renderPage(Promise.resolve({ q: "q1.1" }));
 

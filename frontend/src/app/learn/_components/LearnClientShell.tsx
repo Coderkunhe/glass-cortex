@@ -25,7 +25,9 @@ import AnswerCard from "@/components/learn/AnswerCard";
 import NotesPanel from "@/components/learn/NotesPanel";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useLearnProgress, computeAllChapterProgress } from "@/hooks/useLearnProgress";
-import type { LearnNote, ChapterProgress } from "@/lib/constants";
+import { useNotesDb } from "@/hooks/useNotesDb";
+import { migrateNotesToIndexedDB } from "@/lib/db/migrateNotes";
+import type { ChapterProgress } from "@/lib/constants";
 import {
   LEARN_LAST_READ_KEY,
   LEARN_COLLAPSED_KEY,
@@ -34,7 +36,6 @@ import {
   LEARN_BOOKMARKS_KEY,
   LEARN_SCROLL_POSITIONS_KEY,
   LEARN_FONT_SIZE_KEY,
-  LEARN_NOTES_KEY,
 } from "@/lib/constants";
 
 /** Remixicon 章节图标映射（与 QuestionList ICON_MAP 对齐） */
@@ -128,14 +129,16 @@ export default function LearnClientShell({
   /** 搜索关键词 — 由 QuestionList 同步，传递给 AnswerCard 用于正文高亮 */
   const [searchQuery, setSearchQuery] = useState("");
 
-  /** 笔记数据 — 读取全量笔记映射，用于高亮渲染（与 NotesPanel 共享同一 localStorage key） */
-  const [notesMap] = useLocalStorage<Record<string, LearnNote[]>>(
-    LEARN_NOTES_KEY,
-    {},
-  );
+  /** 笔记数据 — 从 IndexedDB 读取全量笔记映射，用于高亮渲染（与 NotesPanel 共享同一 useNotesDb 数据源）。B143 从 localStorage 迁移至 IndexedDB。 */
+  const { notesMap } = useNotesDb();
 
   /** 用户学习进度 — 基于 localStorage 持久化的问题阅读记录。 */
   const { progress: userProgress, markViewed } = useLearnProgress();
+
+  // B143: 一次性将 localStorage 笔记迁移到 IndexedDB（幂等操作）
+  useEffect(() => {
+    migrateNotesToIndexedDB();
+  }, []);
 
   /** 按章节汇总的用户进度（供 ContentDashboard / QuestionList 消费）。 */
   const chapterProgressMap = useMemo<Record<string, ChapterProgress>>(

@@ -1,12 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import type { LearnNote } from "@/lib/constants";
+import "fake-indexeddb/auto";
+import { notesDb, type NoteRecord } from "@/lib/db/notesDb";
 
-/** 测试用 localStorage mock store */
-let mockStore: Record<string, string>;
-
-/** 工厂：创建一条测试笔记 */
-function makeNote(overrides: Partial<LearnNote> = {}): LearnNote {
+/** 工厂：创建一条测试用 NoteRecord */
+function makeNoteRecord(overrides: Partial<NoteRecord> = {}): NoteRecord {
   return {
     id: "note-1",
     questionId: "q1.1",
@@ -18,42 +16,15 @@ function makeNote(overrides: Partial<LearnNote> = {}): LearnNote {
   };
 }
 
-/** 在 mock localStorage 中预置笔记数据 */
-function seedNotes(questionId: string, notes: LearnNote[]) {
-  const key = "gm-learn-notes";
-  const existing = JSON.parse(mockStore[key] || "{}") as Record<string, LearnNote[]>;
-  existing[questionId] = notes;
-  mockStore[key] = JSON.stringify(existing);
-}
-
-// NotesPanel 在挂载后通过 useEffect 从 localStorage 读取 notesMap，
-// 因此在 render 之前需要 `seedNotes()` 将种子数据写入 mockStore。
-// 注意：首帧渲染返回 defaultValue {}，然后 useEffect 触发重新渲染恢复存储值。
-// 因此所有断言需要 `waitFor` / `findBy*` 等待级联渲染完成。
+// NotesPanel 在挂载后通过 useEffect 从 IndexedDB 异步加载 notesMap，
+// 因此首帧渲染返回空的 notesMap，然后 useEffect 触发重新渲染恢复存储值。
+// 所有断言需要 `waitFor` / `findBy*` 等待级联渲染完成。
 
 import NotesPanel from "@/components/learn/NotesPanel";
 
 describe("NotesPanel", () => {
-  beforeEach(() => {
-    mockStore = {};
-    const mockLS = {
-      getItem: vi.fn((key: string) => mockStore[key] ?? null),
-      setItem: vi.fn((key: string, val: string) => {
-        mockStore[key] = val;
-      }),
-      removeItem: vi.fn((key: string) => {
-        delete mockStore[key];
-      }),
-      clear: vi.fn(() => {
-        mockStore = {};
-      }),
-      get length() {
-        return Object.keys(mockStore).length;
-      },
-      key: vi.fn((index: number) => Object.keys(mockStore)[index] ?? null),
-    };
-    vi.stubGlobal("localStorage", mockLS);
-    // Stub crypto.randomUUID for deterministic note IDs
+  beforeEach(async () => {
+    await notesDb.notes.clear();
     vi.stubGlobal("crypto", {
       randomUUID: vi.fn(() => "test-uuid-1"),
     });
@@ -82,7 +53,7 @@ describe("NotesPanel", () => {
     expect(screen.getByTestId("note-create-cancel-btn")).toBeDefined();
   });
 
-  it("saves new note to localStorage on save", async () => {
+  it("saves new note to IndexedDB on save", async () => {
     render(<NotesPanel questionId="q1.1" />);
     const addBtn = await screen.findByTestId("note-create-btn");
     fireEvent.click(addBtn);
@@ -93,14 +64,12 @@ describe("NotesPanel", () => {
     });
     fireEvent.click(screen.getByTestId("note-create-save-btn"));
 
-    await waitFor(() => {
-      const stored = JSON.parse(mockStore["gm-learn-notes"]) as Record<string, LearnNote[]>;
-      const notes = stored["q1.1"];
-      expect(notes).toHaveLength(1);
-      expect(notes[0].noteText).toBe("我的第一条笔记");
-      expect(notes[0].selectedText).toBe("");
-      expect(notes[0].questionId).toBe("q1.1");
-      expect(notes[0].id).toBe("test-uuid-1");
+    await waitFor(async () => {
+      const stored = await notesDb.notes.get("test-uuid-1");
+      expect(stored).toBeDefined();
+      expect(stored!.noteText).toBe("我的第一条笔记");
+      expect(stored!.selectedText).toBe("");
+      expect(stored!.questionId).toBe("q1.1");
     });
   });
 
@@ -116,16 +85,17 @@ describe("NotesPanel", () => {
     await waitFor(() => {
       expect(screen.queryByTestId("note-create-textarea")).toBeNull();
     });
-    // localStorage 不应有任何写入
-    expect(mockStore["gm-learn-notes"]).toBeUndefined();
+    // IndexedDB 不应有任何写入
+    const count = await notesDb.notes.count();
+    expect(count).toBe(0);
   });
 
   // ── 笔记列表渲染 ──────────────────────────────────────────
 
   it("renders saved notes as cards", async () => {
-    seedNotes("q1.1", [
-      makeNote({ id: "n1", noteText: "第一条笔记", selectedText: "溢出策略" }),
-    ]);
+    await notesDb.notes.put(
+      makeNoteRecord({ id: "n1", noteText: "第一条笔记", selectedText: "溢出策略" }),
+    );
     render(<NotesPanel questionId="q1.1" />);
 
     await waitFor(() => {
@@ -136,9 +106,9 @@ describe("NotesPanel", () => {
   });
 
   it("renders selectedText as blockquote when non-empty", async () => {
-    seedNotes("q1.1", [
-      makeNote({ id: "n1", selectedText: "上下文窗口溢出的三种处理方式" }),
-    ]);
+    await notesDb.notes.put(
+      makeNoteRecord({ id: "n1", selectedText: "上下文窗口溢出的三种处理方式" }),
+    );
     render(<NotesPanel questionId="q1.1" />);
 
     await waitFor(() => {
@@ -149,9 +119,9 @@ describe("NotesPanel", () => {
   });
 
   it("does not render blockquote when selectedText is empty", async () => {
-    seedNotes("q1.1", [
-      makeNote({ id: "n1", selectedText: "", noteText: "纯文本笔记" }),
-    ]);
+    await notesDb.notes.put(
+      makeNoteRecord({ id: "n1", selectedText: "", noteText: "纯文本笔记" }),
+    );
     render(<NotesPanel questionId="q1.1" />);
 
     await waitFor(() => {
@@ -161,7 +131,10 @@ describe("NotesPanel", () => {
   });
 
   it("shows note count in header", async () => {
-    seedNotes("q1.1", [makeNote({ id: "n1" }), makeNote({ id: "n2" })]);
+    await notesDb.notes.bulkPut([
+      makeNoteRecord({ id: "n1" }),
+      makeNoteRecord({ id: "n2" }),
+    ]);
     render(<NotesPanel questionId="q1.1" />);
 
     await waitFor(() => {
@@ -172,7 +145,7 @@ describe("NotesPanel", () => {
   // ── 编辑笔记 ──────────────────────────────────────────────
 
   it("enters edit mode on edit button click", async () => {
-    seedNotes("q1.1", [makeNote({ id: "n1", noteText: "原始文本" })]);
+    await notesDb.notes.put(makeNoteRecord({ id: "n1", noteText: "原始文本" }));
     render(<NotesPanel questionId="q1.1" />);
 
     await waitFor(() => {
@@ -189,7 +162,7 @@ describe("NotesPanel", () => {
   });
 
   it("saves edited note and exits edit mode", async () => {
-    seedNotes("q1.1", [makeNote({ id: "n1", noteText: "原始文本" })]);
+    await notesDb.notes.put(makeNoteRecord({ id: "n1", noteText: "原始文本" }));
     render(<NotesPanel questionId="q1.1" />);
 
     await waitFor(() => expect(screen.getByTestId("note-card-n1")).toBeDefined());
@@ -199,17 +172,15 @@ describe("NotesPanel", () => {
     fireEvent.change(textarea, { target: { value: "修改后的文本" } });
     fireEvent.click(screen.getByTestId("note-save-btn"));
 
-    await waitFor(() => {
-      const stored = JSON.parse(mockStore["gm-learn-notes"]) as Record<string, LearnNote[]>;
-      expect(stored["q1.1"][0].noteText).toBe("修改后的文本");
-      expect(stored["q1.1"][0].updatedAt).toBeGreaterThan(
-        stored["q1.1"][0].createdAt,
-      );
+    await waitFor(async () => {
+      const stored = await notesDb.notes.get("n1");
+      expect(stored!.noteText).toBe("修改后的文本");
+      expect(stored!.updatedAt).toBeGreaterThan(stored!.createdAt);
     });
   });
 
   it("cancels edit without saving", async () => {
-    seedNotes("q1.1", [makeNote({ id: "n1", noteText: "原始文本" })]);
+    await notesDb.notes.put(makeNoteRecord({ id: "n1", noteText: "原始文本" }));
     render(<NotesPanel questionId="q1.1" />);
 
     await waitFor(() => expect(screen.getByTestId("note-card-n1")).toBeDefined());
@@ -219,16 +190,16 @@ describe("NotesPanel", () => {
     fireEvent.change(textarea, { target: { value: "未保存的修改" } });
     fireEvent.click(screen.getByTestId("note-cancel-btn"));
 
-    await waitFor(() => {
-      const stored = JSON.parse(mockStore["gm-learn-notes"]) as Record<string, LearnNote[]>;
-      expect(stored["q1.1"][0].noteText).toBe("原始文本");
+    await waitFor(async () => {
+      const stored = await notesDb.notes.get("n1");
+      expect(stored!.noteText).toBe("原始文本");
     });
   });
 
   // ── 删除笔记 ──────────────────────────────────────────────
 
   it("opens ConfirmModal on delete click", async () => {
-    seedNotes("q1.1", [makeNote({ id: "n1" })]);
+    await notesDb.notes.put(makeNoteRecord({ id: "n1" }));
     render(<NotesPanel questionId="q1.1" />);
 
     await waitFor(() => expect(screen.getByTestId("note-card-n1")).toBeDefined());
@@ -241,7 +212,7 @@ describe("NotesPanel", () => {
   });
 
   it("deletes note on confirm", async () => {
-    seedNotes("q1.1", [makeNote({ id: "n1" })]);
+    await notesDb.notes.put(makeNoteRecord({ id: "n1" }));
     render(<NotesPanel questionId="q1.1" />);
 
     await waitFor(() => expect(screen.getByTestId("note-card-n1")).toBeDefined());
@@ -250,17 +221,19 @@ describe("NotesPanel", () => {
     await waitFor(() => expect(screen.getByText("删除")).toBeDefined());
     fireEvent.click(screen.getByText("删除"));
 
-    await waitFor(() => {
-      const stored = JSON.parse(mockStore["gm-learn-notes"]) as Record<string, LearnNote[]>;
-      expect(stored["q1.1"]).toHaveLength(0);
+    await waitFor(async () => {
+      const stored = await notesDb.notes.get("n1");
+      expect(stored).toBeUndefined();
     });
   });
 
   // ── questionId 切换 ───────────────────────────────────────
 
   it("resets edit state when questionId changes", async () => {
-    seedNotes("q1.1", [makeNote({ id: "n1", noteText: "Ch1 笔记" })]);
-    seedNotes("q1.2", [makeNote({ id: "n2", noteText: "Ch1 Q2 笔记" })]);
+    await notesDb.notes.bulkPut([
+      makeNoteRecord({ id: "n1", questionId: "q1.1", noteText: "Ch1 笔记" }),
+      makeNoteRecord({ id: "n2", questionId: "q1.2", noteText: "Ch1 Q2 笔记" }),
+    ]);
 
     const { rerender } = render(<NotesPanel questionId="q1.1" />);
     await waitFor(() => expect(screen.getByTestId("note-card-n1")).toBeDefined());
@@ -309,14 +282,11 @@ describe("NotesPanel", () => {
       fireEvent.change(textarea, { target: { value: "我的划词笔记" } });
       fireEvent.click(screen.getByTestId("note-create-save-btn"));
 
-      await waitFor(() => {
-        const stored = JSON.parse(
-          mockStore["gm-learn-notes"],
-        ) as Record<string, LearnNote[]>;
-        const notes = stored["q1.1"];
-        expect(notes).toHaveLength(1);
-        expect(notes[0].selectedText).toBe("被选中的溢出策略段落");
-        expect(notes[0].noteText).toBe("我的划词笔记");
+      await waitFor(async () => {
+        const stored = await notesDb.notes.get("test-uuid-1");
+        expect(stored).toBeDefined();
+        expect(stored!.selectedText).toBe("被选中的溢出策略段落");
+        expect(stored!.noteText).toBe("我的划词笔记");
       });
     });
 

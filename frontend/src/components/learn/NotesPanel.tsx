@@ -10,13 +10,12 @@ import {
   RiCloseLine,
 } from "@remixicon/react";
 import type { LearnNote } from "@/lib/constants";
-import { LEARN_NOTES_KEY } from "@/lib/constants";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useNotesDb } from "@/hooks/useNotesDb";
 import { formatRelativeTime } from "@/lib/formatTime";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 
-/** NotesPanel — 自包含划词笔记面板，内嵌 localStorage 读写。 */
+/** NotesPanel — 自包含划词笔记面板，内嵌 IndexedDB 读写（useNotesDb）。 */
 export interface NotesPanelProps {
   /** 当前问题 ID */
   questionId: string;
@@ -29,20 +28,19 @@ export interface NotesPanelProps {
 /**
  * 自包含笔记面板。
  *
- * 使用 useLocalStorage 直接管理 `Record<string, LearnNote[]>` 的持久化，
+ * 使用 useNotesDb 直接管理 IndexedDB 笔记持久化，
  * 不需要父组件传递 state 或回调。仅需 `questionId` prop。
  *
  * 支持：创建（"+" 按钮 → 内联 textarea）、编辑、删除、确认弹窗。
  * B66 补齐正文选择工具栏 + 高亮渲染。
+ * B143 数据源从 localStorage 迁移至 IndexedDB。
  */
 export default function NotesPanel({
   questionId,
   initialSelectedText,
   onNoteCreated,
 }: NotesPanelProps) {
-  const [notesMap, setNotesMap] = useLocalStorage<
-    Record<string, LearnNote[]>
-  >(LEARN_NOTES_KEY, {});
+  const { notesMap, addNote, updateNote, deleteNote } = useNotesDb();
 
   const currentNotes: LearnNote[] = notesMap[questionId] || [];
 
@@ -79,7 +77,7 @@ export default function NotesPanel({
 
   // ── CRUD 操作 ──────────────────────────────────────────────
 
-  function handleCreate() {
+  async function handleCreate() {
     const trimmed = createText.trim();
     if (!trimmed) return;
 
@@ -92,10 +90,7 @@ export default function NotesPanel({
       updatedAt: Date.now(),
     };
 
-    setNotesMap((prev) => {
-      const existing = prev[questionId] || [];
-      return { ...prev, [questionId]: [...existing, newNote] };
-    });
+    await addNote(newNote);
     setIsCreating(false);
     setCreateText("");
     onNoteCreated?.();
@@ -112,20 +107,12 @@ export default function NotesPanel({
     setEditingText(note.noteText);
   }
 
-  function handleSaveEdit() {
+  async function handleSaveEdit() {
     if (editingId === null) return;
     const trimmed = editingText.trim();
     if (!trimmed) return;
 
-    setNotesMap((prev) => {
-      const notes = prev[questionId] || [];
-      return {
-        ...prev,
-        [questionId]: notes.map((n) =>
-          n.id === editingId ? { ...n, noteText: trimmed, updatedAt: Date.now() } : n,
-        ),
-      };
-    });
+    await updateNote(editingId, questionId, trimmed);
     setEditingId(null);
     setEditingText("");
   }
@@ -135,15 +122,9 @@ export default function NotesPanel({
     setEditingText("");
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (deletingId === null) return;
-    setNotesMap((prev) => {
-      const notes = prev[questionId] || [];
-      return {
-        ...prev,
-        [questionId]: notes.filter((n) => n.id !== deletingId),
-      };
-    });
+    await deleteNote(deletingId, questionId);
     setDeletingId(null);
   }
 

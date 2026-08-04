@@ -65,5 +65,5 @@ export interface LearnNote {
   updatedAt: number;
 }
 
-/** Learn 页用户笔记 — Record<questionId, LearnNote[]> */
+/** @deprecated B143 — 笔记已迁移至 IndexedDB (notesDb)，仅保留供 migrateNotes 迁移函数读取。新代码请使用 useNotesDb() hook。 */
 export const LEARN_NOTES_KEY = "gm-learn-notes";
