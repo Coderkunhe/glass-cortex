@@ -137,7 +137,14 @@ export default function LearnClientShell({
 
   // B143: 一次性将 localStorage 笔记迁移到 IndexedDB（幂等操作）
   useEffect(() => {
-    migrateNotesToIndexedDB();
+    migrateNotesToIndexedDB().then((result) => {
+      if (result.skipped) return;
+      if (result.migrated > 0) {
+        console.info(
+          `[migrateNotes] 已迁移 ${result.migrated} 条笔记到 IndexedDB`,
+        );
+      }
+    });
   }, []);
 
   /** 按章节汇总的用户进度（供 ContentDashboard / QuestionList 消费）。 */

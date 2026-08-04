@@ -77,7 +77,9 @@ describe("migrateNotesToIndexedDB", () => {
     };
     mockStorage.getItem.mockReturnValue(JSON.stringify(notesData));
 
-    await migrateNotesToIndexedDB();
+    const result = await migrateNotesToIndexedDB();
+
+    expect(result).toEqual({ migrated: 3, skipped: false });
 
     // 验证 IndexedDB 数据
     const allNotes = await notesDb.notes.toArray();
@@ -91,6 +93,8 @@ describe("migrateNotesToIndexedDB", () => {
 
     // 验证迁移标记
     expect(mockStorage.setItem).toHaveBeenCalledWith("gm-notes-migrated", "1");
+    // 验证旧数据已清理
+    expect(mockStorage.removeItem).toHaveBeenCalledWith("gm-learn-notes");
   });
 
   it("skips migration when already migrated", async () => {
@@ -99,8 +103,9 @@ describe("migrateNotesToIndexedDB", () => {
       return null;
     });
 
-    await migrateNotesToIndexedDB();
+    const result = await migrateNotesToIndexedDB();
 
+    expect(result).toEqual({ migrated: 0, skipped: true });
     // 不应写入任何 IndexedDB 数据
     const count = await notesDb.notes.count();
     expect(count).toBe(0);
@@ -139,7 +144,51 @@ describe("migrateNotesToIndexedDB", () => {
     });
 
     // 不应抛出
-    await expect(migrateNotesToIndexedDB()).resolves.toBeUndefined();
+    await expect(migrateNotesToIndexedDB()).resolves.toEqual({
+      migrated: 0,
+      skipped: true,
+    });
+  });
+
+  it("returns result with migrated count for empty notes object", async () => {
+    mockStorage.getItem.mockReturnValue(JSON.stringify({}));
+
+    const result = await migrateNotesToIndexedDB();
+
+    expect(result).toEqual({ migrated: 0, skipped: false });
+    expect(mockStorage.setItem).toHaveBeenCalledWith("gm-notes-migrated", "1");
+  });
+
+  it("does not clean localStorage when write verification fails", async () => {
+    const notesData = {
+      "q1.1": [
+        {
+          id: "note-a",
+          questionId: "q1.1",
+          selectedText: "文本",
+          noteText: "笔记",
+          createdAt: 1000,
+          updatedAt: 1000,
+        },
+      ],
+    };
+    mockStorage.getItem.mockReturnValue(JSON.stringify(notesData));
+
+    // 模拟 IndexedDB count 不匹配（写入后立即清库模拟验证失败）
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.spyOn(notesDb.notes, "bulkPut").mockResolvedValueOnce(undefined as any);
+    vi.spyOn(notesDb.notes, "count").mockResolvedValue(0); // 模拟验证失败
+
+    const result = await migrateNotesToIndexedDB();
+
+    expect(result).toEqual({ migrated: 0, skipped: false });
+    // 不应标记已迁移
+    expect(mockStorage.setItem).not.toHaveBeenCalledWith(
+      "gm-notes-migrated",
+      "1",
+    );
+    // 不应清理旧数据
+    expect(mockStorage.removeItem).not.toHaveBeenCalled();
   });
 
   it("isNotesMigrationDone reflects migration status", () => {
