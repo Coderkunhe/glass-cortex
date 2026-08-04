@@ -490,6 +490,12 @@ export function renderMarkdown(md: string): string {
   // 修复：块元素前有文本内容时（char ≠ >），闭合前面的 <p>
   html = html.replace(/([^>])(<(?:pre|div)\b)/g, "$1</p>$2");
 
+  // 终末清理：<hr> 等自闭合块元素从 <p><hr></p> 提取后，
+  // 残留 </p>（line 481 匹配不到 </hr>）。DOMPurify 会把 </p><p>
+  // 规范化为 <p></p><p> → 页面出现空白行。在 DOMPurify 前清理。
+  html = html.replace(/(<(?:hr)\b[^>]*>)\s*<\/p>/g, "$1");
+  html = html.replace(/<p>\s*<\/p>/g, "");
+
   // ── DOMPurify 消毒（SSR 通过 jsdom 窗口运行，客户端用浏览器原生 DOM）──
   return getPurifyFn()(html);
 }
