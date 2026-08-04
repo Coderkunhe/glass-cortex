@@ -11,6 +11,7 @@ function makeNoteRecord(overrides: Partial<NoteRecord> = {}): NoteRecord {
     questionId: "q1.1",
     selectedText: "溢出的三种方式",
     noteText: "重要：滑动窗口适用于实时对话场景",
+    highlightColor: "yellow",
     createdAt: 1700000000000,
     updatedAt: 1700000000000,
     ...overrides,

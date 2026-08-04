@@ -10,6 +10,7 @@ function makeNoteRecord(overrides: Partial<NoteRecord> = {}): NoteRecord {
     questionId: "q1.1",
     selectedText: "溢出策略有三种常见处理方式。",
     noteText: "这里要注意滑动窗口和摘要压缩的适用场景。",
+    highlightColor: "yellow",
     createdAt: 1700000000000,
     updatedAt: 1700000000000,
     ...overrides,

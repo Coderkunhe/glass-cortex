@@ -27,6 +27,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useLearnProgress, computeAllChapterProgress } from "@/hooks/useLearnProgress";
 import { useNotesDb } from "@/hooks/useNotesDb";
 import { migrateNotesToIndexedDB } from "@/lib/db/migrateNotes";
+import type { HighlightColor } from "@/lib/db/notesDb";
 import type { ChapterProgress } from "@/lib/constants";
 import {
   LEARN_LAST_READ_KEY,
@@ -130,7 +131,7 @@ export default function LearnClientShell({
   const [searchQuery, setSearchQuery] = useState("");
 
   /** 笔记数据 — 从 IndexedDB 读取全量笔记映射，用于高亮渲染（与 NotesPanel 共享同一 useNotesDb 数据源）。B143 从 localStorage 迁移至 IndexedDB。 */
-  const { notesMap } = useNotesDb();
+  const { notesMap, addNote } = useNotesDb();
 
   /** 用户学习进度 — 基于 localStorage 持久化的问题阅读记录。 */
   const { progress: userProgress, markViewed } = useLearnProgress();
@@ -155,6 +156,10 @@ export default function LearnClientShell({
 
   /** 划词选中待记文本 — 非空时触发 NotesPanel 自动进入创建模式 */
   const [pendingSelectionText, setPendingSelectionText] = useState<string | null>(null);
+  /** B146 划词待记颜色 — 非空时传递给 NotesPanel 作为创建颜色预设 */
+  const [pendingHighlightColor, setPendingHighlightColor] = useState<HighlightColor>("yellow");
+  /** B146 当前激活的高亮颜色 — SelectionToolbar 中高亮显示当前选中色 */
+  const [activeHighlightColor, setActiveHighlightColor] = useState<HighlightColor>("yellow");
 
   /**
    * 当前选中的问题 ID。
@@ -171,14 +176,44 @@ export default function LearnClientShell({
    */
   const selectedAnswer = urlId ? getAnswerById(urlId) : undefined;
 
-  /** 当前问题的笔记高亮文本列表（提取所有已存笔记的 selectedText） */
+  /** 当前问题的笔记高亮列表（提取 selectedText + highlightColor，≥3 字符） */
   const noteHighlights = useMemo(() => {
     if (!selectedAnswer) return [];
     const notes = notesMap[selectedAnswer.id] || [];
     return notes
-      .map((n) => n.selectedText)
-      .filter((t): t is string => !!t && t.trim().length >= 3);
+      .filter((n) => n.selectedText && n.selectedText.trim().length >= 3)
+      .map((n) => ({
+        text: n.selectedText,
+        color: n.highlightColor || "yellow" as HighlightColor,
+      }));
   }, [notesMap, selectedAnswer]);
+
+  /** B146 快速划线回调 — 选中文本后点颜色圆点，立即保存（无笔记内容） */
+  const handleQuickHighlight = useCallback(
+    async (text: string, color: HighlightColor) => {
+      if (!selectedAnswer) return;
+      const note = {
+        id: crypto.randomUUID(),
+        questionId: selectedAnswer.id,
+        selectedText: text,
+        noteText: "",
+        highlightColor: color,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      await addNote(note);
+    },
+    [selectedAnswer, addNote],
+  );
+
+  /** B146 记笔记回调 — 选中文本后点击"记笔记"，设置 pending 状态触发 NotesPanel */
+  const handleAddNoteFromSelection = useCallback(
+    (text: string, color: HighlightColor) => {
+      setPendingHighlightColor(color);
+      setPendingSelectionText(text);
+    },
+    [],
+  );
 
   /** 当前选中答案的预估阅读时间（分钟） */
   const readingTime = useMemo(() => {
@@ -632,6 +667,10 @@ export default function LearnClientShell({
                     estimatedReadingTime={readingTime}
                     noteHighlights={noteHighlights}
                     onAddNote={(text) => setPendingSelectionText(text)}
+                    onHighlight={handleQuickHighlight}
+                    onAddNoteWithColor={handleAddNoteFromSelection}
+                    activeHighlightColor={activeHighlightColor}
+                    onHighlightColorChange={setActiveHighlightColor}
                     questionIndex={questionIndexInChapter ?? undefined}
                   />
                 </div>
@@ -642,7 +681,10 @@ export default function LearnClientShell({
                     <NotesPanel
                       questionId={selectedAnswer.id}
                       initialSelectedText={pendingSelectionText ?? undefined}
-                      onNoteCreated={() => setPendingSelectionText(null)}
+                      onNoteCreated={() => {
+                        setPendingSelectionText(null);
+                      }}
+                      highlightColor={pendingHighlightColor}
                     />
                   </div>
                 )}
@@ -739,6 +781,10 @@ export default function LearnClientShell({
                 estimatedReadingTime={readingTime}
                 noteHighlights={noteHighlights}
                 onAddNote={(text) => setPendingSelectionText(text)}
+                onHighlight={handleQuickHighlight}
+                onAddNoteWithColor={handleAddNoteFromSelection}
+                activeHighlightColor={activeHighlightColor}
+                onHighlightColorChange={setActiveHighlightColor}
                 questionIndex={questionIndexInChapter ?? undefined}
               />
               {/* B66: NotesPanel — 移动端笔记面板 */}
@@ -746,7 +792,10 @@ export default function LearnClientShell({
                 <NotesPanel
                   questionId={selectedAnswer.id}
                   initialSelectedText={pendingSelectionText ?? undefined}
-                  onNoteCreated={() => setPendingSelectionText(null)}
+                  onNoteCreated={() => {
+                    setPendingSelectionText(null);
+                  }}
+                  highlightColor={pendingHighlightColor}
                 />
               </div>
             </div>

@@ -48,10 +48,18 @@ export interface AnswerCardProps {
   searchQuery?: string;
   /** 预估阅读时间（分钟），由父组件计算传入 */
   estimatedReadingTime?: number;
-  /** 笔记划词高亮文本列表 — 已存笔记的 selectedText */
-  noteHighlights?: string[];
-  /** 划词选中回调 — 用户选中正文文本并点击"记笔记"时触发 */
+  /** 笔记划词高亮列表 — 已存笔记的 selectedText + highlightColor */
+  noteHighlights?: Array<{ text: string; color: import("@/lib/db/notesDb").HighlightColor }>;
+  /** 划词选中回调 — 用户选中正文文本并点击"记笔记"时触发（保留向后兼容） */
   onAddNote?: (selectedText: string) => void;
+  /** B146 快速划线回调 — 点击颜色圆点时立即触发 */
+  onHighlight?: (selectedText: string, color: import("@/lib/db/notesDb").HighlightColor) => void;
+  /** B146 记笔记回调（带颜色） — 点击"记笔记"时触发 */
+  onAddNoteWithColor?: (selectedText: string, color: import("@/lib/db/notesDb").HighlightColor) => void;
+  /** B146 当前激活高亮颜色 */
+  activeHighlightColor?: import("@/lib/db/notesDb").HighlightColor;
+  /** B146 切换激活颜色回调 */
+  onHighlightColorChange?: (color: import("@/lib/db/notesDb").HighlightColor) => void;
   questionIndex?: { index: number; total: number };
 }
 
@@ -59,6 +67,14 @@ export interface AnswerCardProps {
 const SKIP_HIGHLIGHT_TAGS = new Set([
   "mark", "code", "pre", "script", "style", "noscript", "textarea", "input",
 ]);
+
+/** B146 高亮颜色 → CSS 类映射 */
+const HIGHLIGHT_COLOR_CLASSES: Record<string, string> = {
+  yellow: "note-highlight-yellow bg-yellow-200/50 dark:bg-yellow-500/25",
+  green: "note-highlight-green bg-green-200/50 dark:bg-green-500/25",
+  blue: "note-highlight-blue bg-blue-200/50 dark:bg-blue-500/25",
+  pink: "note-highlight-pink bg-pink-200/50 dark:bg-pink-500/25",
+};
 
 /** 高亮结果：firstMark 为第一个匹配的 <mark> 元素，cleanup 用于移除所有高亮 */
 interface HighlightState {
@@ -175,6 +191,10 @@ export default function AnswerCard({
   estimatedReadingTime,
   noteHighlights,
   onAddNote,
+  onHighlight,
+  onAddNoteWithColor,
+  activeHighlightColor = "yellow",
+  onHighlightColorChange,
   questionIndex,
 }: AnswerCardProps) {
   const router = useRouter();
@@ -266,7 +286,7 @@ export default function AnswerCard({
     };
   }, [searchQuery, answer.id]);
 
-  // ── 笔记划词高亮（B66）──
+  // ── 笔记划词高亮（B66 → B146 多色升级）──
   const noteHighlightRef = useRef<{ cleanup: () => void } | null>(null);
 
   useEffect(() => {
@@ -276,14 +296,11 @@ export default function AnswerCard({
     if (!noteHighlights || noteHighlights.length === 0 || !articleRef.current) return;
 
     const cleanups: Array<() => void> = [];
-    for (const text of noteHighlights) {
-      const trimmed = text.trim();
+    for (const entry of noteHighlights) {
+      const trimmed = entry.text.trim();
       if (trimmed.length < 3) continue; // 过短文本不高亮
-      const result = highlightInContainer(
-        articleRef.current,
-        trimmed,
-        "note-highlight bg-brand/10",
-      );
+      const className = HIGHLIGHT_COLOR_CLASSES[entry.color] || HIGHLIGHT_COLOR_CLASSES.yellow;
+      const result = highlightInContainer(articleRef.current, trimmed, className);
       cleanups.push(result.cleanup);
     }
 
@@ -542,11 +559,25 @@ export default function AnswerCard({
         </div>
       )}
 
-      {/* ── B66: 划词浮动工具栏 ── */}
-      {onAddNote && (
+      {/* ── B66→B146: 划词浮动工具栏（多色划线 + 记笔记）── */}
+      {(onHighlight || onAddNoteWithColor || onAddNote) && (
         <SelectionToolbar
           containerRef={articleRef as React.RefObject<HTMLElement | null>}
-          onAddNote={onAddNote}
+          onHighlight={
+            onHighlight ||
+            ((text) => {
+              // 降级：无 onHighlight 时用旧 onAddNote 行为
+              onAddNote?.(text);
+            })
+          }
+          onAddNote={
+            onAddNoteWithColor ||
+            ((text) => {
+              onAddNote?.(text);
+            })
+          }
+          activeColor={activeHighlightColor}
+          onColorChange={onHighlightColorChange || (() => {})}
         />
       )}
     </article>

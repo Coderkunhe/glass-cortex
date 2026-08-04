@@ -72,6 +72,7 @@ export async function migrateNotesToIndexedDB(): Promise<MigrationResult> {
           questionId: note.questionId,
           selectedText: note.selectedText,
           noteText: note.noteText,
+          highlightColor: (note as NoteRecord).highlightColor || "yellow",
           createdAt: note.createdAt,
           updatedAt: note.updatedAt,
         });

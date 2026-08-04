@@ -64,12 +64,21 @@ export function useNotesDb() {
     });
   }, []);
 
-  /** 更新笔记 — 按 id 匹配，更新 noteText + updatedAt。 */
+  /** 更新笔记 — 按 id 匹配，更新 noteText + highlightColor（可选）+ updatedAt。 */
   const updateNote = useCallback(
-    async (id: string, questionId: string, noteText: string) => {
+    async (
+      id: string,
+      questionId: string,
+      noteText: string,
+      highlightColor?: string,
+    ) => {
       const updatedAt = Date.now();
+      const updates: Partial<NoteRecord> = { noteText, updatedAt };
+      if (highlightColor !== undefined) {
+        updates.highlightColor = highlightColor as NoteRecord["highlightColor"];
+      }
       try {
-        await notesDb.notes.update(id, { noteText, updatedAt });
+        await notesDb.notes.update(id, updates);
       } catch {
         // 静默降级
       }
@@ -78,7 +87,9 @@ export function useNotesDb() {
         return {
           ...prev,
           [questionId]: notes.map((n) =>
-            n.id === id ? { ...n, noteText, updatedAt } : n,
+            n.id === id
+              ? { ...n, noteText, updatedAt, ...(highlightColor !== undefined ? { highlightColor: highlightColor as NoteRecord["highlightColor"] } : {}) }
+              : n,
           ),
         };
       });

@@ -2,13 +2,28 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { RiStickyNoteLine } from "@remixicon/react";
+import { HIGHLIGHT_COLORS, type HighlightColor } from "@/lib/db/notesDb";
 
-/** SelectionToolbar — 正文划词浮动工具栏，选中文本后显示"记笔记"按钮。 */
+/** 高亮颜色 → 圆点 Tailwind 类映射 */
+const COLOR_DOT_CLASSES: Record<HighlightColor, string> = {
+  yellow: "bg-yellow-400 ring-yellow-500",
+  green: "bg-green-400 ring-green-500",
+  blue: "bg-blue-400 ring-blue-500",
+  pink: "bg-pink-400 ring-pink-500",
+};
+
+/** SelectionToolbar — 正文划词浮动工具栏，支持多色划线和记笔记。 */
 export interface SelectionToolbarProps {
   /** 监听的容器 ref，仅响应此容器内的文本选中 */
   containerRef: React.RefObject<HTMLElement | null>;
-  /** 用户点击"记笔记"时的回调，传入选中的文本 */
-  onAddNote: (selectedText: string) => void;
+  /** 快速划线回调 — 点击颜色圆点时立即触发，不打开笔记面板 */
+  onHighlight: (selectedText: string, color: HighlightColor) => void;
+  /** 记笔记回调 — 传递选中文本和当前激活颜色 */
+  onAddNote: (selectedText: string, color: HighlightColor) => void;
+  /** 当前激活的高亮颜色 */
+  activeColor: HighlightColor;
+  /** 切换激活颜色回调 */
+  onColorChange: (color: HighlightColor) => void;
 }
 
 /** 工具栏高度估算值（px），用于位置计算 */
@@ -21,13 +36,17 @@ const MIN_SELECTION_LENGTH = 2;
 /**
  * 划词浮动工具栏。
  *
- * 监听 document mouseup 事件，检测容器内的文本选中，
- * 在选区上方居中显示"记笔记"按钮。
- * 点击外部 / Esc / 选区消失 → 自动隐藏。
+ * B146 重构：从单一"记笔记"按钮升级为 4 色调色板 + 记笔记按钮。
+ * - 点击颜色圆点 → 即时划线（不弹出笔记面板）
+ * - 点击"记笔记" → 打开笔记创建面板（颜色预设为当前激活色）
+ * - 点击外部 / Esc / 选区消失 → 自动隐藏
  */
 export default function SelectionToolbar({
   containerRef,
+  onHighlight,
   onAddNote,
+  activeColor,
+  onColorChange,
 }: SelectionToolbarProps) {
   const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -36,7 +55,6 @@ export default function SelectionToolbar({
   /** 计算工具栏锚点：选区上方居中 */
   const calcPosition = useCallback((rect: DOMRect) => {
     const x = Math.max(8, rect.left + rect.width / 2);
-    // 优先放在选区上方，空间不足则放下方
     const aboveY = rect.top - TOOLBAR_GAP;
     const belowY = rect.bottom + TOOLBAR_GAP;
     const y = aboveY >= TOOLBAR_HEIGHT + 8 ? aboveY : belowY;
@@ -46,11 +64,9 @@ export default function SelectionToolbar({
   /** mouseup 处理器：检测选区内文本选中 */
   const handleMouseUp = useCallback(
     (e: MouseEvent) => {
-      // 略过工具栏自身点击
       const target = e.target as HTMLElement | null;
       if (target?.closest("[data-selection-toolbar]")) return;
 
-      // 延迟一帧让浏览器完成选区更新
       requestAnimationFrame(() => {
         const sel = window.getSelection();
         if (!sel || sel.isCollapsed) {
@@ -64,7 +80,6 @@ export default function SelectionToolbar({
           return;
         }
 
-        // 检查选区是否在容器内
         const container = containerRef.current;
         if (!container) return;
 
@@ -102,7 +117,6 @@ export default function SelectionToolbar({
       if (e.key === "Escape") setVisible(false);
     };
 
-    // 延迟绑定避免 mouseup 立即触发 mousedown 关闭
     const id = setTimeout(() => {
       document.addEventListener("mousedown", onMouseDown);
       document.addEventListener("keydown", onKeyDown);
@@ -133,25 +147,57 @@ export default function SelectionToolbar({
         transform: "translate(-50%, -100%)",
       }}
     >
-      <button
-        type="button"
-        data-testid="selection-toolbar-btn"
-        onClick={() => {
-          onAddNote(selectedTextRef.current);
-          setVisible(false);
-          window.getSelection()?.removeAllRanges();
-        }}
-        className="flex items-center gap-gm-1 px-gm-2_5 py-gm-1
-                   bg-deep text-inverse text-gm-xs font-medium
-                   rounded-gm-md shadow-gm-md
-                   hover:bg-deep/90 transition-all
-                   focus-visible:ring-2 focus-visible:ring-brand/50
-                   focus-visible:outline-none active:scale-[0.98]
-                   whitespace-nowrap select-none"
+      <div
+        className="flex items-center gap-gm-1 px-gm-2 py-gm-1
+                   bg-deep text-inverse rounded-gm-md shadow-gm-md
+                   select-none"
       >
-        <RiStickyNoteLine className="w-gm-icon-sm h-gm-icon-sm" />
-        <span>记笔记</span>
-      </button>
+        {/* 颜色调色板 */}
+        {HIGHLIGHT_COLORS.map((color) => (
+          <button
+            key={color}
+            type="button"
+            data-testid={`highlight-color-${color}`}
+            aria-label={`${color} 划线`}
+            onClick={() => {
+              onColorChange(color);
+              onHighlight(selectedTextRef.current, color);
+              setVisible(false);
+              window.getSelection()?.removeAllRanges();
+            }}
+            className={`w-4 h-4 rounded-full ${COLOR_DOT_CLASSES[color]}
+                       transition-all
+                       hover:scale-110
+                       focus-visible:ring-2 focus-visible:ring-offset-1
+                       focus-visible:ring-offset-deep focus-visible:outline-none
+                       ${activeColor === color ? "ring-2 ring-offset-1 ring-offset-deep" : ""}`}
+          />
+        ))}
+
+        {/* 分隔线 */}
+        <span className="w-px h-4 bg-border/30 mx-gm-0.5" />
+
+        {/* 记笔记按钮 */}
+        <button
+          type="button"
+          data-testid="selection-toolbar-btn"
+          onClick={() => {
+            onAddNote(selectedTextRef.current, activeColor);
+            setVisible(false);
+            window.getSelection()?.removeAllRanges();
+          }}
+          className="flex items-center gap-gm-0.5 text-gm-xs font-medium
+                     text-inverse/80 hover:text-inverse
+                     transition-all
+                     focus-visible:ring-2 focus-visible:ring-brand/50
+                     focus-visible:outline-none active:scale-[0.98]
+                     whitespace-nowrap"
+        >
+          <RiStickyNoteLine className="w-gm-icon-sm h-gm-icon-sm" />
+          <span>记笔记</span>
+        </button>
+      </div>
+
       {/* 小三角箭头指向选区 */}
       <div
         className="absolute left-1/2 -translate-x-1/2

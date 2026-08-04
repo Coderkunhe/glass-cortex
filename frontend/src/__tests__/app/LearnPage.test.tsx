@@ -908,8 +908,8 @@ describe("LearnPage", () => {
 
     it("shows existing notes count for current question", async () => {
       await notesDb.notes.bulkPut([
-        { id: "n1", questionId: "q1.1", selectedText: "溢出策略", noteText: "笔记一", createdAt: 1700000000000, updatedAt: 1700000000000 },
-        { id: "n2", questionId: "q1.1", selectedText: "FIFO", noteText: "笔记二", createdAt: 1700000000000, updatedAt: 1700000000000 },
+        { id: "n1", questionId: "q1.1", selectedText: "溢出策略", noteText: "笔记一", highlightColor: "yellow", createdAt: 1700000000000, updatedAt: 1700000000000 },
+        { id: "n2", questionId: "q1.1", selectedText: "FIFO", noteText: "笔记二", highlightColor: "yellow", createdAt: 1700000000000, updatedAt: 1700000000000 },
       ]);
 
       await renderPage(Promise.resolve({ q: "q1.1" }));
@@ -924,14 +924,14 @@ describe("LearnPage", () => {
 
     it("passes noteHighlights to AnswerCard for saved notes", async () => {
       await notesDb.notes.put(
-        { id: "n1", questionId: "q1.1", selectedText: "三种策略", noteText: "笔记", createdAt: 1700000000000, updatedAt: 1700000000000 },
+        { id: "n1", questionId: "q1.1", selectedText: "三种策略", noteText: "笔记", highlightColor: "yellow", createdAt: 1700000000000, updatedAt: 1700000000000 },
       );
 
       await renderPage(Promise.resolve({ q: "q1.1" }));
 
       // 笔记高亮应通过 AnswerCard 渲染
       await vi.waitFor(() => {
-        const marks = document.querySelectorAll("mark.note-highlight");
+        const marks = document.querySelectorAll("mark.note-highlight-yellow");
         expect(marks.length).toBeGreaterThan(0);
       }, { timeout: 3000 });
     });

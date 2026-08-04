@@ -633,16 +633,16 @@ describe("AnswerCard", () => {
     });
   });
 
-  // ── B66: 笔记划词高亮 ──
+  // ── B66→B146: 笔记划词高亮（多色升级）──
   describe("B66 note highlighting", () => {
     it("highlights note selectedText in content", () => {
       const { container } = render(
         <AnswerCard
           answer={mockAnswer}
-          noteHighlights={["三种经典策略"]}
+          noteHighlights={[{ text: "三种经典策略", color: "yellow" }]}
         />,
       );
-      const marks = container.querySelectorAll("mark.note-highlight");
+      const marks = container.querySelectorAll("mark.note-highlight-yellow");
       expect(marks.length).toBeGreaterThan(0);
       const markTexts = Array.from(marks).map((m) => m.textContent);
       expect(markTexts.some((t) => t?.includes("三种经典策略"))).toBe(true);
@@ -652,10 +652,10 @@ describe("AnswerCard", () => {
       const { container } = render(
         <AnswerCard
           answer={mockAnswer}
-          noteHighlights={["的"]}
+          noteHighlights={[{ text: "的", color: "yellow" }]}
         />,
       );
-      const marks = container.querySelectorAll("mark.note-highlight");
+      const marks = container.querySelectorAll("mark.note-highlight-yellow");
       expect(marks.length).toBe(0);
     });
 
@@ -663,13 +663,13 @@ describe("AnswerCard", () => {
       const { container } = render(
         <AnswerCard answer={mockAnswer} noteHighlights={[]} />,
       );
-      const marks = container.querySelectorAll("mark.note-highlight");
+      const marks = container.querySelectorAll("mark[class*='note-highlight-']");
       expect(marks.length).toBe(0);
     });
 
     it("does not add note marks when noteHighlights is undefined", () => {
       const { container } = render(<AnswerCard answer={mockAnswer} />);
-      const marks = container.querySelectorAll("mark.note-highlight");
+      const marks = container.querySelectorAll("mark[class*='note-highlight-']");
       expect(marks.length).toBe(0);
     });
 
@@ -677,10 +677,13 @@ describe("AnswerCard", () => {
       const { container } = render(
         <AnswerCard
           answer={mockAnswer}
-          noteHighlights={["三种经典策略", "压缩摘要"]}
+          noteHighlights={[
+            { text: "三种经典策略", color: "yellow" },
+            { text: "压缩摘要", color: "green" },
+          ]}
         />,
       );
-      const marks = container.querySelectorAll("mark.note-highlight");
+      const marks = container.querySelectorAll("mark[class*='note-highlight-']");
       expect(marks.length).toBeGreaterThanOrEqual(2);
     });
 
@@ -688,14 +691,14 @@ describe("AnswerCard", () => {
       const { container, rerender } = render(
         <AnswerCard
           answer={mockAnswer}
-          noteHighlights={["三种经典策略"]}
+          noteHighlights={[{ text: "三种经典策略", color: "yellow" }]}
         />,
       );
-      let marks = container.querySelectorAll("mark.note-highlight");
+      let marks = container.querySelectorAll("mark[class*='note-highlight-']");
       expect(marks.length).toBeGreaterThan(0);
 
       rerender(<AnswerCard answer={mockAnswer} noteHighlights={[]} />);
-      marks = container.querySelectorAll("mark.note-highlight");
+      marks = container.querySelectorAll("mark[class*='note-highlight-']");
       expect(marks.length).toBe(0);
     });
 
@@ -705,7 +708,7 @@ describe("AnswerCard", () => {
         l1: "使用 `FIFO` 策略处理溢出。",
       };
       const { container } = render(
-        <AnswerCard answer={answer} noteHighlights={["FIFO"]} />,
+        <AnswerCard answer={answer} noteHighlights={[{ text: "FIFO", color: "yellow" }]} />,
       );
       const codeEl = container.querySelector("code");
       expect(codeEl).toBeInTheDocument();
@@ -720,11 +723,11 @@ describe("AnswerCard", () => {
         <AnswerCard
           answer={mockAnswer}
           searchQuery="上下文窗口"
-          noteHighlights={["三种经典策略"]}
+          noteHighlights={[{ text: "三种经典策略", color: "yellow" }]}
         />,
       );
       const searchMarks = container.querySelectorAll("mark.search-highlight");
-      const noteMarks = container.querySelectorAll("mark.note-highlight");
+      const noteMarks = container.querySelectorAll("mark.note-highlight-yellow");
       expect(searchMarks.length).toBeGreaterThan(0);
       expect(noteMarks.length).toBeGreaterThan(0);
     });
