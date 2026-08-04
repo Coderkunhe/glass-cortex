@@ -318,6 +318,112 @@ describe("AnswerCard", () => {
     expect(html).toContain("&amp;");
   });
 
+  // ── Phase 1000 B133: Prism 语法高亮 token span 覆盖 ──
+  // I-143: jsdom 环境有 global 导致 Prism 组件加载正常，但浏览器无 global
+  // 时静默失败无告警。补 token span 产出验证 —— 确认 Prism.highlightElement()
+  // 实际产出了 .token 类 span 元素，而非静默跳过。
+
+  describe("Prism syntax highlighting", () => {
+    it("produces token spans for Python code in L2", () => {
+      const answer: Answer = {
+        ...mockAnswer,
+        l2: "Code:\n\n```python\nprint('hello')\n```",
+      };
+      const { container } = render(<AnswerCard answer={answer} />);
+      const btn = screen.getByRole("button", { name: /深度探索/ });
+      fireEvent.click(btn);
+      const code = container.querySelector("pre code.language-python");
+      expect(code).toBeInTheDocument();
+      // Prism must produce .token spans — absence = silent failure
+      const tokenSpans = code!.querySelectorAll("span.token");
+      expect(tokenSpans.length).toBeGreaterThan(0);
+    });
+
+    it("produces keyword token for Python code", () => {
+      const answer: Answer = {
+        ...mockAnswer,
+        l2: "```python\nimport os\n```",
+      };
+      const { container } = render(<AnswerCard answer={answer} />);
+      const btn = screen.getByRole("button", { name: /深度探索/ });
+      fireEvent.click(btn);
+      const code = container.querySelector("pre code.language-python");
+      expect(code).toBeInTheDocument();
+      // import → token keyword
+      const keywordTokens = code!.querySelectorAll("span.token.keyword");
+      expect(keywordTokens.length).toBeGreaterThan(0);
+    });
+
+    it("produces string token for Python code", () => {
+      const answer: Answer = {
+        ...mockAnswer,
+        l2: "```python\nx = 'hello world'\n```",
+      };
+      const { container } = render(<AnswerCard answer={answer} />);
+      const btn = screen.getByRole("button", { name: /深度探索/ });
+      fireEvent.click(btn);
+      const code = container.querySelector("pre code.language-python");
+      expect(code).toBeInTheDocument();
+      const stringTokens = code!.querySelectorAll("span.token.string");
+      expect(stringTokens.length).toBeGreaterThan(0);
+    });
+
+    it("produces token spans for code in L1 (always visible)", () => {
+      const answer: Answer = {
+        ...mockAnswer,
+        l1: "L1 with code:\n\n```javascript\nconst x = 1;\n```",
+      };
+      const { container } = render(<AnswerCard answer={answer} />);
+      const code = container.querySelector("pre code.language-javascript");
+      expect(code).toBeInTheDocument();
+      const tokenSpans = code!.querySelectorAll("span.token");
+      expect(tokenSpans.length).toBeGreaterThan(0);
+    });
+
+    it("produces token spans for multiple languages in same card", () => {
+      const answer: Answer = {
+        ...mockAnswer,
+        l2: [
+          "Python:",
+          "",
+          "```python",
+          "def foo(): pass",
+          "```",
+          "",
+          "JavaScript:",
+          "",
+          "```javascript",
+          "const bar = () => {};",
+          "```",
+        ].join("\n"),
+      };
+      const { container } = render(<AnswerCard answer={answer} />);
+      const btn = screen.getByRole("button", { name: /深度探索/ });
+      fireEvent.click(btn);
+      const pyCode = container.querySelector("pre code.language-python");
+      const jsCode = container.querySelector("pre code.language-javascript");
+      expect(pyCode).toBeInTheDocument();
+      expect(jsCode).toBeInTheDocument();
+      expect(pyCode!.querySelectorAll("span.token").length).toBeGreaterThan(0);
+      expect(jsCode!.querySelectorAll("span.token").length).toBeGreaterThan(0);
+    });
+
+    it("does not produce token spans for plain text code blocks", () => {
+      const answer: Answer = {
+        ...mockAnswer,
+        l2: "```text\nplain text, no lang\n```",
+      };
+      const { container } = render(<AnswerCard answer={answer} />);
+      const btn = screen.getByRole("button", { name: /深度探索/ });
+      fireEvent.click(btn);
+      const code = container.querySelector("pre code.language-text");
+      expect(code).toBeInTheDocument();
+      // text/plain language has no grammar rules → 0 token spans
+      const tokenSpans = code!.querySelectorAll("span.token");
+      expect(tokenSpans.length).toBe(0);
+    });
+  });
+
   it("does not parse > inside code block as blockquote", () => {
     const answer: Answer = {
       ...mockAnswer,
