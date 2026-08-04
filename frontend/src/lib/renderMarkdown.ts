@@ -151,6 +151,32 @@ export function renderMarkdown(md: string): string {
     return `\x00COD${idx}\x00`;
   });
 
+  // ── Step 0c: Extract images before escaping (fixes &amp; in query-string URLs) ──
+  // 根因：此前图片在 Step 1 HTML 实体转义之后处理，URL 中的 & 已被转义为
+  // &amp;（如 ?w=800&amp;h=600），导致带查询参数的图片 URL 彻底损坏。
+  // 修复：将图片和链接提取放到实体转义之前，与 mermaid/代码块模式一致。
+  const images: Array<{ alt: string; url: string }> = [];
+  html = html.replace(
+    /!\[([^\]]*)\]\(([^)]+)\)/g,
+    (_m, alt: string, url: string) => {
+      const idx = images.length;
+      images.push({ alt, url });
+      return `\x00IMG${idx}\x00`;
+    },
+  );
+
+  // ── Step 0d: Extract links before escaping (same &amp; root cause) ──
+  // (?<!!) 防止匹配图片语法 ![alt](url)
+  const links: Array<{ text: string; url: string }> = [];
+  html = html.replace(
+    /(?<!!)\[([^\]]+)\]\(([^)]+)\)/g,
+    (_m, text: string, url: string) => {
+      const idx = links.length;
+      links.push({ text, url });
+      return `\x00LNK${idx}\x00`;
+    },
+  );
+
   // ── Step 1: HTML entity escaping (sentinels are immune) ──
   html = html
     .replace(/&/g, "&amp;")
@@ -175,6 +201,42 @@ export function renderMarkdown(md: string): string {
     return `<pre>${langLabel}<code class="language-${lang}">${escaped}</code></pre>`;
   });
 
+  // ── Step 2b: Restore images (URL raw, alt text escaped) ──
+  html = html.replace(/\x00IMG(\d+)\x00/g, (_m, idx) => {
+    const img = images[parseInt(idx, 10)];
+    if (!img) return "";
+    const escapedAlt = img.alt
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    const safe =
+      img.url.startsWith("https://") ||
+      img.url.startsWith("http://") ||
+      img.url.startsWith("/") ||
+      img.url.startsWith(".");
+    if (!safe) return escapedAlt;
+    return `<img src="${img.url}" alt="${escapedAlt}" loading="lazy" class="gm-md-img" />`;
+  });
+
+  // ── Step 2c: Restore links (URL raw, text escaped) ──
+  html = html.replace(/\x00LNK(\d+)\x00/g, (_m, idx) => {
+    const link = links[parseInt(idx, 10)];
+    if (!link) return "";
+    const escapedText = link.text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    const safe =
+      link.url.startsWith("https://") ||
+      link.url.startsWith("http://") ||
+      link.url.startsWith("mailto:") ||
+      link.url.startsWith("/") ||
+      link.url.startsWith("#") ||
+      link.url.startsWith(".");
+    if (!safe) return escapedText;
+    return `<a href="${link.url}" target="_blank" rel="noopener noreferrer">${escapedText}</a>`;
+  });
+
   // 行内代码 `...`
   html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
 
@@ -183,37 +245,6 @@ export function renderMarkdown(md: string): string {
 
   // 斜体 *...* (非贪婪，不跨行)
   html = html.replace(/\*([^*\n]+?)\*/g, "<em>$1</em>");
-
-  // 图片 ![alt](url) — 必须在链接之前处理，复用协议白名单
-  html = html.replace(
-    /!\[([^\]]*)\]\(([^)]+)\)/g,
-    (_m: string, alt: string, url: string) => {
-      const safe =
-        url.startsWith("https://") ||
-        url.startsWith("http://") ||
-        url.startsWith("/") ||
-        url.startsWith(".");
-      if (!safe) return alt;
-      return `<img src="${url}" alt="${alt}" loading="lazy" class="gm-md-img" />`;
-    },
-  );
-
-  // 链接 [text](url) — 阻止 javascript:/data: 等危险协议
-  // (?<!!) 防止匹配图片语法 ![alt](url)
-  html = html.replace(
-    /(?<!!)\[([^\]]+)\]\(([^)]+)\)/g,
-    (_m: string, text: string, url: string) => {
-      const safe =
-        url.startsWith("https://") ||
-        url.startsWith("http://") ||
-        url.startsWith("mailto:") ||
-        url.startsWith("/") ||
-        url.startsWith("#") ||
-        url.startsWith(".");
-      if (!safe) return text;
-      return `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`;
-    },
-  );
   html = html.replace(
     /\[\^(\d+)\]:/g,
     '<sup id="fn$1-ref"><a href="#fn$1">[$1]</a></sup>'
@@ -469,6 +500,9 @@ export function renderMarkdown(md: string): string {
   // ── 段落换行前：确保块级元素前有双换行 ──
   html = html.replace(/([^\n])\n(<(?:ol|ul|table|pre|hr|h[1-6]|blockquote|div)[> ])/g, "$1\n\n$2");
   html = html.replace(/(<\/(?:ol|ul|table|pre|blockquote|div)>)\n([^\n])/g, "$1\n\n$2");
+  // 自闭合块元素（hr）后也需双换行 — 否则 <hr> 后的文本被吞入上一个 <p>
+  // 或成为裸文本（DOMPurify 随后插入 <p></p>）。B138 扩展修复。
+  html = html.replace(/(<(?:hr)\b[^>]*>)\n([^\n])/g, "$1\n\n$2");
 
   // 段落：连续的非空行
   html = html.replace(/\n\n+/g, "</p><p>");

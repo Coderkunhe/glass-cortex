@@ -7,8 +7,8 @@
 
 import type { Answer } from "./types";
 
-/** 匹配 ```mermaid ... ``` 围栏代码块，与 AnswerCard renderMarkdown 正则一致 */
-const MERMAID_RE = /```mermaid\n([\s\S]*?)```/g;
+/** 匹配 ```mermaid ... ``` 围栏代码块，与 renderMarkdown 正则一致（容忍尾部空格） */
+const MERMAID_RE = /```mermaid\s*\n([\s\S]*?)```/g;
 
 /**
  * 从 Markdown 字符串中提取第一个 mermaid 代码块内容。
