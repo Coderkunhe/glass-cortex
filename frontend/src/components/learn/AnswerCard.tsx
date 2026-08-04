@@ -11,6 +11,7 @@ import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import { renderMarkdown } from "@/lib/renderMarkdown";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
 import { formatReadingTime } from "@/lib/content/estimateReadingTime";
+import { getContentTypeBadges } from "@/lib/content/detectContentTypes";
 import SelectionToolbar from "@/components/learn/SelectionToolbar";
 import { formatChapterTitle } from "@/lib/formatChapter";
 
@@ -414,7 +415,21 @@ export default function AnswerCard({
       {answer.l2 && (
         <CollapsibleSection
           variant="card"
-          title="深度探索"
+          title={
+            <span className="inline-flex items-center gap-gm-1_5">
+              深度探索
+              {getContentTypeBadges(answer.l2).map((badge) => (
+                <span
+                  key={badge}
+                  className="inline-flex items-center px-gm-1_5 py-gm-0_5 rounded-gm-xs
+                             text-gm-2xs font-medium bg-surface text-text-muted
+                             border border-border/40"
+                >
+                  {badge}
+                </span>
+              ))}
+            </span>
+          }
           headerClassName="answer-l2-header"
           contentClassName={
             "answer-fold-content prose text-gm-sm text-text leading-relaxed " +
@@ -435,7 +450,21 @@ export default function AnswerCard({
       {answer.l3 && (
         <CollapsibleSection
           variant="card"
-          title="前沿与未解"
+          title={
+            <span className="inline-flex items-center gap-gm-1_5">
+              前沿与未解
+              {getContentTypeBadges(answer.l3).map((badge) => (
+                <span
+                  key={badge}
+                  className="inline-flex items-center px-gm-1_5 py-gm-0_5 rounded-gm-xs
+                             text-gm-2xs font-medium bg-surface text-text-muted
+                             border border-border/40"
+                >
+                  {badge}
+                </span>
+              ))}
+            </span>
+          }
           headerClassName="answer-l3-header"
           contentClassName={
             "answer-fold-content prose text-gm-sm text-text leading-relaxed " +

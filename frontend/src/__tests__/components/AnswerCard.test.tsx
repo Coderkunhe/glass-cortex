@@ -624,6 +624,79 @@ describe("AnswerCard", () => {
     });
   });
 
+  // ── B137: L2/L3 折叠区内容类型徽章 ──
+  describe("B137 content type badges", () => {
+    it("shows no badge when L2 has no code/mermaid/table", () => {
+      render(<AnswerCard answer={mockAnswer} />);
+      // mockAnswer.l2 = plain text → no badges
+      expect(screen.queryByText("代码示例")).not.toBeInTheDocument();
+      expect(screen.queryByText("流程图")).not.toBeInTheDocument();
+      expect(screen.queryByText("表格")).not.toBeInTheDocument();
+    });
+
+    it("shows '代码示例' badge when L2 has code fences", () => {
+      const answer: Answer = {
+        ...mockAnswer,
+        l2: "这里有一段代码：\n\n```python\nprint('hello')\n```",
+      };
+      render(<AnswerCard answer={answer} />);
+      expect(screen.getByText("代码示例")).toBeInTheDocument();
+    });
+
+    it("shows '流程图' badge when L2 has mermaid fences", () => {
+      const answer: Answer = {
+        ...mockAnswer,
+        l2: "流程图如下：\n\n```mermaid\ngraph TD\nA --> B\n```",
+      };
+      render(<AnswerCard answer={answer} />);
+      expect(screen.getByText("流程图")).toBeInTheDocument();
+    });
+
+    it("shows '表格' badge when L2 has markdown tables", () => {
+      const answer: Answer = {
+        ...mockAnswer,
+        l2: "数据对比如下：\n\n| 策略 | 优点 | 缺点 |\n|------|------|------|\n| FIFO | 简单 | 丢关键信息 |",
+      };
+      render(<AnswerCard answer={answer} />);
+      expect(screen.getByText("表格")).toBeInTheDocument();
+    });
+
+    it("shows multiple badges when L2 has code + table", () => {
+      const answer: Answer = {
+        ...mockAnswer,
+        l2: "代码：\n\n```js\nconst x = 1;\n```\n\n数据：\n\n| A | B |\n|---|---|\n| 1 | 2 |",
+      };
+      render(<AnswerCard answer={answer} />);
+      expect(screen.getByText("代码示例")).toBeInTheDocument();
+      expect(screen.getByText("表格")).toBeInTheDocument();
+    });
+
+    it("L2 button still accessible with badges present", () => {
+      const answer: Answer = {
+        ...mockAnswer,
+        l2: "```python\nprint('hi')\n```\n\n```mermaid\ngraph TD\n```",
+      };
+      render(<AnswerCard answer={answer} />);
+      // Button accessible name includes "深度探索" + badge texts
+      const btn = screen.getByRole("button", { name: /深度探索/ });
+      expect(btn).toBeInTheDocument();
+      // Still collapsed by default
+      expect(btn.getAttribute("aria-expanded")).toBe("false");
+    });
+
+    it("L3 also shows badges for its content", () => {
+      const answer: Answer = {
+        ...mockAnswer,
+        l3: "```rust\nfn main() {}\n```",
+      };
+      render(<AnswerCard answer={answer} />);
+      const btn = screen.getByRole("button", { name: /前沿与未解/ });
+      expect(btn).toBeInTheDocument();
+      // L3 button text includes badge
+      expect(screen.getByText("代码示例")).toBeInTheDocument();
+    });
+  });
+
   // ── B66: 划词浮动工具栏 ──
   describe("B66 SelectionToolbar integration", () => {
     it("renders SelectionToolbar when onAddNote is provided", () => {
