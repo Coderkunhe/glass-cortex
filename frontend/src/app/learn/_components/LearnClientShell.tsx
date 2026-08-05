@@ -23,6 +23,7 @@ import AppShell from "@/components/layout/AppShell";
 import QuestionList from "@/components/learn/QuestionList";
 import AnswerCard from "@/components/learn/AnswerCard";
 import NotesPanel from "@/components/learn/NotesPanel";
+import NoteModal from "@/components/learn/NoteModal";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useLearnProgress, computeAllChapterProgress } from "@/hooks/useLearnProgress";
 import { useNotesDb } from "@/hooks/useNotesDb";
@@ -154,12 +155,17 @@ export default function LearnClientShell({
     [userProgress, questionsByChapter],
   );
 
-  /** 划词选中待记文本 — 非空时触发 NotesPanel 自动进入创建模式 */
+  /** 划词选中待记文本 — 非空时触发 NotesPanel 自动进入创建模式（B148 降级路径：直接点"添加笔记"按钮时使用） */
   const [pendingSelectionText, setPendingSelectionText] = useState<string | null>(null);
-  /** B146 划词待记颜色 — 非空时传递给 NotesPanel 作为创建颜色预设 */
-  const [pendingHighlightColor, setPendingHighlightColor] = useState<HighlightColor>("yellow");
   /** B146 当前激活的高亮颜色 — SelectionToolbar 中高亮显示当前选中色 */
   const [activeHighlightColor, setActiveHighlightColor] = useState<HighlightColor>("yellow");
+
+  /** B148 NoteModal 状态 — 划词记笔记弹出模态窗，不再滚动到底部 */
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [noteModalData, setNoteModalData] = useState<{
+    selectedText: string;
+    color: HighlightColor;
+  } | null>(null);
 
   /**
    * 当前选中的问题 ID。
@@ -207,13 +213,31 @@ export default function LearnClientShell({
     [selectedAnswer, addNote],
   );
 
-  /** B146 记笔记回调 — 选中文本后点击"记笔记"，设置 pending 状态触发 NotesPanel */
+  /** B146→B148 记笔记回调 — 选中文本后点击"记笔记"，打开 NoteModal 而非滚动到底部 */
   const handleAddNoteFromSelection = useCallback(
     (text: string, color: HighlightColor) => {
-      setPendingHighlightColor(color);
-      setPendingSelectionText(text);
+      setNoteModalData({ selectedText: text, color });
+      setNoteModalOpen(true);
     },
     [],
+  );
+
+  /** B148 NoteModal 保存回调 — 写入 IndexedDB 并关闭弹窗 */
+  const handleSaveNote = useCallback(
+    async (noteText: string, color: HighlightColor) => {
+      if (!selectedAnswer || !noteModalData) return;
+      const note = {
+        id: crypto.randomUUID(),
+        questionId: selectedAnswer.id,
+        selectedText: noteModalData.selectedText,
+        noteText,
+        highlightColor: color,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      await addNote(note);
+    },
+    [selectedAnswer, noteModalData, addNote],
   );
 
   /** B147 删除划线回调 — 从 HighlightPopover 触发，从 IndexedDB 删除对应笔记 */
@@ -695,7 +719,7 @@ export default function LearnClientShell({
                       onNoteCreated={() => {
                         setPendingSelectionText(null);
                       }}
-                      highlightColor={pendingHighlightColor}
+                      highlightColor="yellow"
                     />
                   </div>
                 )}
@@ -807,7 +831,7 @@ export default function LearnClientShell({
                   onNoteCreated={() => {
                     setPendingSelectionText(null);
                   }}
-                  highlightColor={pendingHighlightColor}
+                  highlightColor="yellow"
                 />
               </div>
             </div>
@@ -824,6 +848,18 @@ export default function LearnClientShell({
         </div>
       </div>
     </AppShell>
+    {/* B148 NoteModal — 划词记笔记居中弹窗 */}
+    <NoteModal
+      isOpen={noteModalOpen}
+      onClose={() => {
+        setNoteModalOpen(false);
+        setNoteModalData(null);
+      }}
+      onSave={handleSaveNote}
+      selectedText={noteModalData?.selectedText}
+      presetColor={noteModalData?.color ?? "yellow"}
+    />
+
     {/* Phase 66 B106 — T16-T22: 即时 tooltip 替代原生 title (7 处按钮) */}
     {learnTooltip && (
       <div

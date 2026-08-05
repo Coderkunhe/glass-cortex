@@ -148,9 +148,11 @@ export default function SelectionToolbar({
       }}
     >
       <div
-        className="flex items-center gap-gm-1 px-gm-2 py-gm-1
-                   bg-deep text-inverse rounded-gm-md shadow-gm-md
-                   select-none"
+        className="flex items-center gap-gm-2 px-gm-4 py-gm-2
+                   bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm
+                   border border-border/60
+                   rounded-gm-lg shadow-gm-lg
+                   select-none animate-gm-onion-in"
       >
         {/* 颜色调色板 */}
         {HIGHLIGHT_COLORS.map((color) => (
@@ -165,17 +167,21 @@ export default function SelectionToolbar({
               setVisible(false);
               window.getSelection()?.removeAllRanges();
             }}
-            className={`w-4 h-4 rounded-full ${COLOR_DOT_CLASSES[color]}
+            className={`w-5 h-5 rounded-full ${COLOR_DOT_CLASSES[color]}
+                       ring-1 ring-inset ring-black/10 dark:ring-white/10
                        transition-all
                        hover:scale-110
                        focus-visible:ring-2 focus-visible:ring-offset-1
-                       focus-visible:ring-offset-deep focus-visible:outline-none
-                       ${activeColor === color ? "ring-2 ring-offset-1 ring-offset-deep" : ""}`}
+                       focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900
+                       focus-visible:outline-none
+                       ${activeColor === color
+                         ? "ring-2 ring-offset-1 ring-offset-white dark:ring-offset-gray-900 scale-110"
+                         : ""}`}
           />
         ))}
 
         {/* 分隔线 */}
-        <span className="w-px h-4 bg-border/30 mx-gm-0.5" />
+        <span className="w-px h-5 bg-border/50 mx-gm-0.5" />
 
         {/* 记笔记按钮 */}
         <button
@@ -186,8 +192,10 @@ export default function SelectionToolbar({
             setVisible(false);
             window.getSelection()?.removeAllRanges();
           }}
-          className="flex items-center gap-gm-0.5 text-gm-xs font-medium
-                     text-inverse/80 hover:text-inverse
+          className="flex items-center gap-gm-1 text-gm-xs font-medium
+                     text-brand hover:text-brand-hover
+                     bg-brand/8 hover:bg-brand/12
+                     rounded-full px-gm-2.5 py-gm-1
                      transition-all
                      focus-visible:ring-2 focus-visible:ring-brand/50
                      focus-visible:outline-none active:scale-[0.98]
@@ -198,13 +206,14 @@ export default function SelectionToolbar({
         </button>
       </div>
 
-      {/* 小三角箭头指向选区 */}
+      {/* 三角箭头 — 白色玻璃态边框的箭头 */}
       <div
         className="absolute left-1/2 -translate-x-1/2
                    w-0 h-0
-                   border-l-4 border-r-4 border-t-4
-                   border-l-transparent border-r-transparent border-t-deep"
-        style={{ bottom: "-4px" }}
+                   border-l-[5px] border-r-[5px] border-t-[5px]
+                   border-l-transparent border-r-transparent
+                   border-t-white dark:border-t-gray-900"
+        style={{ bottom: "-5px", filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.06))" }}
       />
     </div>
   );

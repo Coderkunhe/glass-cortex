@@ -9,6 +9,7 @@ import {
   RiCheckLine,
   RiCloseLine,
   RiQuillPenLine,
+  RiTimeLine,
 } from "@remixicon/react";
 import type { NoteRecord, HighlightColor } from "@/lib/db/notesDb";
 import { HIGHLIGHT_COLORS } from "@/lib/db/notesDb";
@@ -31,6 +32,14 @@ const COLOR_BORDER_CLASSES: Record<HighlightColor, string> = {
   green: "border-l-green-400",
   blue: "border-l-blue-400",
   pink: "border-l-pink-400",
+};
+
+/** B148 高亮颜色 → 引用块背景色映射（与颜色匹配的淡色底） */
+const COLOR_QUOTE_BG: Record<HighlightColor, string> = {
+  yellow: "bg-yellow-50 dark:bg-yellow-500/10 border-l-yellow-400/60",
+  green: "bg-green-50 dark:bg-green-500/10 border-l-green-400/60",
+  blue: "bg-blue-50 dark:bg-blue-500/10 border-l-blue-400/60",
+  pink: "bg-pink-50 dark:bg-pink-500/10 border-l-pink-400/60",
 };
 
 /** NotesPanel — 自包含划词笔记面板，内嵌 IndexedDB 读写（useNotesDb）。 */
@@ -182,11 +191,14 @@ export default function NotesPanel({
               type="button"
               data-testid="note-create-btn"
               onClick={() => setIsCreating(true)}
-              className="flex items-center gap-gm-1 text-gm-sm text-text-muted
-                         hover:text-text transition-all
+              className="flex items-center justify-center gap-gm-1.5
+                         w-full text-gm-sm text-text-muted
+                         hover:text-brand hover:border-brand/40 hover:bg-brand/3
+                         transition-all rounded-full
+                         border border-dashed border-border
+                         px-gm-3 py-gm-2
                          focus-visible:ring-2 focus-visible:ring-brand/50
-                         focus-visible:outline-none active:scale-[0.98] rounded-gm-xs
-                         px-gm-1 py-gm-0.5 -ml-gm-1"
+                         focus-visible:outline-none active:scale-[0.98]"
             >
               <RiAddLine className="w-gm-icon-sm h-gm-icon-sm" />
               <span>添加笔记</span>
@@ -208,7 +220,8 @@ export default function NotesPanel({
                 </blockquote>
               )}
               {/* B146 颜色选择器 */}
-              <div className="flex items-center gap-gm-1">
+              <div className="flex items-center gap-gm-1.5">
+                <span className="text-gm-xs text-text-muted">划线色：</span>
                 {HIGHLIGHT_COLORS.map((color) => (
                   <button
                     key={color}
@@ -217,10 +230,13 @@ export default function NotesPanel({
                     aria-label={`${color} 划线色`}
                     onClick={() => setCreateColor(color)}
                     className={`w-6 h-6 rounded-full ${COLOR_DOT_CLASSES[color]}
+                               ring-1 ring-inset ring-black/10 dark:ring-white/10
                                transition-all hover:scale-110
                                focus-visible:ring-2 focus-visible:ring-brand/50
                                focus-visible:outline-none
-                               ${createColor === color ? "ring-2 ring-offset-1 ring-offset-surface ring-brand" : "opacity-60 hover:opacity-100"}`}
+                               ${createColor === color
+                                 ? "ring-2 ring-offset-1 ring-offset-surface ring-brand scale-110"
+                                 : "opacity-60 hover:opacity-100"}`}
                   />
                 ))}
               </div>
@@ -285,25 +301,30 @@ export default function NotesPanel({
                   <li
                     key={note.id}
                     data-testid={`note-card-${note.id}`}
-                    className={`gm-card-lift rounded-gm-lg border border-border
+                    className={`group gm-card-lift rounded-gm-lg border border-border
                                bg-surface-elevated shadow-gm-xs
+                               hover:shadow-gm-md hover:-translate-y-0.5
+                               transition-all duration-200
                                flex flex-col
-                               border-l-[3px] ${borderClass}
-                               ${hasNoteText ? "p-gm-3 gap-gm-2" : "p-gm-2 gap-gm-1"}`}
+                               border-l-[4px] ${borderClass}
+                               ${hasNoteText ? "p-gm-3 gap-gm-2" : "p-gm-2.5 gap-gm-1.5"}`}
                   >
                     {/* 选中文本引用块 + 颜色标识 */}
                     {note.selectedText && (
                       <div className="flex items-start gap-gm-2">
                         <span
                           data-testid={`note-color-dot-${note.id}`}
-                          className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${COLOR_DOT_CLASSES[noteColor]}`}
+                          className={`mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0
+                                     ring-1 ring-inset ring-black/10 dark:ring-white/10
+                                     ${COLOR_DOT_CLASSES[noteColor]}`}
                         />
                         <blockquote
                           data-testid={`note-quote-${note.id}`}
-                          className="border-l-2 border-border pl-gm-2
+                          className={`border-l-[3px] pl-gm-2.5 pr-gm-1.5 py-gm-1
                                      text-gm-sm text-text-secondary
                                      leading-relaxed line-clamp-3 m-0
-                                     bg-surface rounded-gm-xs py-gm-0.5 pr-gm-1"
+                                     rounded-gm-xs
+                                     ${COLOR_QUOTE_BG[noteColor]}`}
                         >
                           {note.selectedText}
                         </blockquote>
@@ -313,7 +334,9 @@ export default function NotesPanel({
                     {!note.selectedText && (
                       <span
                         data-testid={`note-color-dot-${note.id}`}
-                        className={`w-2 h-2 rounded-full ${COLOR_DOT_CLASSES[noteColor]}`}
+                        className={`w-2.5 h-2.5 rounded-full
+                                   ring-1 ring-inset ring-black/10 dark:ring-white/10
+                                   ${COLOR_DOT_CLASSES[noteColor]}`}
                       />
                     )}
 
@@ -321,7 +344,8 @@ export default function NotesPanel({
                     {editingId === note.id ? (
                       <div className="flex flex-col gap-gm-2">
                         {/* B146 编辑颜色选择器 */}
-                        <div className="flex items-center gap-gm-1">
+                        <div className="flex items-center gap-gm-1.5">
+                          <span className="text-gm-xs text-text-muted">划线色：</span>
                           {HIGHLIGHT_COLORS.map((color) => (
                             <button
                               key={color}
@@ -330,10 +354,13 @@ export default function NotesPanel({
                               aria-label={`${color} 划线色`}
                               onClick={() => setEditingColor(color)}
                               className={`w-6 h-6 rounded-full ${COLOR_DOT_CLASSES[color]}
+                                         ring-1 ring-inset ring-black/10 dark:ring-white/10
                                          transition-all hover:scale-110
                                          focus-visible:ring-2 focus-visible:ring-brand/50
                                          focus-visible:outline-none
-                                         ${editingColor === color ? "ring-2 ring-offset-1 ring-offset-surface ring-brand" : "opacity-60 hover:opacity-100"}`}
+                                         ${editingColor === color
+                                           ? "ring-2 ring-offset-1 ring-offset-surface ring-brand scale-110"
+                                           : "opacity-60 hover:opacity-100"}`}
                             />
                           ))}
                         </div>
@@ -395,7 +422,8 @@ export default function NotesPanel({
                     {/* 元数据 + 操作 */}
                     {editingId !== note.id && (
                       <div className="flex items-center justify-between">
-                        <span className="text-gm-xs text-text-muted">
+                        <span className="inline-flex items-center gap-gm-1 text-gm-xs text-text-muted">
+                          <RiTimeLine className="w-gm-icon-sm h-gm-icon-sm" />
                           {note.updatedAt !== note.createdAt
                             ? `已编辑 · ${formatRelativeTime(note.updatedAt)}`
                             : formatRelativeTime(note.createdAt)}
@@ -406,11 +434,12 @@ export default function NotesPanel({
                             data-testid={`note-edit-btn-${note.id}`}
                             onClick={() => startEdit(note)}
                             aria-label="编辑笔记"
-                            className="p-gm-0.5 text-text-muted hover:text-text
-                                       hover:bg-surface rounded-gm-md
-                                       transition-all
+                            className="p-gm-1.5 text-text-muted hover:text-text
+                                       hover:bg-surface rounded-full
+                                       transition-all opacity-0 group-hover:opacity-100
                                        focus-visible:ring-2 focus-visible:ring-brand/50
-                                       focus-visible:outline-none active:scale-[0.98]"
+                                       focus-visible:outline-none focus-visible:opacity-100
+                                       active:scale-[0.98]"
                           >
                             <RiPencilLine className="w-gm-icon-sm h-gm-icon-sm" />
                           </button>
@@ -419,11 +448,12 @@ export default function NotesPanel({
                             data-testid={`note-delete-btn-${note.id}`}
                             onClick={() => setDeletingId(note.id)}
                             aria-label="删除笔记"
-                            className="p-gm-0.5 text-text-muted hover:text-danger
-                                       hover:bg-surface rounded-gm-md
-                                       transition-all
+                            className="p-gm-1.5 text-text-muted hover:text-danger
+                                       hover:bg-danger/8 rounded-full
+                                       transition-all opacity-0 group-hover:opacity-100
                                        focus-visible:ring-2 focus-visible:ring-brand/50
-                                       focus-visible:outline-none active:scale-[0.98]"
+                                       focus-visible:outline-none focus-visible:opacity-100
+                                       active:scale-[0.98]"
                           >
                             <RiDeleteBinLine className="w-gm-icon-sm h-gm-icon-sm" />
                           </button>
@@ -438,12 +468,21 @@ export default function NotesPanel({
             !isCreating && (
               <div
                 data-testid="notes-panel-empty"
-                className="flex flex-col items-center gap-gm-2 py-gm-6"
+                className="flex flex-col items-center gap-gm-3 py-gm-8"
               >
-                <RiQuillPenLine className="w-8 h-8 text-text-muted/40" />
-                <p className="text-gm-sm text-text-muted text-center m-0 leading-relaxed">
-                  选中正文文字，划线标记或添加笔记
-                </p>
+                <div className="flex items-center justify-center w-16 h-16
+                               rounded-full bg-gradient-to-br from-brand/8 to-accent/8
+                               ring-1 ring-inset ring-brand/10">
+                  <RiQuillPenLine className="w-8 h-8 text-brand/40" />
+                </div>
+                <div className="flex flex-col items-center gap-gm-1">
+                  <p className="text-gm-sm text-text-secondary font-medium text-center m-0">
+                    暂无笔记
+                  </p>
+                  <p className="text-gm-xs text-text-muted text-center m-0 leading-relaxed max-w-[200px]">
+                    选中正文文字，划线标记或添加笔记
+                  </p>
+                </div>
               </div>
             )
           )}

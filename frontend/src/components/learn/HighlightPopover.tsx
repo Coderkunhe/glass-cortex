@@ -135,8 +135,10 @@ export default function HighlightPopover({
       className="fixed z-50"
     >
       <div
-        className="flex items-center gap-gm-1 px-gm-2 py-gm-1
-                   bg-deep text-inverse rounded-gm-md shadow-gm-md
+        className="flex items-center gap-gm-2 px-gm-4 py-gm-2
+                   bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm
+                   border border-border/60
+                   rounded-gm-lg shadow-gm-lg
                    select-none animate-gm-onion-in"
       >
         {/* 删除划线 */}
@@ -149,8 +151,9 @@ export default function HighlightPopover({
             onClose();
           }}
           className="flex items-center gap-gm-0.5 text-gm-xs font-medium
-                     text-inverse/70 hover:text-danger-light
-                     transition-colors
+                     text-text-muted hover:text-danger
+                     hover:bg-danger/8 rounded-full px-gm-2 py-gm-0.5
+                     transition-all
                      focus-visible:ring-2 focus-visible:ring-brand/50
                      focus-visible:outline-none active:scale-[0.98]
                      whitespace-nowrap"
@@ -160,7 +163,7 @@ export default function HighlightPopover({
         </button>
 
         {/* 分隔线 */}
-        <span className="w-px h-4 bg-border/30" />
+        <span className="w-px h-5 bg-border/50" />
 
         {/* 复制 */}
         <button
@@ -169,8 +172,9 @@ export default function HighlightPopover({
           aria-label="复制"
           onClick={handleCopy}
           className="flex items-center gap-gm-0.5 text-gm-xs font-medium
-                     text-inverse/70 hover:text-inverse
-                     transition-colors
+                     text-text-secondary hover:text-brand
+                     hover:bg-brand/8 rounded-full px-gm-2 py-gm-0.5
+                     transition-all
                      focus-visible:ring-2 focus-visible:ring-brand/50
                      focus-visible:outline-none active:scale-[0.98]
                      whitespace-nowrap"
@@ -180,7 +184,7 @@ export default function HighlightPopover({
         </button>
 
         {/* 分隔线 */}
-        <span className="w-px h-4 bg-border/30" />
+        <span className="w-px h-5 bg-border/50" />
 
         {/* 记笔记 */}
         <button
@@ -192,8 +196,9 @@ export default function HighlightPopover({
             onClose();
           }}
           className="flex items-center gap-gm-0.5 text-gm-xs font-medium
-                     text-inverse/70 hover:text-inverse
-                     transition-colors
+                     text-text-secondary hover:text-brand
+                     hover:bg-brand/8 rounded-full px-gm-2 py-gm-0.5
+                     transition-all
                      focus-visible:ring-2 focus-visible:ring-brand/50
                      focus-visible:outline-none active:scale-[0.98]
                      whitespace-nowrap"
@@ -203,13 +208,14 @@ export default function HighlightPopover({
         </button>
       </div>
 
-      {/* 三角箭头指向点击的 mark 元素 */}
+      {/* 三角箭头 */}
       <div
         className="absolute left-1/2 -translate-x-1/2
                    w-0 h-0
-                   border-l-4 border-r-4 border-t-4
-                   border-l-transparent border-r-transparent border-t-deep"
-        style={{ bottom: "-4px" }}
+                   border-l-[5px] border-r-[5px] border-t-[5px]
+                   border-l-transparent border-r-transparent
+                   border-t-white dark:border-t-gray-900"
+        style={{ bottom: "-5px", filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.06))" }}
       />
     </div>
   );
