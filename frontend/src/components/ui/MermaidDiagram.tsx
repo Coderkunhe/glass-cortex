@@ -257,8 +257,9 @@ export default function MermaidDiagram({
           width: 100%;
           overflow: hidden;
           border-radius: var(--gm-radius-sm, 4px);
-          background: var(--gm-surface-elevated);
-          border: 1px solid var(--gm-border);
+          /* B150: 不设 background/border — 由父容器（AnswerCard .answer-l1-body /
+             ChatMessage .chat-prose / Lab panel）提供视觉层级。外层再加会导致白块
+             （嵌套卡片效果）。仅保留 padding 给 SVG 呼吸空间。 */
           padding: var(--gm-space-3, 12px);
         }
         /* 仅当 maxHeight 显式设置且内容溢出时才启用纵向滚动 */
@@ -274,11 +275,6 @@ export default function MermaidDiagram({
         /* 块大小统一 — 限制节点标签宽度，避免长文本节挤压短文本节 */
         .gm-mermaid-wrap svg .nodeLabel {
           max-width: 220px;
-        }
-        /* 暗色模式 — 流程图容器与 GM 设计 token 对齐 */
-        [data-theme="dark"] .gm-mermaid-wrap {
-          background: var(--gm-surface-elevated);
-          border-color: var(--gm-border);
         }
         .gm-mermaid-title {
           font-size: 0.875rem;
