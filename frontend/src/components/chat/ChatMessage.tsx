@@ -71,7 +71,10 @@ function ChatMessage({
     containers.forEach((container) => {
       const base64 = container.getAttribute("data-chart");
       const title = container.getAttribute("data-title") || "流程图";
-      if (!base64) return;
+      if (!base64) {
+        console.warn("[mermaid-hydrate] ChatMessage: 跳过无 data-chart 的 block", container);
+        return;
+      }
       try {
         const chart = decodeURIComponent(atob(base64));
         let root = mermaidRootsRef.current.get(container);
@@ -82,7 +85,9 @@ function ChatMessage({
         root.render(
           <MermaidDiagram chart={chart} title={title} maxHeight={0} />,
         );
-      } catch {
+        container.setAttribute("data-mermaid-hydrated", "true");
+      } catch (err) {
+        console.error("[mermaid-hydrate] ChatMessage: 水合失败", { title, error: err });
         container.innerHTML =
           '<p class="text-gm-sm text-error">流程图加载失败</p>';
         mermaidRootsRef.current.delete(container);

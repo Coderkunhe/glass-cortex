@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { useEffect, useMemo, useRef, useState } from "react";
+import mermaid from "mermaid";
 import { useRouter } from "next/navigation";
 import { RiArrowLeftLine, RiStarLine, RiStarFill, RiFlaskLine, RiLinkM, RiArrowRightUpLine, RiNodeTree } from "@remixicon/react";
 import type { Answer } from "@/lib/content/types";
 import { getAnswerById } from "@/lib/content/questions";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
-import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import { renderMarkdown } from "@/lib/renderMarkdown";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
 import { formatReadingTime } from "@/lib/content/estimateReadingTime";
@@ -212,12 +211,17 @@ export default function AnswerCard({
   const router = useRouter();
   const isStub = answer.l0 === "";
   const articleRef = useRef<HTMLElement>(null);
-  // 容器 → React Root 映射，避免重复 createRoot
-  const rootsRef = useRef<Map<HTMLElement, ReturnType<typeof createRoot>>>(
-    new Map(),
-  );
+
+  // B153: useMemo — 必须在条件 return 之前调用 (rules-of-hooks)
+  const l1Html = useMemo(() => renderMarkdown(answer.l1), [answer.l1]);
+  const l2Html = useMemo(() => answer.l2 ? renderMarkdown(answer.l2) : "", [answer.l2]);
+  const l3Html = useMemo(() => answer.l3 ? renderMarkdown(answer.l3) : "", [answer.l3]);
 
   // ── Hydrate mermaid blocks injected by renderMarkdown ──
+  // B153: 无依赖数组 + data-mermaid-hydrated 守卫。
+  // dangerouslySetInnerHTML 在每次 render 时重置 innerHTML
+  // → gm-mermaid-block 内的 SVG 被销毁 → 必须在水合 effect 恢复。
+  // 守卫跳过已水合 block，避免重复渲染。
   useEffect(() => {
     if (!articleRef.current) return;
     const containers = articleRef.current.querySelectorAll<HTMLDivElement>(
@@ -225,40 +229,56 @@ export default function AnswerCard({
     );
     if (containers.length === 0) return;
 
-    containers.forEach((container) => {
-      // 跳过隐藏容器（如移动端 AnswerCard 在桌面端被 lg:hidden 隐藏），
-      // 避免在 display:none 的祖先内渲染出零尺寸 SVG。
-      // getBoundingClientRect() 对隐藏元素返回 0×0。
-      if (container.getBoundingClientRect().width === 0) return;
-      const base64 = container.getAttribute("data-chart");
-      const title = container.getAttribute("data-title") || "流程图";
-      if (!base64) return;
-      try {
-        const chart = decodeURIComponent(atob(base64));
-        let root = rootsRef.current.get(container);
-        if (!root) {
-          root = createRoot(container);
-          rootsRef.current.set(container, root);
-        }
-        root.render(
-          <MermaidDiagram chart={chart} title={title} maxHeight={0} />,
-        );
-      } catch {
-        container.innerHTML =
-          '<p class="text-gm-sm text-error">流程图加载失败</p>';
-        rootsRef.current.delete(container);
-      }
-    });
+    let cancelled = false;
 
-    // Strict Mode 双 effect 下不 unmount 也不清空 ref：
-    // re-run 时通过 ref 复用已有 root（调用 root.render() 更新），
-    // 避免 createRoot() 在已有 root 的容器上报错。
-    // 真正卸载时 DOM 容器随组件销毁，React root 随之 GC。
-    // ⚠️ 不在 effect body 中同步调 root.unmount()——React 18+ 不允许
-    // 在渲染阶段同步卸载另一个 root，会抛"Attempted to synchronously
-    // unmount a root while React was already rendering"。内容切换时
-    // AnswerCard 整个卸载，roots 随 DOM 自然 GC，无需显式清理。
-  }, [answer.l1, answer.l2, answer.l3]);
+    async function hydrateAll() {
+      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: isDark ? "dark" : "neutral",
+        securityLevel: "strict",
+        flowchart: { useMaxWidth: true, htmlLabels: true },
+        ...(isDark && {
+          themeVariables: {
+            lineColor: "#64748b",
+            textColor: "#e2e8f0",
+            mainBkg: "#334155",
+            nodeBorder: "#475569",
+          },
+        }),
+      });
+
+      for (const container of containers) {
+        if (cancelled) return;
+        if (container.hasAttribute("data-mermaid-hydrated")) continue;
+        const base64 = container.getAttribute("data-chart");
+        if (!base64) continue;
+        try {
+          const chart = decodeURIComponent(atob(base64));
+          const id = `gm-md-${Math.random().toString(36).slice(2, 11)}`;
+          const { svg } = await mermaid.render(id, chart);
+          if (cancelled) return;
+          const cleanSvg = svg.replace(
+            /(<svg\b[^>]*?)\s*style\s*=\s*"([^"]*)"/,
+            (_, before: string, styles: string) => {
+              const cleaned = styles.replace(/background-color:\s*[^;"]+;?\s*/g, "").trim();
+              return cleaned ? `${before} style="${cleaned}"` : before;
+            },
+          );
+          container.innerHTML = `<div class="gm-mermaid-wrap">${cleanSvg}</div>`;
+          container.setAttribute("data-mermaid-hydrated", "true");
+        } catch {
+          if (!cancelled) {
+            container.innerHTML = '<p class="text-gm-sm text-error">流程图加载失败</p>';
+          }
+        }
+      }
+    }
+
+    hydrateAll();
+
+    return () => { cancelled = true; };
+  });
 
   // ── Prism 语法高亮 + 行号 + 复制按钮 ──
   useCodeHighlight(articleRef, [answer.l1, answer.l2, answer.l3]);
@@ -472,6 +492,7 @@ export default function AnswerCard({
       <div className="answer-l1-body">
         <h2>核心解释</h2>
         <div
+          key={answer.l1}
           className="prose text-gm-base text-text leading-relaxed
                      [&_p]:mb-gm-4 [&_ul]:mb-gm-3 [&_ol]:mb-gm-3 [&_li]:mb-gm-1_5
                      [&_strong]:text-text [&_a]:text-brand [&_a]:underline
@@ -479,7 +500,7 @@ export default function AnswerCard({
                      [&_table]:w-full [&_table]:text-gm-sm [&_td]:border [&_td]:border-border [&_td]:p-gm-2
                      [&_th]:border [&_th]:border-border [&_th]:p-gm-2 [&_th]:text-text-secondary"
           suppressHydrationWarning
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.l1) }}
+          dangerouslySetInnerHTML={{ __html: l1Html }}
         />
       </div>
 
@@ -513,7 +534,7 @@ export default function AnswerCard({
             "[&_th]:border [&_th]:border-border [&_th]:p-gm-2 [&_th]:text-text-secondary"
           }
         >
-          <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.l2) }} />
+          <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: l2Html }} />
         </CollapsibleSection>
       )}
 
@@ -544,7 +565,7 @@ export default function AnswerCard({
             "[&_code]:text-gm-xs [&_code]:bg-bg-subtle [&_code]:px-gm-1 [&_code]:rounded-gm-xs"
           }
         >
-          <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.l3) }} />
+          <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: l3Html }} />
         </CollapsibleSection>
       )}
 

@@ -124,7 +124,10 @@ export default function MermaidDiagram({
             themeVariables: {
               lineColor: "#64748b",
               textColor: "#e2e8f0",
-              mainBkg: "#1e293b",
+              /* B153: mainBkg 选 #334155 (slate-700)，与 --gm-surface-elevated
+                 (#1e293b / slate-800) 形成明度差，避免节点融入 prose 容器背景。
+                 同时保留 GM 设计系统的 slate 色调连续性。 */
+              mainBkg: "#334155",
               nodeBorder: "#475569",
             },
           }),

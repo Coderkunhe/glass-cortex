@@ -1456,6 +1456,9 @@ pre:focus-within .gm-code-copy-btn {
   min-height: 200px;
   margin: 0.5em 0;
 }
+/* B153: 未水合的 block 不显示红色诊断边框（生产环境），
+   但保留 data-mermaid-hydrated 属性供调试。
+   水合遗漏根因已在 Phase 66 B153 修复：去掉零宽守卫 + 节点填充色与容器背景对比。 */
 
 /* B151: 在 prose 容器内取消 .gm-mermaid-wrap 的 bg/border —
    父容器（.answer-l1-body / .chat-prose）已提供视觉框架，
