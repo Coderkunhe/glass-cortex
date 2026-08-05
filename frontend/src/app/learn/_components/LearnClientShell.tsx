@@ -131,7 +131,7 @@ export default function LearnClientShell({
   const [searchQuery, setSearchQuery] = useState("");
 
   /** 笔记数据 — 从 IndexedDB 读取全量笔记映射，用于高亮渲染（与 NotesPanel 共享同一 useNotesDb 数据源）。B143 从 localStorage 迁移至 IndexedDB。 */
-  const { notesMap, addNote } = useNotesDb();
+  const { notesMap, addNote, deleteNote } = useNotesDb();
 
   /** 用户学习进度 — 基于 localStorage 持久化的问题阅读记录。 */
   const { progress: userProgress, markViewed } = useLearnProgress();
@@ -176,15 +176,16 @@ export default function LearnClientShell({
    */
   const selectedAnswer = urlId ? getAnswerById(urlId) : undefined;
 
-  /** 当前问题的笔记高亮列表（提取 selectedText + highlightColor，≥3 字符） */
+  /** 当前问题的笔记高亮列表（提取 id + selectedText + highlightColor，≥3 字符） */
   const noteHighlights = useMemo(() => {
     if (!selectedAnswer) return [];
     const notes = notesMap[selectedAnswer.id] || [];
     return notes
       .filter((n) => n.selectedText && n.selectedText.trim().length >= 3)
       .map((n) => ({
+        id: n.id,
         text: n.selectedText,
-        color: n.highlightColor || "yellow" as HighlightColor,
+        color: (n.highlightColor || "yellow") as HighlightColor,
       }));
   }, [notesMap, selectedAnswer]);
 
@@ -213,6 +214,15 @@ export default function LearnClientShell({
       setPendingSelectionText(text);
     },
     [],
+  );
+
+  /** B147 删除划线回调 — 从 HighlightPopover 触发，从 IndexedDB 删除对应笔记 */
+  const handleDeleteHighlight = useCallback(
+    async (noteId: string) => {
+      if (!selectedAnswer) return;
+      await deleteNote(noteId, selectedAnswer.id);
+    },
+    [selectedAnswer, deleteNote],
   );
 
   /** 当前选中答案的预估阅读时间（分钟） */
@@ -671,6 +681,7 @@ export default function LearnClientShell({
                     onAddNoteWithColor={handleAddNoteFromSelection}
                     activeHighlightColor={activeHighlightColor}
                     onHighlightColorChange={setActiveHighlightColor}
+                    onDeleteHighlight={handleDeleteHighlight}
                     questionIndex={questionIndexInChapter ?? undefined}
                   />
                 </div>
@@ -785,6 +796,7 @@ export default function LearnClientShell({
                 onAddNoteWithColor={handleAddNoteFromSelection}
                 activeHighlightColor={activeHighlightColor}
                 onHighlightColorChange={setActiveHighlightColor}
+                onDeleteHighlight={handleDeleteHighlight}
                 questionIndex={questionIndexInChapter ?? undefined}
               />
               {/* B66: NotesPanel — 移动端笔记面板 */}

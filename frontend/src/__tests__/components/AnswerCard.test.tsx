@@ -639,20 +639,23 @@ describe("AnswerCard", () => {
       const { container } = render(
         <AnswerCard
           answer={mockAnswer}
-          noteHighlights={[{ text: "三种经典策略", color: "yellow" }]}
+          noteHighlights={[{ id: "n1", text: "三种经典策略", color: "yellow" }]}
         />,
       );
       const marks = container.querySelectorAll("mark.note-highlight-yellow");
       expect(marks.length).toBeGreaterThan(0);
       const markTexts = Array.from(marks).map((m) => m.textContent);
       expect(markTexts.some((t) => t?.includes("三种经典策略"))).toBe(true);
+      // B147: verify data-note-id attribute is set for click interaction
+      const markWithId = container.querySelector("mark[data-note-id='n1']");
+      expect(markWithId).toBeInTheDocument();
     });
 
     it("does not highlight text shorter than 3 characters", () => {
       const { container } = render(
         <AnswerCard
           answer={mockAnswer}
-          noteHighlights={[{ text: "的", color: "yellow" }]}
+          noteHighlights={[{ id: "n-skip", text: "的", color: "yellow" }]}
         />,
       );
       const marks = container.querySelectorAll("mark.note-highlight-yellow");
@@ -678,8 +681,8 @@ describe("AnswerCard", () => {
         <AnswerCard
           answer={mockAnswer}
           noteHighlights={[
-            { text: "三种经典策略", color: "yellow" },
-            { text: "压缩摘要", color: "green" },
+            { id: "n1", text: "三种经典策略", color: "yellow" },
+            { id: "n2", text: "压缩摘要", color: "green" },
           ]}
         />,
       );
@@ -691,7 +694,7 @@ describe("AnswerCard", () => {
       const { container, rerender } = render(
         <AnswerCard
           answer={mockAnswer}
-          noteHighlights={[{ text: "三种经典策略", color: "yellow" }]}
+          noteHighlights={[{ id: "n1", text: "三种经典策略", color: "yellow" }]}
         />,
       );
       let marks = container.querySelectorAll("mark[class*='note-highlight-']");
@@ -708,7 +711,7 @@ describe("AnswerCard", () => {
         l1: "使用 `FIFO` 策略处理溢出。",
       };
       const { container } = render(
-        <AnswerCard answer={answer} noteHighlights={[{ text: "FIFO", color: "yellow" }]} />,
+        <AnswerCard answer={answer} noteHighlights={[{ id: "n-fifo", text: "FIFO", color: "yellow" }]} />,
       );
       const codeEl = container.querySelector("code");
       expect(codeEl).toBeInTheDocument();
@@ -723,7 +726,7 @@ describe("AnswerCard", () => {
         <AnswerCard
           answer={mockAnswer}
           searchQuery="上下文窗口"
-          noteHighlights={[{ text: "三种经典策略", color: "yellow" }]}
+          noteHighlights={[{ id: "n1", text: "三种经典策略", color: "yellow" }]}
         />,
       );
       const searchMarks = container.querySelectorAll("mark.search-highlight");

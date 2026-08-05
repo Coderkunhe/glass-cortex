@@ -41,7 +41,7 @@ describe("NotesPanel", () => {
     render(<NotesPanel questionId="q1.1" />);
     const empty = await screen.findByTestId("notes-panel-empty");
     expect(empty).toBeDefined();
-    expect(screen.getByText(/还没有笔记/)).toBeDefined();
+    expect(screen.getByText(/选中正文文字/)).toBeDefined();
     expect(screen.getByTestId("note-create-btn")).toBeDefined();
   });
 

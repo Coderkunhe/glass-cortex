@@ -13,6 +13,7 @@ import { useCodeHighlight } from "@/hooks/useCodeHighlight";
 import { formatReadingTime } from "@/lib/content/estimateReadingTime";
 import { getContentTypeBadges } from "@/lib/content/detectContentTypes";
 import SelectionToolbar from "@/components/learn/SelectionToolbar";
+import HighlightPopover from "@/components/learn/HighlightPopover";
 import { formatChapterTitle } from "@/lib/formatChapter";
 
 /** 跨章关联类型 → 中文标签映射 */
@@ -48,8 +49,8 @@ export interface AnswerCardProps {
   searchQuery?: string;
   /** 预估阅读时间（分钟），由父组件计算传入 */
   estimatedReadingTime?: number;
-  /** 笔记划词高亮列表 — 已存笔记的 selectedText + highlightColor */
-  noteHighlights?: Array<{ text: string; color: import("@/lib/db/notesDb").HighlightColor }>;
+  /** 笔记划词高亮列表 — 已存笔记的 selectedText + highlightColor + noteId */
+  noteHighlights?: Array<{ id: string; text: string; color: import("@/lib/db/notesDb").HighlightColor }>;
   /** 划词选中回调 — 用户选中正文文本并点击"记笔记"时触发（保留向后兼容） */
   onAddNote?: (selectedText: string) => void;
   /** B146 快速划线回调 — 点击颜色圆点时立即触发 */
@@ -60,6 +61,8 @@ export interface AnswerCardProps {
   activeHighlightColor?: import("@/lib/db/notesDb").HighlightColor;
   /** B146 切换激活颜色回调 */
   onHighlightColorChange?: (color: import("@/lib/db/notesDb").HighlightColor) => void;
+  /** B147 删除划线回调 — 从 HighlightPopover 触发 */
+  onDeleteHighlight?: (noteId: string) => void;
   questionIndex?: { index: number; total: number };
 }
 
@@ -86,11 +89,13 @@ interface HighlightState {
  * 在容器 DOM 内对关键词进行高亮。
  * 遍历所有文本节点，将匹配的文本用 `<mark class="${className}">` 包裹。
  * 返回第一个匹配元素（用于滚动定位）和清理函数。
+ * B147 新增 `noteId` 参数 — 写入 `data-note-id` 属性以支持点击删除。
  */
 function highlightInContainer(
   container: HTMLElement,
   query: string,
   className = "search-highlight",
+  noteId?: string,
 ): HighlightState {
   const lowerQuery = query.toLowerCase();
   const replaced: Array<{ parent: Node; oldNode: Text; fragment: DocumentFragment }> = [];
@@ -108,7 +113,7 @@ function highlightInContainer(
   while (walker.nextNode()) {
     const textNode = walker.currentNode as Text;
     const text = textNode.textContent || "";
-    const fragment = buildHighlightFragment(text, query, className);
+    const fragment = buildHighlightFragment(text, query, className, noteId);
     replaced.push({ parent: textNode.parentNode!, oldNode: textNode, fragment });
   }
 
@@ -138,11 +143,13 @@ function highlightInContainer(
 /**
  * 将文本中的关键词用 `<mark>` 标签包裹，返回 DocumentFragment。
  * 大小写不敏感匹配，保留原文大小写显示。
+ * B147 新增 `noteId` — 写入 `data-note-id` 属性以支持点击交互。
  */
 function buildHighlightFragment(
   text: string,
   query: string,
   className: string,
+  noteId?: string,
 ): DocumentFragment {
   const fragment = document.createDocumentFragment();
   const lowerText = text.toLowerCase();
@@ -161,6 +168,10 @@ function buildHighlightFragment(
       "text-current rounded-gm-xs px-gm-0_5";
     mark.className = `${className} ${baseStyle}`;
     mark.textContent = text.slice(idx, idx + query.length);
+    // B147 写入 noteId 以支持点击高亮文本弹出操作弹窗
+    if (noteId) {
+      mark.setAttribute("data-note-id", noteId);
+    }
     fragment.appendChild(mark);
 
     cursor = idx + query.length;
@@ -195,6 +206,7 @@ export default function AnswerCard({
   onAddNoteWithColor,
   activeHighlightColor = "yellow",
   onHighlightColorChange,
+  onDeleteHighlight,
   questionIndex,
 }: AnswerCardProps) {
   const router = useRouter();
@@ -300,7 +312,7 @@ export default function AnswerCard({
       const trimmed = entry.text.trim();
       if (trimmed.length < 3) continue; // 过短文本不高亮
       const className = HIGHLIGHT_COLOR_CLASSES[entry.color] || HIGHLIGHT_COLOR_CLASSES.yellow;
-      const result = highlightInContainer(articleRef.current, trimmed, className);
+      const result = highlightInContainer(articleRef.current, trimmed, className, entry.id);
       cleanups.push(result.cleanup);
     }
 
@@ -318,6 +330,46 @@ export default function AnswerCard({
 
   // Phase 66 B104 — 即时 tooltip 替代原生 title (T3)
   const [bookmarkTooltip, setBookmarkTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+
+  // B147 — 划线点击弹窗状态
+  const [highlightPopover, setHighlightPopover] = useState<{
+    noteId: string;
+    selectedText: string;
+    color: import("@/lib/db/notesDb").HighlightColor;
+    rect: DOMRect;
+  } | null>(null);
+
+  /** B147 划线 mark 点击委托 — 捕获点击并显示 HighlightPopover */
+  const handleArticleClick = (e: React.MouseEvent<HTMLElement>) => {
+    const mark = (e.target as HTMLElement).closest("[data-note-id]");
+    if (!mark) {
+      setHighlightPopover(null);
+      return;
+    }
+    const noteId = mark.getAttribute("data-note-id");
+    const colorClass = Array.from((mark as HTMLElement).classList).find((c) =>
+      c.startsWith("note-highlight-"),
+    );
+    // 从 className 推断颜色
+    const colorMap: Record<string, import("@/lib/db/notesDb").HighlightColor> = {
+      "note-highlight-yellow": "yellow",
+      "note-highlight-green": "green",
+      "note-highlight-blue": "blue",
+      "note-highlight-pink": "pink",
+    };
+    const color: import("@/lib/db/notesDb").HighlightColor =
+      colorMap[colorClass || ""] || "yellow";
+
+    if (noteId) {
+      e.stopPropagation();
+      setHighlightPopover({
+        noteId,
+        selectedText: (mark as HTMLElement).textContent || "",
+        color,
+        rect: (mark as HTMLElement).getBoundingClientRect(),
+      });
+    }
+  };
 
   if (isStub) {
     return (
@@ -350,7 +402,11 @@ export default function AnswerCard({
 
   return (
     <>
-    <article ref={articleRef} className={`flex flex-col gap-gm-6 ${immersive ? "answer-reading-mode" : ""}`}>
+    <article
+      ref={articleRef}
+      className={`flex flex-col gap-gm-6 ${immersive ? "answer-reading-mode" : ""}`}
+      onClick={handleArticleClick}
+    >
       {/* 移动端返回按钮 */}
       {onBack && (
         <button
@@ -557,6 +613,37 @@ export default function AnswerCard({
             ))}
           </div>
         </div>
+      )}
+
+      {/* B147 划线点击样式 — data-note-id mark 显示手型光标 */}
+      <style>{`
+        mark[data-note-id] {
+          cursor: pointer;
+          transition: opacity var(--gm-duration-fast, 120ms) ease;
+        }
+        mark[data-note-id]:hover {
+          opacity: 0.75;
+        }
+      `}</style>
+
+      {/* ── B147 划线点击弹窗 ── */}
+      {highlightPopover && onDeleteHighlight && (
+        <HighlightPopover
+          noteId={highlightPopover.noteId}
+          selectedText={highlightPopover.selectedText}
+          color={highlightPopover.color}
+          referenceRect={highlightPopover.rect}
+          onDelete={onDeleteHighlight}
+          onAddNote={(text, color) => {
+            // 优先使用 B146 回调，降级到旧 onAddNote
+            if (onAddNoteWithColor) {
+              onAddNoteWithColor(text, color);
+            } else {
+              onAddNote?.(text);
+            }
+          }}
+          onClose={() => setHighlightPopover(null)}
+        />
       )}
 
       {/* ── B66→B146: 划词浮动工具栏（多色划线 + 记笔记）── */}

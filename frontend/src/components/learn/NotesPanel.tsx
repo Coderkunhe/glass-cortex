@@ -8,6 +8,7 @@ import {
   RiDeleteBinLine,
   RiCheckLine,
   RiCloseLine,
+  RiQuillPenLine,
 } from "@remixicon/react";
 import type { NoteRecord, HighlightColor } from "@/lib/db/notesDb";
 import { HIGHLIGHT_COLORS } from "@/lib/db/notesDb";
@@ -22,6 +23,14 @@ const COLOR_DOT_CLASSES: Record<HighlightColor, string> = {
   green: "bg-green-400",
   blue: "bg-blue-400",
   pink: "bg-pink-400",
+};
+
+/** B147 高亮颜色 → 卡片左边框 Tailwind 类映射（对标微信读书） */
+const COLOR_BORDER_CLASSES: Record<HighlightColor, string> = {
+  yellow: "border-l-yellow-400",
+  green: "border-l-green-400",
+  blue: "border-l-blue-400",
+  pink: "border-l-pink-400",
 };
 
 /** NotesPanel — 自包含划词笔记面板，内嵌 IndexedDB 读写（useNotesDb）。 */
@@ -207,7 +216,7 @@ export default function NotesPanel({
                     data-testid={`create-color-${color}`}
                     aria-label={`${color} 划线色`}
                     onClick={() => setCreateColor(color)}
-                    className={`w-5 h-5 rounded-full ${COLOR_DOT_CLASSES[color]}
+                    className={`w-6 h-6 rounded-full ${COLOR_DOT_CLASSES[color]}
                                transition-all hover:scale-110
                                focus-visible:ring-2 focus-visible:ring-brand/50
                                focus-visible:outline-none
@@ -224,7 +233,7 @@ export default function NotesPanel({
                 autoFocus
                 className="w-full rounded-gm-md border border-border bg-surface
                            text-gm-sm text-text placeholder:text-text-muted
-                           p-gm-2 resize-y
+                           p-gm-2 resize-y transition-shadow
                            focus-visible:ring-2 focus-visible:ring-brand/50
                            focus-visible:outline-none"
               />
@@ -266,157 +275,174 @@ export default function NotesPanel({
           {/* 笔记列表 */}
           {currentNotes.length > 0 ? (
             <ul className="flex flex-col gap-gm-2 m-0 p-0 list-none">
-              {currentNotes.map((note) => (
-                <li
-                  key={note.id}
-                  data-testid={`note-card-${note.id}`}
-                  className="rounded-gm-lg border border-border bg-surface-elevated
-                             p-gm-3 flex flex-col gap-gm-2"
-                >
-                  {/* 选中文本引用块 + 颜色标识 */}
-                  {note.selectedText && (
-                    <div className="flex items-start gap-gm-2">
+              {currentNotes.map((note) => {
+                const noteColor: HighlightColor =
+                  (note.highlightColor || "yellow") as HighlightColor;
+                const hasNoteText = note.noteText && note.noteText.trim().length > 0;
+                const borderClass = COLOR_BORDER_CLASSES[noteColor];
+
+                return (
+                  <li
+                    key={note.id}
+                    data-testid={`note-card-${note.id}`}
+                    className={`gm-card-lift rounded-gm-lg border border-border
+                               bg-surface-elevated shadow-gm-xs
+                               flex flex-col
+                               border-l-[3px] ${borderClass}
+                               ${hasNoteText ? "p-gm-3 gap-gm-2" : "p-gm-2 gap-gm-1"}`}
+                  >
+                    {/* 选中文本引用块 + 颜色标识 */}
+                    {note.selectedText && (
+                      <div className="flex items-start gap-gm-2">
+                        <span
+                          data-testid={`note-color-dot-${note.id}`}
+                          className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${COLOR_DOT_CLASSES[noteColor]}`}
+                        />
+                        <blockquote
+                          data-testid={`note-quote-${note.id}`}
+                          className="border-l-2 border-border pl-gm-2
+                                     text-gm-sm text-text-secondary
+                                     leading-relaxed line-clamp-3 m-0
+                                     bg-surface rounded-gm-xs py-gm-0.5 pr-gm-1"
+                        >
+                          {note.selectedText}
+                        </blockquote>
+                      </div>
+                    )}
+                    {/* B146 无 selectedText 时也显示颜色点 */}
+                    {!note.selectedText && (
                       <span
                         data-testid={`note-color-dot-${note.id}`}
-                        className={`mt-0.5 w-3 h-3 rounded-full flex-shrink-0 ${COLOR_DOT_CLASSES[(note.highlightColor || "yellow") as HighlightColor]}`}
+                        className={`w-2 h-2 rounded-full ${COLOR_DOT_CLASSES[noteColor]}`}
                       />
-                      <blockquote
-                        data-testid={`note-quote-${note.id}`}
-                        className="border-l-2 border-brand/30 pl-gm-2
-                                   text-gm-sm text-text-muted italic
-                                   line-clamp-2 m-0"
-                      >
-                        {note.selectedText}
-                      </blockquote>
-                    </div>
-                  )}
-                  {/* B146 无 selectedText 时也显示颜色点 */}
-                  {!note.selectedText && (
-                    <span
-                      data-testid={`note-color-dot-${note.id}`}
-                      className={`w-3 h-3 rounded-full ${COLOR_DOT_CLASSES[(note.highlightColor || "yellow") as HighlightColor]}`}
-                    />
-                  )}
+                    )}
 
-                  {/* 笔记正文 / 编辑态 */}
-                  {editingId === note.id ? (
-                    <div className="flex flex-col gap-gm-2">
-                      {/* B146 编辑颜色选择器 */}
-                      <div className="flex items-center gap-gm-1">
-                        {HIGHLIGHT_COLORS.map((color) => (
+                    {/* 笔记正文 / 编辑态 */}
+                    {editingId === note.id ? (
+                      <div className="flex flex-col gap-gm-2">
+                        {/* B146 编辑颜色选择器 */}
+                        <div className="flex items-center gap-gm-1">
+                          {HIGHLIGHT_COLORS.map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              data-testid={`edit-color-${color}`}
+                              aria-label={`${color} 划线色`}
+                              onClick={() => setEditingColor(color)}
+                              className={`w-6 h-6 rounded-full ${COLOR_DOT_CLASSES[color]}
+                                         transition-all hover:scale-110
+                                         focus-visible:ring-2 focus-visible:ring-brand/50
+                                         focus-visible:outline-none
+                                         ${editingColor === color ? "ring-2 ring-offset-1 ring-offset-surface ring-brand" : "opacity-60 hover:opacity-100"}`}
+                            />
+                          ))}
+                        </div>
+                        <textarea
+                          data-testid="note-edit-textarea"
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value)}
+                          rows={3}
+                          autoFocus
+                          className="w-full rounded-gm-md border border-border
+                                     bg-surface text-gm-sm text-text
+                                     placeholder:text-text-muted
+                                     p-gm-2 resize-y
+                                     focus-visible:ring-2 focus-visible:ring-brand/50
+                                     focus-visible:outline-none
+                                     transition-shadow"
+                        />
+                        <div className="flex items-center gap-gm-1">
                           <button
-                            key={color}
                             type="button"
-                            data-testid={`edit-color-${color}`}
-                            aria-label={`${color} 划线色`}
-                            onClick={() => setEditingColor(color)}
-                            className={`w-5 h-5 rounded-full ${COLOR_DOT_CLASSES[color]}
-                                       transition-all hover:scale-110
+                            data-testid="note-save-btn"
+                            onClick={handleSaveEdit}
+                            disabled={!editingText.trim()}
+                            className="flex items-center gap-gm-0.5 text-gm-xs
+                                       bg-brand text-white rounded-gm-md
+                                       px-gm-2 py-gm-0.5
+                                       hover:bg-brand/90 transition-all
+                                       disabled:opacity-50 disabled:cursor-not-allowed
                                        focus-visible:ring-2 focus-visible:ring-brand/50
-                                       focus-visible:outline-none
-                                       ${editingColor === color ? "ring-2 ring-offset-1 ring-offset-surface ring-brand" : "opacity-60 hover:opacity-100"}`}
-                          />
-                        ))}
+                                       focus-visible:outline-none active:scale-[0.98]"
+                          >
+                            <RiCheckLine className="w-gm-icon-sm h-gm-icon-sm" />
+                            <span>保存</span>
+                          </button>
+                          <button
+                            type="button"
+                            data-testid="note-cancel-btn"
+                            onClick={handleCancelEdit}
+                            className="flex items-center gap-gm-0.5 text-gm-xs
+                                       text-text-muted hover:text-text
+                                       rounded-gm-md px-gm-2 py-gm-0.5
+                                       transition-all
+                                       focus-visible:ring-2 focus-visible:ring-brand/50
+                                       focus-visible:outline-none active:scale-[0.98]"
+                          >
+                            <RiCloseLine className="w-gm-icon-sm h-gm-icon-sm" />
+                            <span>取消</span>
+                          </button>
+                        </div>
                       </div>
-                      <textarea
-                        data-testid="note-edit-textarea"
-                        value={editingText}
-                        onChange={(e) => setEditingText(e.target.value)}
-                        rows={3}
-                        autoFocus
-                        className="w-full rounded-gm-md border border-border
-                                   bg-surface text-gm-sm text-text
-                                   placeholder:text-text-muted
-                                   p-gm-2 resize-y
-                                   focus-visible:ring-2 focus-visible:ring-brand/50
-                                   focus-visible:outline-none"
-                      />
-                      <div className="flex items-center gap-gm-1">
-                        <button
-                          type="button"
-                          data-testid="note-save-btn"
-                          onClick={handleSaveEdit}
-                          disabled={!editingText.trim()}
-                          className="flex items-center gap-gm-0.5 text-gm-xs
-                                     bg-brand text-white rounded-gm-md
-                                     px-gm-2 py-gm-0.5
-                                     hover:bg-brand/90 transition-all
-                                     disabled:opacity-50 disabled:cursor-not-allowed
-                                     focus-visible:ring-2 focus-visible:ring-brand/50
-                                     focus-visible:outline-none active:scale-[0.98]"
-                        >
-                          <RiCheckLine className="w-gm-icon-sm h-gm-icon-sm" />
-                          <span>保存</span>
-                        </button>
-                        <button
-                          type="button"
-                          data-testid="note-cancel-btn"
-                          onClick={handleCancelEdit}
-                          className="flex items-center gap-gm-0.5 text-gm-xs
-                                     text-text-muted hover:text-text
-                                     rounded-gm-md px-gm-2 py-gm-0.5
-                                     transition-all
-                                     focus-visible:ring-2 focus-visible:ring-brand/50
-                                     focus-visible:outline-none active:scale-[0.98]"
-                        >
-                          <RiCloseLine className="w-gm-icon-sm h-gm-icon-sm" />
-                          <span>取消</span>
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-gm-sm text-text leading-relaxed m-0">
-                      {note.noteText}
-                    </p>
-                  )}
+                    ) : (
+                      hasNoteText && (
+                        <p className="text-gm-sm text-text leading-relaxed m-0">
+                          {note.noteText}
+                        </p>
+                      )
+                    )}
 
-                  {/* 元数据 + 操作 */}
-                  {editingId !== note.id && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gm-xs text-text-muted">
-                        {note.updatedAt !== note.createdAt
-                          ? `已编辑 · ${formatRelativeTime(note.updatedAt)}`
-                          : formatRelativeTime(note.createdAt)}
-                      </span>
-                      <div className="flex items-center gap-gm-1">
-                        <button
-                          type="button"
-                          data-testid={`note-edit-btn-${note.id}`}
-                          onClick={() => startEdit(note)}
-                          aria-label="编辑笔记"
-                          className="p-gm-0.5 text-text-muted hover:text-text
-                                     rounded-gm-xs transition-all
-                                     focus-visible:ring-2 focus-visible:ring-brand/50
-                                     focus-visible:outline-none active:scale-[0.98]"
-                        >
-                          <RiPencilLine className="w-gm-icon-sm h-gm-icon-sm" />
-                        </button>
-                        <button
-                          type="button"
-                          data-testid={`note-delete-btn-${note.id}`}
-                          onClick={() => setDeletingId(note.id)}
-                          aria-label="删除笔记"
-                          className="p-gm-0.5 text-text-muted hover:text-text
-                                     rounded-gm-xs transition-all
-                                     focus-visible:ring-2 focus-visible:ring-brand/50
-                                     focus-visible:outline-none active:scale-[0.98]"
-                        >
-                          <RiDeleteBinLine className="w-gm-icon-sm h-gm-icon-sm" />
-                        </button>
+                    {/* 元数据 + 操作 */}
+                    {editingId !== note.id && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-gm-xs text-text-muted">
+                          {note.updatedAt !== note.createdAt
+                            ? `已编辑 · ${formatRelativeTime(note.updatedAt)}`
+                            : formatRelativeTime(note.createdAt)}
+                        </span>
+                        <div className="flex items-center gap-gm-0.5">
+                          <button
+                            type="button"
+                            data-testid={`note-edit-btn-${note.id}`}
+                            onClick={() => startEdit(note)}
+                            aria-label="编辑笔记"
+                            className="p-gm-0.5 text-text-muted hover:text-text
+                                       hover:bg-surface rounded-gm-md
+                                       transition-all
+                                       focus-visible:ring-2 focus-visible:ring-brand/50
+                                       focus-visible:outline-none active:scale-[0.98]"
+                          >
+                            <RiPencilLine className="w-gm-icon-sm h-gm-icon-sm" />
+                          </button>
+                          <button
+                            type="button"
+                            data-testid={`note-delete-btn-${note.id}`}
+                            onClick={() => setDeletingId(note.id)}
+                            aria-label="删除笔记"
+                            className="p-gm-0.5 text-text-muted hover:text-danger
+                                       hover:bg-surface rounded-gm-md
+                                       transition-all
+                                       focus-visible:ring-2 focus-visible:ring-brand/50
+                                       focus-visible:outline-none active:scale-[0.98]"
+                          >
+                            <RiDeleteBinLine className="w-gm-icon-sm h-gm-icon-sm" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </li>
-              ))}
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             !isCreating && (
               <div
                 data-testid="notes-panel-empty"
-                className="flex flex-col items-center gap-gm-2 py-gm-4"
+                className="flex flex-col items-center gap-gm-2 py-gm-6"
               >
-                <p className="text-gm-sm text-text-muted text-center m-0">
-                  还没有笔记
+                <RiQuillPenLine className="w-8 h-8 text-text-muted/40" />
+                <p className="text-gm-sm text-text-muted text-center m-0 leading-relaxed">
+                  选中正文文字，划线标记或添加笔记
                 </p>
               </div>
             )
