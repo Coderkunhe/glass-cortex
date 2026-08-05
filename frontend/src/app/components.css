@@ -1449,13 +1449,12 @@ pre:focus-within .gm-code-copy-btn {
 }
 
 /* ── Mermaid 块 ── */
+/* B149: 仅保留 min-height + margin 防 hydration 前塌陷。
+   background/border/padding 由 MermaidDiagram 内部 .gm-mermaid-wrap 提供，
+   外层再加会导致白块（双重嵌套 bg）。 */
 :is(.chat-prose, .prose) .gm-mermaid-block {
   min-height: 200px;
   margin: 0.5em 0;
-  padding: var(--gm-space-3);
-  background: var(--gm-bg-subtle);
-  border: 1px solid var(--gm-border);
-  border-radius: var(--gm-radius-sm);
 }
 
 /* ── 图片 ── */
