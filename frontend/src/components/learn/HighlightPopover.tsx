@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useLayoutEffect } from "react";
 import {
   useFloating,
   flip,
@@ -52,15 +52,8 @@ export default function HighlightPopover({
 }: HighlightPopoverProps) {
   const [copied, setCopied] = useState(false);
 
-  // (destructured as `fRefs` to avoid react-hooks/refs false-positive
-  //  on callback refs that aren't React ref values)
-  // B147 虚拟参考元素 — floating-ui VirtualElement 需要 getBoundingClientRect
+  // (destructured as `fRefs` to avoid react-hooks/refs false-positive)
   const { refs: fRefs, floatingStyles } = useFloating({
-    elements: {
-      reference: referenceRect
-        ? ({ getBoundingClientRect: () => referenceRect } as Element)
-        : undefined,
-    },
     placement: "top",
     middleware: [
       offset(8),
@@ -69,6 +62,16 @@ export default function HighlightPopover({
     ],
     open: referenceRect !== null,
   });
+
+  // B147 虚拟参考元素 — 用 setPositionReference 而非 elements.reference
+  // floating-ui 不允许在 elements.reference 中传虚拟元素，必须用此 API。
+  useLayoutEffect(() => {
+    if (referenceRect) {
+      fRefs.setPositionReference({
+        getBoundingClientRect: () => referenceRect,
+      });
+    }
+  }, [referenceRect, fRefs]);
 
   // 自动消失计时器
   useEffect(() => {
