@@ -1457,6 +1457,15 @@ pre:focus-within .gm-code-copy-btn {
   margin: 0.5em 0;
 }
 
+/* B151: 在 prose 容器内取消 .gm-mermaid-wrap 的 bg/border —
+   父容器（.answer-l1-body / .chat-prose）已提供视觉框架，
+   保留 MermaidDiagram 自身的 bg + border 会导致嵌套卡片白块。
+   用 !important 防御 MermaidDiagram 内联 <style> 的同优先级覆盖。 */
+:is(.chat-prose, .prose) .gm-mermaid-wrap {
+  background: transparent !important;
+  border: none !important;
+}
+
 /* ── 图片 ── */
 :is(.chat-prose, .prose) .gm-md-img {
   max-width: 100%;
