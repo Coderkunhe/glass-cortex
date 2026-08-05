@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import mermaid from "mermaid";
+import { createRoot } from "react-dom/client";
 import { useRouter } from "next/navigation";
 import { RiArrowLeftLine, RiStarLine, RiStarFill, RiFlaskLine, RiLinkM, RiArrowRightUpLine, RiNodeTree } from "@remixicon/react";
 import type { Answer } from "@/lib/content/types";
@@ -14,6 +14,7 @@ import { getContentTypeBadges } from "@/lib/content/detectContentTypes";
 import SelectionToolbar from "@/components/learn/SelectionToolbar";
 import HighlightPopover from "@/components/learn/HighlightPopover";
 import { formatChapterTitle } from "@/lib/formatChapter";
+import MermaidDiagram from "@/components/ui/MermaidDiagram";
 
 /** 跨章关联类型 → 中文标签映射 */
 const CONNECTION_TYPE_LABELS: Record<string, string> = {
@@ -211,6 +212,8 @@ export default function AnswerCard({
   const router = useRouter();
   const isStub = answer.l0 === "";
   const articleRef = useRef<HTMLElement>(null);
+  /** Mermaid React roots — 用于 hydration 后的清理，防止内存泄漏 */
+  const mermaidRootsRef = useRef<Map<HTMLElement, ReturnType<typeof createRoot>>>(new Map());
 
   // B153: useMemo — 必须在条件 return 之前调用 (rules-of-hooks)
   const l1Html = useMemo(() => renderMarkdown(answer.l1), [answer.l1]);
@@ -222,8 +225,13 @@ export default function AnswerCard({
   // dangerouslySetInnerHTML 在每次 render 时重置 innerHTML
   // → gm-mermaid-block 内的 SVG 被销毁 → 必须在水合 effect 恢复。
   // 守卫跳过已水合 block，避免重复渲染。
+  //
+  // B154: 使用 createRoot + MermaidDiagram 组件渲染，替代裸 innerHTML。
+  // 裸 innerHTML 丢失了 MermaidDiagram 的 onClick lightbox、tooltip、
+  // 键盘可访问性等交互能力，导致流程图无法点击放大。
   useEffect(() => {
     if (!articleRef.current) return;
+    const roots = mermaidRootsRef.current;
     const containers = articleRef.current.querySelectorAll<HTMLDivElement>(
       ".gm-mermaid-block",
     );
@@ -232,40 +240,23 @@ export default function AnswerCard({
     let cancelled = false;
 
     async function hydrateAll() {
-      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: isDark ? "dark" : "neutral",
-        securityLevel: "strict",
-        flowchart: { useMaxWidth: true, htmlLabels: true },
-        ...(isDark && {
-          themeVariables: {
-            lineColor: "#64748b",
-            textColor: "#e2e8f0",
-            mainBkg: "#334155",
-            nodeBorder: "#475569",
-          },
-        }),
-      });
-
       for (const container of containers) {
         if (cancelled) return;
         if (container.hasAttribute("data-mermaid-hydrated")) continue;
         const base64 = container.getAttribute("data-chart");
+        const title = container.getAttribute("data-title") || "流程图";
         if (!base64) continue;
         try {
           const chart = decodeURIComponent(atob(base64));
-          const id = `gm-md-${Math.random().toString(36).slice(2, 11)}`;
-          const { svg } = await mermaid.render(id, chart);
-          if (cancelled) return;
-          const cleanSvg = svg.replace(
-            /(<svg\b[^>]*?)\s*style\s*=\s*"([^"]*)"/,
-            (_, before: string, styles: string) => {
-              const cleaned = styles.replace(/background-color:\s*[^;"]+;?\s*/g, "").trim();
-              return cleaned ? `${before} style="${cleaned}"` : before;
-            },
+          // 复用已有 root 或创建新 root，渲染 MermaidDiagram 组件（含 lightbox 交互）
+          let root = roots.get(container);
+          if (!root) {
+            root = createRoot(container);
+            roots.set(container, root);
+          }
+          root.render(
+            <MermaidDiagram chart={chart} title={title} maxHeight={0} />,
           );
-          container.innerHTML = `<div class="gm-mermaid-wrap">${cleanSvg}</div>`;
           container.setAttribute("data-mermaid-hydrated", "true");
         } catch {
           if (!cancelled) {
@@ -277,7 +268,14 @@ export default function AnswerCard({
 
     hydrateAll();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      // 不在此处 unmount：dangerouslySetInnerHTML 替换 innerHTML 时
+      // React 正处于渲染阶段，同步 unmount 会触发 "Attempted to
+      // synchronously unmount a root while React was already rendering"。
+      // 旧 DOM 被整体替换后 React root 自动失效，GC 回收。
+      roots.clear();
+    };
   });
 
   // ── Prism 语法高亮 + 行号 + 复制按钮 ──
