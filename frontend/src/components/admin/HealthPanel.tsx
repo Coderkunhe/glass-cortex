@@ -9,7 +9,7 @@
  * @module components/admin/HealthPanel
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { RiRefreshLine } from "@remixicon/react";
 import { api } from "@/lib/api/client";
 import { fmtDate } from "./utils";
@@ -20,38 +20,34 @@ export default function HealthPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const cancelledRef = useRef(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const json = await api.getAdminHealth();
-      setData(json);
-      setLastUpdated(new Date());
+      if (!cancelledRef.current) {
+        setData(json);
+        setLastUpdated(new Date());
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "加载失败");
+      if (!cancelledRef.current) {
+        setError(err instanceof Error ? err.message : "加载失败");
+      }
     } finally {
-      setLoading(false);
+      if (!cancelledRef.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const json = await api.getAdminHealth();
-        if (!cancelled) { setData(json); setLastUpdated(new Date()); }
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "加载失败");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, []);
+    cancelledRef.current = false;
+    // refresh() 内部 setState 是 mount 时初始加载的预期行为，
+    // 对标 AdminShell L45 的 suppress comment。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    refresh();
+    return () => { cancelledRef.current = true; };
+  }, [refresh]);
 
   if (loading) {
     return (

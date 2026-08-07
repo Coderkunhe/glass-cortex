@@ -19,10 +19,30 @@ import type { DocListItem } from "@/lib/api/types";
 /** 当前需求日志路径 */
 const CURRENT_LOG_PATH = "docs/requirements-log.md";
 
+/** 当前日志排序权重 — 始终排最前 */
+const CURRENT_LOG_SORT_ORDER = 9999;
+
+/** 解析失败时的兜底当前 Phase */
+const FALLBACK_CURRENT_PHASE = 66;
+
+/**
+ * 从当前需求日志内容提取最新 Phase 编号。
+ *
+ * 锚定在 `### ` 条目标题行（新→旧），避免命中归档表顶部的 Phase 1000 引用。
+ * 导出以支持 I-146 单测。
+ */
+export function extractLatestPhase(content: string): number | null {
+  const m = content.match(/^### .*?Phase (\d+)/m);
+  if (!m) return null;
+  const n = parseInt(m[1], 10);
+  // 防御：归档的 Phase 1000 治理段不计入当前 Phase
+  return n === 1000 ? null : n;
+}
+
 /** 从文件名提取起始 Phase 编号用于排序 */
 function extractPhaseOrder(item: DocListItem): number {
   // 当前日志排最前
-  if (item.path === CURRENT_LOG_PATH) return 9999;
+  if (item.path === CURRENT_LOG_PATH) return CURRENT_LOG_SORT_ORDER;
   // roadmap 排最后
   if (item.name.includes("roadmap")) return -1;
   // requirements-log-phase-N-M.md → 取 N
@@ -31,8 +51,10 @@ function extractPhaseOrder(item: DocListItem): number {
 }
 
 /** 从文件名生成 Phase 标签 */
-function phaseLabel(item: DocListItem): string {
-  if (item.path === CURRENT_LOG_PATH) return "Phase 66+";
+function phaseLabel(item: DocListItem, currentPhase: number | null): string {
+  if (item.path === CURRENT_LOG_PATH) {
+    return `Phase ${currentPhase ?? FALLBACK_CURRENT_PHASE}+`;
+  }
   if (item.name.includes("roadmap")) return "路线图";
   const m = item.name.match(/phase-(\d+-\d+)/i);
   if (m) return `Phase ${m[1]}`;
@@ -58,6 +80,7 @@ export default function RequirementsLogPanel({
   const [items, setItems] = useState<DocListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPhase, setCurrentPhase] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,8 +88,19 @@ export default function RequirementsLogPanel({
       setLoading(true);
       setError(null);
       try {
+        // 内容解析为辅助信息：失败不阻断面板，回退到常量
+        let phaseFromContent: number | null = null;
+        try {
+          const content = await api.getDocContent("requirements-log.md");
+          phaseFromContent = extractLatestPhase(content.content);
+        } catch {
+          phaseFromContent = null;
+        }
+
         const allDocs = await api.getDocs();
         if (cancelled) return;
+
+        setCurrentPhase(phaseFromContent);
 
         // 收集：当前日志 + 归档目录下全部子文件
         const result: DocListItem[] = [];
@@ -174,7 +208,7 @@ export default function RequirementsLogPanel({
                 </span>
               </span>
               <span className="text-gm-xs text-text-muted">
-                Phase 66+ · {currentItem.lines.toLocaleString()} 行 · {fmtBytes(currentItem.size_bytes)} · {fmtDate(currentItem.mtime)}
+                Phase {currentPhase ?? FALLBACK_CURRENT_PHASE}+ · {currentItem.lines.toLocaleString()} 行 · {fmtBytes(currentItem.size_bytes)} · {fmtDate(currentItem.mtime)}
               </span>
             </span>
             {/* 箭头 */}
@@ -204,7 +238,7 @@ export default function RequirementsLogPanel({
             >
               <span className="w-28 shrink-0">
                 <span className="inline-block text-gm-2xs font-mono text-text-muted bg-surface-lowered px-gm-1.5 py-px rounded-gm-xs border border-border group-hover:border-border-strong group-hover:text-text transition-colors">
-                  {phaseLabel(item)}
+                  {phaseLabel(item, currentPhase)}
                 </span>
               </span>
               <span className="flex-1 min-w-0 text-gm-sm text-text group-hover:text-brand truncate transition-colors">{item.name}</span>
