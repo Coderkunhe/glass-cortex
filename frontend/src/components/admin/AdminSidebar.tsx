@@ -53,7 +53,7 @@ const MENU_GROUPS: MenuGroup[] = [
     group: "文档管理",
     items: [
       { key: "docs", label: "文档清单", icon: <RiFileListLine size={16} /> },
-      { key: "daily", label: "日报", icon: <RiCalendarLine size={16} /> },
+      { key: "daily", label: "工作日报", icon: <RiCalendarLine size={16} /> },
       { key: "requirements-log", label: "需求日志", icon: <RiArticleLine size={16} /> },
     ],
   },
