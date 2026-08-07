@@ -160,7 +160,7 @@ export default function DocViewer({
   const hasToc = headings.length > 0;
 
   return (
-    <div className="h-full flex flex-col rounded-gm-lg bg-surface-elevated border border-border overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col rounded-gm-lg bg-surface-elevated border border-border overflow-hidden">
       {/* 文档头部 */}
       <div className="flex items-center gap-gm-3 px-gm-5 py-gm-3 border-b border-border bg-surface-lowered/50">
         <button

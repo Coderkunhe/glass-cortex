@@ -303,9 +303,11 @@ export function renderMarkdown(md: string): string {
   });
 
   // # ~ ###### 标题（全 6 级）— 含 anchor ID 生成，供 TOC 导航使用
+  // 重复标题自动追加 -2, -3... 避免 React duplicate key error
+  const headingSlugSeen = new Map<string, number>();
   html = html.replace(/^(#{1,6}) (.+)$/gm, (_m, hashes, text) => {
     const level = hashes.length;
-    const slug = text
+    const baseSlug = text
       .replace(/<[^>]+>/g, "")            // 剥除行内 HTML 标签（加粗/斜体等）
       .replace(/&amp;/g, "&")
       .replace(/&lt;/g, "<")
@@ -316,6 +318,10 @@ export function renderMarkdown(md: string): string {
       .replace(/[^\w一-鿿-]+/g, "-") // 非字母/数字/中文/连字符 → 连字符
       .replace(/^-+|-+$/g, "")            // 去首尾连字符
       || "heading";                        // 纯符号标题兜底
+    // 去重: 首次出现直接用 baseSlug，重复出现追加 -2, -3...
+    const count = headingSlugSeen.get(baseSlug) ?? 0;
+    headingSlugSeen.set(baseSlug, count + 1);
+    const slug = count === 0 ? baseSlug : `${baseSlug}-${count + 1}`;
     return `<h${level} id="${slug}">${text}</h${level}>`;
   });
 
