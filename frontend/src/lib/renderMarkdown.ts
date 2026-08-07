@@ -302,10 +302,21 @@ export function renderMarkdown(md: string): string {
     return `<blockquote class="answer-bq${variant}"><p>${content}</p></blockquote>`;
   });
 
-  // # ~ ###### 标题（全 6 级）
+  // # ~ ###### 标题（全 6 级）— 含 anchor ID 生成，供 TOC 导航使用
   html = html.replace(/^(#{1,6}) (.+)$/gm, (_m, hashes, text) => {
     const level = hashes.length;
-    return `<h${level}>${text}</h${level}>`;
+    const slug = text
+      .replace(/<[^>]+>/g, "")            // 剥除行内 HTML 标签（加粗/斜体等）
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#x27;/g, "'")
+      .toLowerCase()
+      .replace(/[^\w一-鿿-]+/g, "-") // 非字母/数字/中文/连字符 → 连字符
+      .replace(/^-+|-+$/g, "")            // 去首尾连字符
+      || "heading";                        // 纯符号标题兜底
+    return `<h${level} id="${slug}">${text}</h${level}>`;
   });
 
   // ── 块级元素 sentinel 保护（列表处理前）──

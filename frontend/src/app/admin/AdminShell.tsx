@@ -706,8 +706,15 @@ function DocFileRow({
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// DocViewer — 文档阅读器
+// DocViewer — 文档阅读器（含 TOC 侧栏导航）
 // ═══════════════════════════════════════════════════════════════════════
+
+/** 目录条目 */
+interface TocHeading {
+  id: string;
+  text: string;
+  level: number; // 1-3
+}
 
 function DocViewer({
   item,
@@ -724,7 +731,12 @@ function DocViewer({
 }) {
   const docBodyRef = useRef<HTMLDivElement>(null);
   const mermaidRootsRef = useRef<Map<HTMLElement, ReturnType<typeof createRoot>>>(new Map());
+  const observerRef = useRef<IntersectionObserver | null>(null);
   useCodeHighlight(docBodyRef, [content]);
+
+  // ── TOC state ──
+  const [headings, setHeadings] = useState<TocHeading[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   // ── Hydrate mermaid blocks injected by renderMarkdown ──
   useEffect(() => {
@@ -763,6 +775,66 @@ function DocViewer({
     // avoids createRoot() error on already-rooted containers.
   }, [content]);
 
+  // ── TOC: 提取标题 + IntersectionObserver 激活追踪 ──
+  useEffect(() => {
+    if (!docBodyRef.current || !content) return;
+
+    // 提取 h1/h2/h3 标题
+    const headingEls = docBodyRef.current.querySelectorAll("h1, h2, h3");
+    const toc: TocHeading[] = [];
+    headingEls.forEach((el) => {
+      const id = el.getAttribute("id");
+      const text = el.textContent || "";
+      const level = parseInt(el.tagName.charAt(1), 10);
+      if (id && text) toc.push({ id, text, level });
+    });
+    setHeadings(toc);
+
+    // 重复 ID 去重: 追加 -2, -3...
+    const seen = new Map<string, number>();
+    toc.forEach((h) => {
+      const count = seen.get(h.id) ?? 0;
+      if (count > 0) {
+        const el = docBodyRef.current?.querySelector(`#${CSS.escape(h.id)}`);
+        const newId = `${h.id}-${count + 1}`;
+        if (el) el.id = newId;
+      }
+      seen.set(h.id, count + 1);
+    });
+
+    // IntersectionObserver: 激活当前可见标题
+    if (observerRef.current) observerRef.current.disconnect();
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // 找第一个进入视口的标题（rootMargin top=-80px 补偿顶栏高度）
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length > 0) {
+          setActiveId(visible[0].target.getAttribute("id"));
+        }
+      },
+      { rootMargin: "-80px 0px -75% 0px", threshold: 0 },
+    );
+
+    headingEls.forEach((el) => observer.observe(el));
+    observerRef.current = observer;
+
+    return () => observer.disconnect();
+  }, [content]);
+
+  // ── TOC 点击 → 平滑滚动到标题 ──
+  const scrollToHeading = useCallback((id: string) => {
+    const el = docBodyRef.current?.querySelector(`#${CSS.escape(id)}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      setActiveId(id);
+    }
+  }, []);
+
+  const hasToc = headings.length > 0;
+
   return (
     <div className="rounded-gm-lg bg-surface-elevated border border-border overflow-hidden">
       {/* 文档头部 */}
@@ -782,34 +854,71 @@ function DocViewer({
         </div>
       </div>
 
-      {/* 文档内容 */}
-      <div className="p-gm-5 min-h-[50vh]">
-        {loading && (
-          <div className="space-y-gm-3">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-4 rounded-gm-sm gm-skeleton-shimmer"
-                style={{ width: `${65 + (i * 7) % 30}%` }}
-              />
-            ))}
-          </div>
+      {/* 文档内容区（TOC 侧栏 + 正文） */}
+      <div className="flex min-h-[50vh]">
+        {/* TOC 侧栏 */}
+        {hasToc && !loading && !error && (
+          <aside className="w-52 xl:w-56 shrink-0 border-r border-border bg-surface-lowered/30">
+            <div className="sticky top-[88px] max-h-[calc(100vh-120px)] overflow-y-auto p-gm-3">
+              <p className="text-gm-xs font-semibold text-text-muted mb-gm-2 px-gm-1">
+                目录
+              </p>
+              <nav>
+                <ul className="space-y-gm-0.5">
+                  {headings.map((h) => {
+                    const isActive = activeId === h.id;
+                    const indent = h.level === 1 ? "pl-gm-1" : h.level === 2 ? "pl-gm-4" : "pl-gm-7";
+                    return (
+                      <li key={h.id}>
+                        <button
+                          onClick={() => scrollToHeading(h.id)}
+                          className={`w-full text-left text-gm-xs py-gm-1 pr-gm-1 rounded-gm-xs transition-colors border-l-2 ${indent} ${
+                            isActive
+                              ? "border-primary text-primary bg-primary/8 font-medium"
+                              : "border-transparent text-text-muted hover:text-text hover:bg-surface-alt/50"
+                          }`}
+                          title={h.text}
+                        >
+                          <span className="line-clamp-2">{h.text}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </nav>
+            </div>
+          </aside>
         )}
 
-        {error && (
-          <div className="text-center py-gm-8">
-            <p className="text-gm-sm text-red-500">文档加载失败</p>
-            <p className="text-gm-xs text-text-muted mt-gm-1">{error}</p>
-          </div>
-        )}
+        {/* 文档正文 */}
+        <div className="flex-1 min-w-0 p-gm-5">
+          {loading && (
+            <div className="space-y-gm-3">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-4 rounded-gm-sm gm-skeleton-shimmer"
+                  style={{ width: `${65 + (i * 7) % 30}%` }}
+                />
+              ))}
+            </div>
+          )}
 
-        {content && (
-          <div
-            ref={docBodyRef}
-            className="prose prose-sm dark:prose-invert max-w-none"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(content.content) }}
-          />
-        )}
+          {error && (
+            <div className="text-center py-gm-8">
+              <p className="text-gm-sm text-red-500">文档加载失败</p>
+              <p className="text-gm-xs text-text-muted mt-gm-1">{error}</p>
+            </div>
+          )}
+
+          {content && (
+            <div
+              ref={docBodyRef}
+              className="prose prose-sm dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(content.content) }}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

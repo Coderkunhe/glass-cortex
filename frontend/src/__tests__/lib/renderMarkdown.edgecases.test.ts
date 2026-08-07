@@ -513,8 +513,8 @@ A-->B
 \`\`\`
 `;
     const html = renderMarkdown(input);
-    expect(html).toContain("<h1>Main Title</h1>");
-    expect(html).toContain("<h2>Section</h2>");
+    expect(html).toContain('<h1 id="main-title">Main Title</h1>');
+    expect(html).toContain('<h2 id="section">Section</h2>');
     expect(html).toContain("<strong>Bold</strong>");
     expect(html).toContain("<em>italic</em>");
     expect(html).toContain("example.com/pic.jpg");

@@ -155,12 +155,12 @@ describe("renderMarkdown", () => {
   });
 
   it("renders h1-h6 headings", () => {
-    expect(renderMarkdown("# h1")).toContain("<h1>h1</h1>");
-    expect(renderMarkdown("## h2")).toContain("<h2>h2</h2>");
-    expect(renderMarkdown("### h3")).toContain("<h3>h3</h3>");
-    expect(renderMarkdown("#### h4")).toContain("<h4>h4</h4>");
-    expect(renderMarkdown("##### h5")).toContain("<h5>h5</h5>");
-    expect(renderMarkdown("###### h6")).toContain("<h6>h6</h6>");
+    expect(renderMarkdown("# h1")).toContain('<h1 id="h1">h1</h1>');
+    expect(renderMarkdown("## h2")).toContain('<h2 id="h2">h2</h2>');
+    expect(renderMarkdown("### h3")).toContain('<h3 id="h3">h3</h3>');
+    expect(renderMarkdown("#### h4")).toContain('<h4 id="h4">h4</h4>');
+    expect(renderMarkdown("##### h5")).toContain('<h5 id="h5">h5</h5>');
+    expect(renderMarkdown("###### h6")).toContain('<h6 id="h6">h6</h6>');
   });
 
   it("does not treat 7+ hashes as heading", () => {
