@@ -131,7 +131,7 @@ export default function AdminShell() {
                 onBack={backToDocs}
               />
             ) : (
-              <DocsPanel onSelectDoc={loadDoc} />
+              <DocsPanel onSelectDoc={loadDoc} onNavigate={handleTabChange} />
             )
           )}
           {activeTab === "daily" && (

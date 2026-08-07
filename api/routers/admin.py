@@ -149,7 +149,7 @@ async def list_docs() -> list[dict[str, object]]:
                 {
                     "name": f.name,
                     "path": f"docs/archive/{f.name}",
-                    "group": "归档",
+                    "group": "需求日志",
                     "size_bytes": stat.st_size,
                     "mtime": date.fromtimestamp(stat.st_mtime).isoformat(),
                     "lines": _count_lines(f),
@@ -159,9 +159,9 @@ async def list_docs() -> list[dict[str, object]]:
         if archive_files:
             items.append(
                 {
-                    "name": "Phase 历史需求日志",
+                    "name": "历史需求日志",
                     "path": "docs/archive/",
-                    "group": "归档",
+                    "group": "需求日志",
                     "is_directory": True,
                     "count": len(archive_files),
                     "children": archive_files,

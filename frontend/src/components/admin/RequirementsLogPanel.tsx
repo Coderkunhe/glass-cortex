@@ -77,7 +77,7 @@ export default function RequirementsLogPanel({
             result.push({ ...item, group: "需求日志" });
           }
           // 归档目录的子文件
-          if (item.group === "归档" && item.is_directory && item.children) {
+          if (item.group === "需求日志" && item.is_directory && item.children) {
             for (const child of item.children) {
               result.push({ ...child, group: "需求日志" });
             }

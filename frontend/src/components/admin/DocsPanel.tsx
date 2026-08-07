@@ -10,10 +10,11 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
-import { RiLockLine } from "@remixicon/react";
+import { RiLockLine, RiArrowRightLine } from "@remixicon/react";
 import { api } from "@/lib/api/client";
 import { fmtBytes, fmtDate } from "./utils";
 import type { DocListItem } from "@/lib/api/types";
+import type { AdminTab } from "./AdminSidebar";
 
 // ── 常量 ──────────────────────────────────────────────────────────────
 
@@ -24,8 +25,47 @@ const GROUP_ORDER: Record<string, number> = {
   "治理看板": 2,
   "参考手册": 3,
   "日报": 4,
-  "归档": 5,
+  "需求日志": 5,
   "其他": 99,
+};
+
+// ── 摘要卡片配置（日报/需求日志 → 跳转专用视图） ──────────────────
+
+interface SummaryCardConfig {
+  groupKey: string;
+  icon: string;
+  title: string;
+  targetTab: AdminTab;
+  buttonLabel: string;
+  statLabel: (dir: DocListItem) => string;
+}
+
+const SUMMARY_CARD_CONFIGS: Record<string, SummaryCardConfig> = {
+  "日报": {
+    groupKey: "日报",
+    icon: "📅",
+    title: "工作日报",
+    targetTab: "daily",
+    buttonLabel: "查看日历",
+    statLabel: (dir) => {
+      const files = dir.children ?? [];
+      if (files.length === 0) return "暂无日报";
+      const latest = files[0].name.slice(0, 10);
+      const first = files[files.length - 1].name.slice(0, 10);
+      return `共 ${dir.count} 篇 · ${first} → ${latest}`;
+    },
+  },
+  "需求日志": {
+    groupKey: "需求日志",
+    icon: "📋",
+    title: "需求日志",
+    targetTab: "requirements-log",
+    buttonLabel: "查看全部",
+    statLabel: (dir) => {
+      const count = dir.count ?? 0;
+      return `当前活跃 · 历史归档 ${count} 个文件`;
+    },
+  },
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -34,10 +74,13 @@ const GROUP_ORDER: Record<string, number> = {
 
 export default function DocsPanel({
   onSelectDoc,
+  onNavigate,
   filterGroup,
 }: {
   onSelectDoc: (item: DocListItem) => void;
-  /** 可选：只展示指定分组（如 "日报" 或 ["核心文档", "归档"]） */
+  /** 点击摘要卡片时导航到专用 tab */
+  onNavigate: (tab: AdminTab) => void;
+  /** 可选：只展示指定分组（如 "日报" 或 ["核心文档", "需求日志"]） */
   filterGroup?: string | string[];
 }) {
   const [items, setItems] = useState<DocListItem[]>([]);
@@ -130,7 +173,7 @@ export default function DocsPanel({
   return (
     <div className="space-y-gm-4">
       {grouped.map(([group, { items: groupItems, dirs }]) => (
-        <DocGroup key={group} group={group} items={groupItems} dirs={dirs} onSelectDoc={onSelectDoc} />
+        <DocGroup key={group} group={group} items={groupItems} dirs={dirs} onSelectDoc={onSelectDoc} onNavigate={onNavigate} />
       ))}
     </div>
   );
@@ -145,13 +188,18 @@ function DocGroup({
   items,
   dirs,
   onSelectDoc,
+  onNavigate,
 }: {
   group: string;
   items: DocListItem[];
   dirs: DocListItem[];
   onSelectDoc: (item: DocListItem) => void;
+  onNavigate: (tab: AdminTab) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
+
+  // 日报 / 需求日志 → 摘要卡片（不展开文件列表）
+  const isSummaryGroup = group in SUMMARY_CARD_CONFIGS;
 
   return (
     <div className="rounded-gm-lg bg-surface-elevated border border-border overflow-hidden">
@@ -170,8 +218,18 @@ function DocGroup({
 
       {expanded && (
         <div className="border-t border-border">
-          {/* 目录项（日报/归档等）— 保持紧凑行 */}
-          {dirs.map((dir) => (
+          {/* 摘要卡片（日报/需求日志 → 跳转专用视图） */}
+          {isSummaryGroup && dirs.map((dir) => (
+            <SummaryCard
+              key={dir.path}
+              dir={dir}
+              config={SUMMARY_CARD_CONFIGS[group]!}
+              onNavigate={onNavigate}
+            />
+          ))}
+
+          {/* 普通目录项（非摘要分组）— 保持紧凑行 */}
+          {!isSummaryGroup && dirs.map((dir) => (
             <DocDirRow key={dir.path} dir={dir} onSelectDoc={onSelectDoc} />
           ))}
 
@@ -242,6 +300,48 @@ function DocDirRow({
         </div>
       )}
     </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// SummaryCard — 日报/需求日志摘要卡片（跳转专用视图）
+// ═══════════════════════════════════════════════════════════════════════
+
+function SummaryCard({
+  dir,
+  config,
+  onNavigate,
+}: {
+  dir: DocListItem;
+  config: SummaryCardConfig;
+  onNavigate: (tab: AdminTab) => void;
+}) {
+  return (
+    <button
+      onClick={() => onNavigate(config.targetTab)}
+      className="w-full flex items-center gap-gm-4 px-gm-5 py-gm-4 hover:bg-surface-alt/30 transition-colors text-left group border-b border-border last:border-b-0"
+    >
+      {/* 图标 */}
+      <span className="text-gm-2xl shrink-0 group-hover:scale-110 transition-transform" aria-hidden>
+        {config.icon}
+      </span>
+
+      {/* 内容 */}
+      <div className="flex-1 min-w-0">
+        <h4 className="text-gm-base font-semibold text-text group-hover:text-primary transition-colors">
+          {config.title}
+        </h4>
+        <p className="text-gm-sm text-text-muted mt-gm-0.5">
+          {config.statLabel(dir)}
+        </p>
+      </div>
+
+      {/* 跳转按钮 */}
+      <span className="shrink-0 flex items-center gap-gm-1.5 text-gm-sm font-medium text-primary bg-primary/8 rounded-gm-md px-gm-3 py-gm-1.5 group-hover:bg-primary group-hover:text-white transition-all">
+        <span>{config.buttonLabel}</span>
+        <RiArrowRightLine size={14} />
+      </span>
+    </button>
   );
 }
 
