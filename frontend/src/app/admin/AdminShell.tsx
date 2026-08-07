@@ -18,6 +18,7 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import type { AdminTab } from "@/components/admin/AdminSidebar";
 import HealthPanel from "@/components/admin/HealthPanel";
 import DocsPanel from "@/components/admin/DocsPanel";
+import DailyPanel from "@/components/admin/DailyPanel";
 import DocViewer from "@/components/admin/DocViewer";
 import { api } from "@/lib/api/client";
 import type { DocListItem, DocContentResponse } from "@/lib/api/types";
@@ -131,7 +132,7 @@ export default function AdminShell() {
         {/* 内容区 — flex flex-col + overflow-hidden + min-h-0 建立高度链 */}
         <main className="flex-1 min-w-0 min-h-0 p-gm-5 overflow-hidden flex flex-col">
           {activeTab === "health" && <HealthPanel />}
-          {(activeTab === "docs" || activeTab === "daily") && (
+          {activeTab === "docs" && (
             selectedDoc ? (
               <DocViewer
                 item={selectedDoc}
@@ -141,10 +142,20 @@ export default function AdminShell() {
                 onBack={backToDocs}
               />
             ) : (
-              <DocsPanel
-                onSelectDoc={loadDoc}
-                filterGroup={activeTab === "daily" ? "日报" : undefined}
+              <DocsPanel onSelectDoc={loadDoc} />
+            )
+          )}
+          {activeTab === "daily" && (
+            selectedDoc ? (
+              <DocViewer
+                item={selectedDoc}
+                content={docContent}
+                loading={docLoading}
+                error={docError}
+                onBack={backToDocs}
               />
+            ) : (
+              <DailyPanel onSelectDoc={loadDoc} />
             )
           )}
           {activeTab === "requirements-log" && (
