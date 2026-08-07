@@ -66,8 +66,9 @@ export default function AdminShell() {
     }
   }, []);
 
-  /** 返回文档列表 */
+  /** 返回文档列表（同时切回 docs 标签页） */
   const backToDocs = useCallback(() => {
+    setActiveTab("docs");
     setSelectedDoc(null);
     setDocContent(null);
     setDocError(null);
@@ -88,6 +89,37 @@ export default function AdminShell() {
     setAuthed(true);
   }, []);
 
+  /** 侧栏菜单切换 — 快捷入口（日报/需求日志）自动触发文档加载 */
+  const handleTabChange = useCallback((tab: AdminTab) => {
+    setActiveTab(tab);
+    setSelectedDoc(null);
+    setDocContent(null);
+    setDocError(null);
+
+    if (tab === "daily") {
+      const today = new Date().toISOString().slice(0, 10);
+      loadDoc({
+        name: `日报 — ${today}`,
+        path: `docs/daily/${today}.md`,
+        group: "日报",
+        is_directory: false,
+        lines: 0,
+        size_bytes: 0,
+        mtime: today,
+      });
+    } else if (tab === "requirements-log") {
+      loadDoc({
+        name: "需求日志",
+        path: "docs/requirements-log.md",
+        group: "核心文档",
+        is_directory: false,
+        lines: 0,
+        size_bytes: 0,
+        mtime: "",
+      });
+    }
+  }, [loadDoc]);
+
   // ── 渲染 ──
 
   if (!authed) {
@@ -101,7 +133,7 @@ export default function AdminShell() {
 
       {/* 主体：侧栏 + 内容 */}
       <div className="flex flex-1">
-        <AdminSidebar activeTab={activeTab} onTab={setActiveTab} />
+        <AdminSidebar activeTab={activeTab} onTab={handleTabChange} />
 
         {/* 内容区 */}
         <main className="flex-1 min-w-0 p-gm-5">
@@ -118,6 +150,15 @@ export default function AdminShell() {
             ) : (
               <DocsPanel onSelectDoc={loadDoc} />
             )
+          )}
+          {(activeTab === "daily" || activeTab === "requirements-log") && (
+            <DocViewer
+              item={selectedDoc!}
+              content={docContent}
+              loading={docLoading}
+              error={docError}
+              onBack={backToDocs}
+            />
           )}
         </main>
       </div>

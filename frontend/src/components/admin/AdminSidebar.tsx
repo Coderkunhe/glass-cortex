@@ -16,6 +16,8 @@ import { useState } from "react";
 import {
   RiHeartPulseLine,
   RiFileListLine,
+  RiCalendarLine,
+  RiArticleLine,
   RiArrowDownSLine,
   RiArrowRightSLine,
 } from "@remixicon/react";
@@ -23,7 +25,7 @@ import {
 // ── 类型 ──────────────────────────────────────────────────────────────
 
 /** Admin 面板 Tab 键 */
-export type AdminTab = "health" | "docs";
+export type AdminTab = "health" | "docs" | "daily" | "requirements-log";
 
 /** 菜单项定义 */
 interface MenuItem {
@@ -51,6 +53,8 @@ const MENU_GROUPS: MenuGroup[] = [
     group: "文档管理",
     items: [
       { key: "docs", label: "文档清单", icon: <RiFileListLine className="text-gm-icon" /> },
+      { key: "daily", label: "日报", icon: <RiCalendarLine className="text-gm-icon" /> },
+      { key: "requirements-log", label: "需求日志", icon: <RiArticleLine className="text-gm-icon" /> },
     ],
   },
 ];
