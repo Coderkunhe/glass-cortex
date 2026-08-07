@@ -6,6 +6,7 @@
  *    types-lab.ts     — Lab 实验 / 分析 / 策略人格 / 成本瀑布
  *    types-profiles.ts — Profile 管理
  *    types-traces.ts  — 追踪 / 指标 / 日志
+ *    types-admin.ts   — Admin 管理面板 (Phase 68 B3)
  */
 
 export type {
@@ -103,3 +104,14 @@ export type {
   LogDetailResponse,
   CompressionStatsResponse,
 } from "./types-traces";
+
+export type {
+  AdminHealthResponse,
+  CheckItem,
+  L5Status,
+  DailyStatus,
+  ViolationsStatus,
+  DocFreshness,
+  DocListItem,
+  DocContentResponse,
+} from "./types-admin";

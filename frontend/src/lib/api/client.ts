@@ -53,6 +53,9 @@ import type {
   FactConfidenceUpdateRequest,
   FactConfidenceUpdateResponse,
   CostWaterfallResponse,
+  AdminHealthResponse,
+  DocListItem,
+  DocContentResponse,
 } from "./types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -528,4 +531,16 @@ export const api = {
       : "";
     return request<CostWaterfallResponse>(`/lab/cost-waterfall${qs}`);
   },
+
+  // ── Admin (Phase 68 B3) ─────────────────────────────────────────────
+
+  /** Admin 工程健康指标 — check-docs JSON 结构化数据 */
+  getAdminHealth: () => request<AdminHealthResponse>("/admin/health"),
+
+  /** Admin 文档清单 — docs/ 下所有 .md 文件元数据 */
+  getDocs: () => request<DocListItem[]>("/admin/docs"),
+
+  /** Admin 获取单个文档 Markdown 原始内容 */
+  getDocContent: (name: string) =>
+    request<DocContentResponse>(`/admin/docs/${encodeURIComponent(name)}`),
 };
