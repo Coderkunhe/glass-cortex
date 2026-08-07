@@ -4,7 +4,11 @@
  * DocViewer — 文档阅读器（含 TOC 侧栏导航 + Mermaid 水合）。
  *
  * 从 AdminShell 拆出为独立组件。
- * 功能：Markdown 渲染 → 代码高亮 → Mermaid 图表水合 → TOC 目录提取及 IntersectionObserver 激活追踪。
+ * 功能：Markdown 渲染 → 代码高亮 → Mermaid 图表水合 → TOC 目录提取及
+ * IntersectionObserver 激活追踪。
+ *
+ * 布局：h-full flex flex-col 承接 AdminShell main 的 overflow-hidden 高度链。
+ * TOC 侧栏与正文各自 overflow-y-auto 独立滚动，互不干扰。
  *
  * @module components/admin/DocViewer
  */
@@ -121,12 +125,13 @@ export default function DocViewer({
       seen.set(h.id, count + 1);
     });
 
-    // IntersectionObserver: 激活当前可见标题
+    // IntersectionObserver: 激活当前可见标题（root = 正文滚动容器）
     if (observerRef.current) observerRef.current.disconnect();
 
+    const scrollContainer = docBodyRef.current?.parentElement;
     const observer = new IntersectionObserver(
       (entries) => {
-        // 找第一个进入视口的标题（rootMargin top=-80px 补偿顶栏高度）
+        // 找第一个进入视口的标题
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
@@ -134,7 +139,7 @@ export default function DocViewer({
           setActiveId(visible[0].target.getAttribute("id"));
         }
       },
-      { rootMargin: "-80px 0px -75% 0px", threshold: 0 },
+      { root: scrollContainer ?? null, rootMargin: "0px 0px -75% 0px", threshold: 0 },
     );
 
     headingEls.forEach((el) => observer.observe(el));
@@ -155,7 +160,7 @@ export default function DocViewer({
   const hasToc = headings.length > 0;
 
   return (
-    <div className="rounded-gm-lg bg-surface-elevated border border-border overflow-hidden">
+    <div className="h-full flex flex-col rounded-gm-lg bg-surface-elevated border border-border overflow-hidden">
       {/* 文档头部 */}
       <div className="flex items-center gap-gm-3 px-gm-5 py-gm-3 border-b border-border bg-surface-lowered/50">
         <button
@@ -173,13 +178,13 @@ export default function DocViewer({
         </div>
       </div>
 
-      {/* 文档内容区（TOC 侧栏 + 正文） */}
-      <div className="flex min-h-[50vh]">
+      {/* 文档内容区（TOC 侧栏 + 正文）— 各自独立滚动 */}
+      <div className="flex flex-1 overflow-hidden min-h-0">
         {/* TOC 侧栏 */}
         {hasToc && !loading && !error && (
-          <aside className="w-52 xl:w-56 shrink-0 border-r border-border bg-surface-lowered/30">
-            <div className="sticky top-[88px] max-h-[calc(100vh-120px)] overflow-y-auto p-gm-3">
-              <p className="text-gm-xs font-semibold text-text-muted mb-gm-2 px-gm-1">
+          <aside className="w-52 xl:w-56 shrink-0 border-r border-border bg-surface-lowered/30 overflow-y-auto">
+            <div className="p-gm-3">
+              <p className="text-gm-xs font-semibold text-text-muted mb-gm-2 px-gm-1 sticky top-0 bg-surface-lowered/30 backdrop-blur py-gm-1 -mx-gm-1 px-gm-2 z-10">
                 目录
               </p>
               <nav>
@@ -209,10 +214,10 @@ export default function DocViewer({
           </aside>
         )}
 
-        {/* 文档正文 */}
-        <div className="flex-1 min-w-0 p-gm-5">
+        {/* 文档正文 — 独立纵向滚动 */}
+        <div className="flex-1 min-w-0 p-gm-5 overflow-y-auto">
           {loading && (
-            <div className="space-y-gm-3">
+            <div className="max-w-3xl mx-auto space-y-gm-3">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={i}
@@ -233,7 +238,13 @@ export default function DocViewer({
           {content && (
             <div
               ref={docBodyRef}
-              className="prose prose-sm dark:prose-invert max-w-none"
+              className="prose prose-sm dark:prose-invert max-w-3xl mx-auto
+                prose-headings:scroll-mt-6
+                prose-p:leading-relaxed
+                prose-a:text-brand prose-a:no-underline hover:prose-a:underline
+                prose-code:rounded prose-code:px-gm-1
+                prose-pre:border prose-pre:border-border prose-pre:bg-surface-lowered
+                prose-img:rounded-gm-lg"
               dangerouslySetInnerHTML={{ __html: renderMarkdown(content.content) }}
             />
           )}
