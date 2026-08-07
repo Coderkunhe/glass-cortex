@@ -375,15 +375,12 @@ function DayCell({
         {cell.day}
       </span>
 
-      {/* 元信息：行数 + 文件大小 */}
+      {/* 元信息：行数 | 文件大小 */}
       {cell.item && (
-        <div className="flex flex-col gap-gm-0_5 mt-auto">
-          <span className="text-gm-xs text-text-secondary leading-none">
-            {cell.item.lines} 行
-          </span>
-          <span className="text-gm-xs text-text-muted leading-none">
-            {fmtBytes(cell.item.size_bytes)}
-          </span>
+        <div className="mt-auto text-gm-xs leading-none">
+          <span className="text-text-secondary">{cell.item.lines} 行</span>
+          <span className="text-text-muted/40 mx-gm-1">|</span>
+          <span className="text-success">{fmtBytes(cell.item.size_bytes)}</span>
         </div>
       )}
     </button>
