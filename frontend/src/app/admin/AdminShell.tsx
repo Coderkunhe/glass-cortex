@@ -127,16 +127,16 @@ export default function AdminShell() {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-text flex flex-col">
+    <div className="h-screen bg-bg text-text flex flex-col">
       {/* 顶部栏 */}
       <TopBar onLogout={handleLogout} />
 
-      {/* 主体：侧栏 + 内容 */}
-      <div className="flex flex-1">
+      {/* 主体：侧栏 + 内容 — min-h-0 允许 flex 子项缩至内容以下，是独立滚动的关键 */}
+      <div className="flex flex-1 min-h-0">
         <AdminSidebar activeTab={activeTab} onTab={handleTabChange} />
 
-        {/* 内容区 — flex flex-col + overflow-hidden 建立高度链，子组件自行管理滚动 */}
-        <main className="flex-1 min-w-0 p-gm-5 overflow-hidden flex flex-col">
+        {/* 内容区 — flex flex-col + overflow-hidden + min-h-0 建立高度链 */}
+        <main className="flex-1 min-w-0 min-h-0 p-gm-5 overflow-hidden flex flex-col">
           {activeTab === "health" && <HealthPanel />}
           {activeTab === "docs" && (
             selectedDoc ? (
