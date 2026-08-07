@@ -20,9 +20,12 @@ import {
   RiDashboardLine,
   RiBookReadLine,
   RiFileLine,
+  RiSearchLine,
+  RiCloseLine,
 } from "@remixicon/react";
 import { api } from "@/lib/api/client";
 import { fmtBytes, fmtDate } from "./utils";
+import { createDocSearchIndex, flattenDocs } from "@/lib/content/docSearch";
 import type { DocListItem } from "@/lib/api/types";
 import type { AdminTab } from "./AdminSidebar";
 
@@ -86,18 +89,36 @@ export default function DocsPanel({
   onSelectDoc,
   onNavigate,
   filterGroup,
+  docs,
 }: {
   onSelectDoc: (item: DocListItem) => void;
   /** 点击摘要卡片时导航到专用 tab */
   onNavigate: (tab: AdminTab) => void;
   /** 可选：只展示指定分组（如 "日报" 或 ["核心文档", "需求日志"]） */
   filterGroup?: string | string[];
+  /** 可选：预取文档列表（AdminShell 传入，避免重复 fetch） */
+  docs?: DocListItem[];
 }) {
   const [items, setItems] = useState<DocListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 外部传入 docs 时直接使用（AdminShell 预取优化），无需内部 fetch
+  const externalItems = useMemo(() => {
+    if (!docs) return null;
+    if (!filterGroup) return docs;
+    const groups = Array.isArray(filterGroup) ? filterGroup : [filterGroup];
+    return docs.filter((item: DocListItem) =>
+      groups.includes(item.group) ||
+      (item.is_directory && item.children?.some((c: DocListItem) => groups.includes(c.group))),
+    );
+  }, [docs, filterGroup]);
+
+  const isExternal = externalItems !== null;
+
   useEffect(() => {
+    if (isExternal) return; // 外部传入 docs 时跳过内部 fetch
+
     let cancelled = false;
     async function load() {
       setLoading(true);
@@ -123,12 +144,15 @@ export default function DocsPanel({
     }
     load();
     return () => { cancelled = true; };
-  }, [filterGroup]);
+  }, [filterGroup, docs, isExternal]);
+
+  // ── 统一数据源：外部传入优先，否则用内部 fetch ──
+  const allItems = externalItems ?? items;
 
   // ── 按 group 分组排序 ──
   const grouped = useMemo(() => {
     const map = new Map<string, { items: DocListItem[]; dirs: DocListItem[] }>();
-    for (const item of items) {
+    for (const item of allItems) {
       if (!map.has(item.group)) {
         map.set(item.group, { items: [], dirs: [] });
       }
@@ -144,9 +168,38 @@ export default function DocsPanel({
       (a, b) => (GROUP_ORDER[a[0]] ?? 99) - (GROUP_ORDER[b[0]] ?? 99)
     );
     return sorted;
-  }, [items]);
+  }, [allItems]);
 
-  if (loading) {
+  // ── 文档搜索 ──
+  const [searchQuery, setSearchQuery] = useState("");
+
+  /** Fuse 索引：仅对非目录项建索引 */
+  const fuseIndex = useMemo(() => {
+    const flat = flattenDocs(allItems);
+    if (flat.length === 0) return null;
+    return createDocSearchIndex(flat);
+  }, [allItems]);
+
+  /** 搜索结果过滤后的分组数据 */
+  const filteredGrouped = useMemo(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed || !fuseIndex) return grouped;
+
+    const fuseResults = fuseIndex.search(trimmed);
+    const matchedPaths = new Set(fuseResults.map((r) => r.item.path));
+
+    // 过滤分组：只保留含匹配项的分组，组内只保留匹配项
+    return grouped
+      .map(([group, { items: groupItems, dirs: groupDirs }]) => {
+        const matchedItems = groupItems.filter((i) => matchedPaths.has(i.path));
+        const matchedDirs = groupDirs.filter((d) => matchedPaths.has(d.path));
+        return [group, { items: matchedItems, dirs: matchedDirs }] as const;
+      })
+      .filter(([, { items: gi, dirs: gd }]) => gi.length > 0 || gd.length > 0);
+  }, [grouped, searchQuery, fuseIndex]);
+
+  // 外部数据源：跳过 loading/error 状态（AdminShell 预取）
+  if (!isExternal && loading) {
     return (
       <div className="space-y-gm-4">
         {Array.from({ length: 4 }).map((_, i) => (
@@ -163,7 +216,7 @@ export default function DocsPanel({
     );
   }
 
-  if (error) {
+  if (!isExternal && error) {
     return (
       <div className="rounded-gm-lg bg-surface-elevated border border-border p-gm-8 text-center">
         <p className="text-gm-sm text-text-muted">文档清单加载失败</p>
@@ -172,7 +225,7 @@ export default function DocsPanel({
     );
   }
 
-  if (items.length === 0) {
+  if (allItems.length === 0) {
     return (
       <div className="rounded-gm-lg bg-surface-elevated border border-border p-gm-8 text-center">
         <p className="text-gm-sm text-text-muted">暂无文档</p>
@@ -182,9 +235,43 @@ export default function DocsPanel({
 
   return (
     <div className="space-y-gm-4">
-      {grouped.map(([group, { items: groupItems, dirs }]) => (
+      {/* 内联搜索框 */}
+      <div className="flex items-center gap-gm-2 rounded-gm-lg bg-surface-elevated
+                      border border-border px-gm-4 py-gm-2.5">
+        <RiSearchLine className="text-gm-icon text-text-muted shrink-0" />
+        <input
+          type="text"
+          className="flex-1 bg-transparent text-gm-sm text-text
+                     placeholder:text-text-muted/50 outline-none"
+          placeholder="搜索文档名称或说明..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          data-testid="docs-search-input"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="p-gm-0.5 rounded-gm-sm text-text-muted
+                       hover:text-text hover:bg-surface-lowered transition-colors"
+            aria-label="清除搜索"
+          >
+            <RiCloseLine size={14} />
+          </button>
+        )}
+      </div>
+
+      {/* 搜索结果为空 */}
+      {searchQuery.trim() && filteredGrouped.length === 0 ? (
+        <div className="rounded-gm-lg bg-surface-elevated border border-border p-gm-8 text-center">
+          <RiSearchLine className="text-gm-2xl text-text-muted mx-auto mb-gm-2" />
+          <p className="text-gm-sm text-text-muted">未找到匹配的文档</p>
+          <p className="text-gm-xs text-text-muted/60 mt-gm-1">试试其他关键词</p>
+        </div>
+      ) : (
+        filteredGrouped.map(([group, { items: groupItems, dirs }]) => (
         <DocGroup key={group} group={group} items={groupItems} dirs={dirs} onSelectDoc={onSelectDoc} onNavigate={onNavigate} />
-      ))}
+      ))
+      )}
     </div>
   );
 }

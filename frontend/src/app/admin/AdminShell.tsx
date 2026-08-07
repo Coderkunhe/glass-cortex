@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { RiLockLine, RiMenuLine, RiCloseLine } from "@remixicon/react";
+import { RiLockLine, RiMenuLine, RiCloseLine, RiSearchLine } from "@remixicon/react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { ScrollLockProvider } from "@/components/ui/ScrollLockContext";
@@ -24,7 +24,9 @@ import DocsPanel from "@/components/admin/DocsPanel";
 import DailyPanel from "@/components/admin/DailyPanel";
 import RequirementsLogPanel from "@/components/admin/RequirementsLogPanel";
 import DocViewer from "@/components/admin/DocViewer";
+import SearchModal from "@/components/admin/SearchModal";
 import { api } from "@/lib/api/client";
+import { flattenDocs } from "@/lib/content/docSearch";
 import type { DocListItem, DocContentResponse } from "@/lib/api/types";
 
 // ── 常量 ──────────────────────────────────────────────────────────────
@@ -61,6 +63,34 @@ export default function AdminShell() {
   const [docContent, setDocContent] = useState<DocContentResponse | null>(null);
   const [docLoading, setDocLoading] = useState(false);
   const [docError, setDocError] = useState<string | null>(null);
+
+  // ── 全量文档列表（供 SearchModal 全局搜索）──
+  const [allDocs, setAllDocs] = useState<DocListItem[]>([]);
+
+  // ── 搜索模态窗 ──
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // 认证后拉取全量文档列表
+  useEffect(() => {
+    if (!authed) return;
+    let cancelled = false;
+    api.getDocs()
+      .then((json) => { if (!cancelled) setAllDocs(json); })
+      .catch(() => { /* 静默失败 — SearchModal 展示空态 */ });
+    return () => { cancelled = true; };
+  }, [authed]);
+
+  // Cmd+K / Ctrl+K 全局搜索快捷键
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   /** 加载文档内容 */
   const loadDoc = useCallback(async (item: DocListItem) => {
@@ -122,6 +152,7 @@ export default function AdminShell() {
         <TopBar
           onLogout={handleLogout}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+          onOpenSearch={() => setSearchOpen(true)}
         />
 
         {/* 主体：侧栏 + 内容 — min-h-0 允许 flex 子项缩至内容以下，是独立滚动的关键 */}
@@ -142,7 +173,7 @@ export default function AdminShell() {
                     onBack={backToDocs}
                   />
                 ) : (
-                  <DocsPanel onSelectDoc={loadDoc} onNavigate={handleTabChange} />
+                  <DocsPanel onSelectDoc={loadDoc} onNavigate={handleTabChange} docs={allDocs.length > 0 ? allDocs : undefined} />
                 )
               )}
               {activeTab === "daily" && (
@@ -208,6 +239,18 @@ export default function AdminShell() {
           />
         </div>
       </Drawer>
+
+      {/* 全局文档搜索模态窗 (Cmd+K) */}
+      <SearchModal
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        docs={flattenDocs(allDocs)}
+        onSelectDoc={(item) => {
+          setSearchOpen(false);
+          setActiveTab("docs");
+          loadDoc(item);
+        }}
+      />
     </ScrollLockProvider>
   );
 }
@@ -219,9 +262,11 @@ export default function AdminShell() {
 function TopBar({
   onLogout,
   onOpenMobileSidebar,
+  onOpenSearch,
 }: {
   onLogout: () => void;
   onOpenMobileSidebar: () => void;
+  onOpenSearch: () => void;
 }) {
   return (
     <header className="sticky top-0 z-40 bg-surface-elevated/80 backdrop-blur border-b border-border shadow-gm-xs shrink-0">
@@ -244,8 +289,23 @@ function TopBar({
           </span>
         </div>
 
-        {/* 操作区：主题切换 + 退出 */}
+        {/* 操作区：搜索 + 主题切换 + 退出 */}
         <div className="flex items-center gap-gm-2">
+          <button
+            onClick={onOpenSearch}
+            className="rounded-gm-sm px-gm-3 py-gm-1 text-gm-xs text-text-muted
+                       hover:text-text hover:bg-surface-alt/30 transition-all
+                       flex items-center gap-gm-1.5"
+            title="搜索文档 (Cmd+K)"
+            aria-label="搜索文档"
+          >
+            <RiSearchLine size={14} />
+            <span className="hidden sm:inline">搜索</span>
+            <kbd className="hidden sm:inline text-gm-2xs text-text-muted/40
+                            bg-surface-lowered rounded-gm-xs px-gm-1 py-0.5 font-mono">
+              ⌘K
+            </kbd>
+          </button>
           <ThemeToggle />
           <button
             onClick={onLogout}
