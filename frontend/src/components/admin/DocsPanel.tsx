@@ -271,17 +271,17 @@ function DocFileCard({
   return (
     <button
       onClick={onClick}
-      className="flex flex-col gap-gm-3 p-gm-5 rounded-gm-lg bg-surface-elevated border border-border
+      className="flex flex-col gap-gm-4 p-gm-6 rounded-gm-lg bg-surface-elevated border border-border
                  hover:border-primary/30 hover:shadow-gm-md hover:bg-surface-alt/20
                  transition-all text-left group"
     >
       {/* 标题行：图标 + 文档名 + 分组徽章 */}
       <div className="flex items-start gap-gm-3 min-w-0">
-        <span className="text-gm-xl shrink-0 leading-none mt-0.5" aria-hidden>
+        <span className="text-gm-2xl shrink-0 leading-none mt-0.5" aria-hidden>
           {icon}
         </span>
         <div className="flex-1 min-w-0">
-          <span className="text-gm-base font-semibold text-text leading-snug group-hover:text-primary transition-colors">
+          <span className="text-gm-lg font-semibold text-text leading-snug group-hover:text-primary transition-colors">
             {displayName}
           </span>
         </div>
@@ -292,15 +292,15 @@ function DocFileCard({
 
       {/* 文档说明 */}
       {item.summary ? (
-        <p className="text-gm-sm text-text-secondary leading-relaxed pl-gm-9">
+        <p className="text-gm-base text-text-secondary leading-relaxed pl-gm-10">
           {item.summary}
         </p>
       ) : (
-        <p className="text-gm-sm text-text-muted/40 italic pl-gm-9">暂无说明</p>
+        <p className="text-gm-base text-text-muted/40 italic pl-gm-10">暂无说明</p>
       )}
 
       {/* 元信息行 */}
-      <div className="flex items-center gap-gm-3 text-gm-sm text-text-muted/60 pl-gm-9 mt-auto">
+      <div className="flex items-center gap-gm-3 text-gm-sm text-text-muted/60 pl-gm-10 mt-auto">
         <span className="tabular-nums">{item.lines} 行</span>
         <span aria-hidden>·</span>
         <span className="tabular-nums text-success">{fmtBytes(item.size_bytes)}</span>
