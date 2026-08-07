@@ -20,6 +20,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from api.routers import (
+    admin,
     chat,
     context,
     health,
@@ -218,4 +219,5 @@ app.include_router(context.router)
 app.include_router(planner.router)
 app.include_router(session.router)
 app.include_router(logs.router)
+app.include_router(admin.router)
 app.include_router(lab.router)
