@@ -64,15 +64,17 @@ const MENU_GROUPS: MenuGroup[] = [
 interface AdminSidebarProps {
   activeTab: AdminTab;
   onTab: (tab: AdminTab) => void;
+  /** 移动端渲染模式 — `block` 替代 `hidden lg:block`，供 Drawer 内嵌使用 */
+  mobile?: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════════════
 // AdminSidebar
 // ═══════════════════════════════════════════════════════════════════════
 
-export default function AdminSidebar({ activeTab, onTab }: AdminSidebarProps) {
+export default function AdminSidebar({ activeTab, onTab, mobile = false }: AdminSidebarProps) {
   return (
-    <aside className="w-[var(--spacing-sidebar-w)] shrink-0 border-r border-border bg-surface-lowered hidden lg:block h-full overflow-y-auto">
+    <aside className={`${mobile ? "block" : "hidden lg:block"} w-[var(--spacing-sidebar-w)] shrink-0 border-r border-border bg-surface-lowered h-full overflow-y-auto`}>
       <div className="py-gm-3">
         <nav>
           {MENU_GROUPS.map((group) => (

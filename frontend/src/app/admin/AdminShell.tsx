@@ -11,9 +11,11 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { RiLockLine } from "@remixicon/react";
+import { RiLockLine, RiMenuLine, RiCloseLine } from "@remixicon/react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
+import { ScrollLockProvider } from "@/components/ui/ScrollLockContext";
+import Drawer from "@/components/ui/Drawer";
 import PasswordGate from "@/components/admin/PasswordGate";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import type { AdminTab } from "@/components/admin/AdminSidebar";
@@ -50,6 +52,9 @@ export default function AdminShell() {
 
   // ── 当前激活的侧栏菜单项 ──
   const [activeTab, setActiveTab] = useState<AdminTab>("health");
+
+  // ── 移动端侧栏 Drawer 状态 ──
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // ── 文档选中状态 ──
   const [selectedDoc, setSelectedDoc] = useState<DocListItem | null>(null);
@@ -111,61 +116,99 @@ export default function AdminShell() {
   }
 
   return (
-    <div className="h-screen bg-bg text-text flex flex-col">
-      {/* 顶部栏 */}
-      <TopBar onLogout={handleLogout} />
+    <ScrollLockProvider>
+      <div className="h-screen bg-bg text-text flex flex-col">
+        {/* 顶部栏 */}
+        <TopBar
+          onLogout={handleLogout}
+          onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+        />
 
-      {/* 主体：侧栏 + 内容 — min-h-0 允许 flex 子项缩至内容以下，是独立滚动的关键 */}
-      <div className="flex flex-1 min-h-0">
-        <AdminSidebar activeTab={activeTab} onTab={handleTabChange} />
+        {/* 主体：侧栏 + 内容 — min-h-0 允许 flex 子项缩至内容以下，是独立滚动的关键 */}
+        <div className="flex flex-1 min-h-0">
+          <AdminSidebar activeTab={activeTab} onTab={handleTabChange} />
 
-        {/* 内容区 — ErrorBoundary 包裹确保子面板崩溃时保留 TopBar + Sidebar */}
-        <main className="flex-1 min-w-0 min-h-0 p-gm-5 overflow-y-auto flex flex-col">
-          <ErrorBoundary fallbackVariant="card">
-            {activeTab === "health" && <HealthPanel />}
-            {activeTab === "docs" && (
-              selectedDoc ? (
-                <DocViewer
-                  item={selectedDoc}
-                  content={docContent}
-                  loading={docLoading}
-                  error={docError}
-                  onBack={backToDocs}
-                />
-              ) : (
-                <DocsPanel onSelectDoc={loadDoc} onNavigate={handleTabChange} />
-              )
-            )}
-            {activeTab === "daily" && (
-              selectedDoc ? (
-                <DocViewer
-                  item={selectedDoc}
-                  content={docContent}
-                  loading={docLoading}
-                  error={docError}
-                  onBack={backToDocs}
-                />
-              ) : (
-                <DailyPanel onSelectDoc={loadDoc} />
-              )
-            )}
-            {activeTab === "requirements-log" && (
-              selectedDoc ? (
-                <DocViewer
-                  item={selectedDoc}
-                  content={docContent}
-                  loading={docLoading}
-                  error={docError}
-                  onBack={backToDocs}
-                />
-              ) : (
-                <RequirementsLogPanel onSelectDoc={loadDoc} />
-              )
-            )}
-          </ErrorBoundary>
-        </main>
+          {/* 内容区 — ErrorBoundary 包裹确保子面板崩溃时保留 TopBar + Sidebar */}
+          <main className="flex-1 min-w-0 min-h-0 p-gm-5 overflow-y-auto flex flex-col">
+            <ErrorBoundary fallbackVariant="card">
+              {activeTab === "health" && <HealthPanel />}
+              {activeTab === "docs" && (
+                selectedDoc ? (
+                  <DocViewer
+                    item={selectedDoc}
+                    content={docContent}
+                    loading={docLoading}
+                    error={docError}
+                    onBack={backToDocs}
+                  />
+                ) : (
+                  <DocsPanel onSelectDoc={loadDoc} onNavigate={handleTabChange} />
+                )
+              )}
+              {activeTab === "daily" && (
+                selectedDoc ? (
+                  <DocViewer
+                    item={selectedDoc}
+                    content={docContent}
+                    loading={docLoading}
+                    error={docError}
+                    onBack={backToDocs}
+                  />
+                ) : (
+                  <DailyPanel onSelectDoc={loadDoc} />
+                )
+              )}
+              {activeTab === "requirements-log" && (
+                selectedDoc ? (
+                  <DocViewer
+                    item={selectedDoc}
+                    content={docContent}
+                    loading={docLoading}
+                    error={docError}
+                    onBack={backToDocs}
+                  />
+                ) : (
+                  <RequirementsLogPanel onSelectDoc={loadDoc} />
+                )
+              )}
+            </ErrorBoundary>
+          </main>
+        </div>
       </div>
-    </div>
+
+      {/* 移动端侧边栏 Drawer — 对标 MobileSidebarDrawer 模式，从左侧滑入 */}
+      <Drawer
+        isOpen={mobileSidebarOpen}
+        onClose={() => setMobileSidebarOpen(false)}
+        position="left"
+        maxWidth={300}
+        duration={350}
+        ariaLabel="导航菜单"
+      >
+        {/* Drawer 头部 */}
+        <div className="flex shrink-0 items-center justify-between gap-gm-3 px-gm-5 py-gm-4">
+          <h2 className="text-gm-lg font-semibold text-text">导航</h2>
+          <button
+            onClick={() => setMobileSidebarOpen(false)}
+            className="rounded-gm-sm p-gm-1 text-text-muted hover:bg-surface-alt transition-all"
+            aria-label="关闭菜单"
+          >
+            <RiCloseLine className="text-gm-icon" />
+          </button>
+        </div>
+        {/* Drawer 内容 — AdminSidebar mobile 模式 */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <AdminSidebar
+            activeTab={activeTab}
+            mobile
+            onTab={(tab) => {
+              handleTabChange(tab);
+              setMobileSidebarOpen(false);
+            }}
+          />
+        </div>
+      </Drawer>
+    </ScrollLockProvider>
   );
 }
 
@@ -173,12 +216,26 @@ export default function AdminShell() {
 // TopBar — 顶部工具栏（简化版：只保留品牌 + 主题切换 + 退出）
 // ═══════════════════════════════════════════════════════════════════════
 
-function TopBar({ onLogout }: { onLogout: () => void }) {
+function TopBar({
+  onLogout,
+  onOpenMobileSidebar,
+}: {
+  onLogout: () => void;
+  onOpenMobileSidebar: () => void;
+}) {
   return (
     <header className="sticky top-0 z-40 bg-surface-elevated/80 backdrop-blur border-b border-border shadow-gm-xs shrink-0">
       <div className="mx-auto px-gm-5 py-gm-3 flex items-center justify-between">
         {/* 品牌 */}
         <div className="flex items-center gap-gm-2 select-none">
+          {/* 移动端汉堡菜单 — lg:hidden，对标 Header.tsx L66-77 */}
+          <button
+            onClick={onOpenMobileSidebar}
+            className="lg:hidden rounded-gm-md p-gm-2 text-text-secondary hover:bg-surface-alt transition-all focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none active:scale-[0.98]"
+            aria-label="打开菜单"
+          >
+            <RiMenuLine className="text-gm-icon" />
+          </button>
           <div className="w-7 h-7 rounded-gm-md bg-brand-50 flex items-center justify-center">
             <RiLockLine className="text-gm-sm text-brand" />
           </div>
