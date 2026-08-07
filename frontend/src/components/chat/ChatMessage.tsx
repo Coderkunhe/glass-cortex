@@ -64,17 +64,14 @@ function ChatMessage({
   useEffect(() => {
     if (!contentRef.current) return;
     const containers = contentRef.current.querySelectorAll<HTMLDivElement>(
-      ".gm-mermaid-block",
+      ".gm-mermaid-block[data-chart]",
     );
     if (containers.length === 0) return;
 
     containers.forEach((container) => {
       const base64 = container.getAttribute("data-chart");
       const title = container.getAttribute("data-title") || "流程图";
-      if (!base64) {
-        console.warn("[mermaid-hydrate] ChatMessage: 跳过无 data-chart 的 block", container);
-        return;
-      }
+      if (!base64) return; // 防御：data-chart 选择器已过滤，此行为安全网
       try {
         const chart = decodeURIComponent(atob(base64));
         let root = mermaidRootsRef.current.get(container);

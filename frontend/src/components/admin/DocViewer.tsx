@@ -57,17 +57,14 @@ export default function DocViewer({
   useEffect(() => {
     if (!docBodyRef.current) return;
     const containers = docBodyRef.current.querySelectorAll<HTMLDivElement>(
-      ".gm-mermaid-block",
+      ".gm-mermaid-block[data-chart]",
     );
     if (containers.length === 0) return;
 
     containers.forEach((container) => {
       const base64 = container.getAttribute("data-chart");
       const title = container.getAttribute("data-title") || "流程图";
-      if (!base64) {
-        console.warn("[mermaid-hydrate] DocViewer: 跳过无 data-chart 的 block", container);
-        return;
-      }
+      if (!base64) return; // 防御：data-chart 选择器已过滤，此行为安全网
       try {
         const chart = decodeURIComponent(atob(base64));
         let root = mermaidRootsRef.current.get(container);
@@ -88,6 +85,13 @@ export default function DocViewer({
     });
     // Strict Mode: re-run reuses existing roots via ref (root.render() update),
     // avoids createRoot() error on already-rooted containers.
+
+    const rootsMap = mermaidRootsRef.current;
+    return () => {
+      // 清理所有 mermaid root（组件卸载时 / content 切换时）
+      rootsMap.forEach((root) => root.unmount());
+      rootsMap.clear();
+    };
   }, [content]);
 
   // ── TOC: 提取标题 + IntersectionObserver 激活追踪 ──

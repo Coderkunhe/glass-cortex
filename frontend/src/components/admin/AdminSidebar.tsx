@@ -46,15 +46,15 @@ const MENU_GROUPS: MenuGroup[] = [
   {
     group: "系统概览",
     items: [
-      { key: "health", label: "健康仪表盘", icon: <RiHeartPulseLine className="text-gm-icon" /> },
+      { key: "health", label: "健康仪表盘", icon: <RiHeartPulseLine size={16} /> },
     ],
   },
   {
     group: "文档管理",
     items: [
-      { key: "docs", label: "文档清单", icon: <RiFileListLine className="text-gm-icon" /> },
-      { key: "daily", label: "日报", icon: <RiCalendarLine className="text-gm-icon" /> },
-      { key: "requirements-log", label: "需求日志", icon: <RiArticleLine className="text-gm-icon" /> },
+      { key: "docs", label: "文档清单", icon: <RiFileListLine size={16} /> },
+      { key: "daily", label: "日报", icon: <RiCalendarLine size={16} /> },
+      { key: "requirements-log", label: "需求日志", icon: <RiArticleLine size={16} /> },
     ],
   },
 ];
