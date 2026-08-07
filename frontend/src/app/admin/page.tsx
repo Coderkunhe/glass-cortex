@@ -10,6 +10,7 @@
 
 import type { Metadata } from "next";
 import AdminShell from "./AdminShell";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 /** Admin 页面元数据 — 不索引管理页 */
 export const metadata: Metadata = {
@@ -17,7 +18,11 @@ export const metadata: Metadata = {
   robots: "noindex, nofollow",
 };
 
-/** Admin 页面入口 — Server Component 包裹 Client Shell */
+/** Admin 页面入口 — ErrorBoundary 包裹 Client Shell，对标 lab/page.tsx 路由级容错 */
 export default function AdminPage() {
-  return <AdminShell />;
+  return (
+    <ErrorBoundary fallbackVariant="card">
+      <AdminShell />
+    </ErrorBoundary>
+  );
 }

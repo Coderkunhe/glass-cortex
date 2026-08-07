@@ -120,28 +120,29 @@ export default function DocViewer({
   useEffect(() => {
     if (!docBodyRef.current || !content) return;
 
-    // 提取 h1/h2/h3 标题
+    // 提取 h1/h2/h3 标题 — 重复 ID 去重在推入 TOC 前完成，
+    // 确保 React state、DOM、activeId 匹配、scrollToHeading 全部使用
+    // 去重后的唯一 ID。去重用元素引用 el.id = newId 直接改名，不依赖
+    // querySelector（它总返回第一个匹配，会改错元素）。
     const headingEls = docBodyRef.current.querySelectorAll("h1, h2, h3");
     const toc: TocHeading[] = [];
+    const seen = new Map<string, number>();
     headingEls.forEach((el) => {
       const id = el.getAttribute("id");
       const text = el.textContent || "";
       const level = parseInt(el.tagName.charAt(1), 10);
-      if (id && text) toc.push({ id, text, level });
+      if (!id || !text) return;
+      const count = seen.get(id) ?? 0;
+      if (count > 0) {
+        const newId = `${id}-${count + 1}`;
+        el.id = newId;
+        toc.push({ id: newId, text, level });
+      } else {
+        toc.push({ id, text, level });
+      }
+      seen.set(id, count + 1);
     });
     setHeadings(toc);
-
-    // 重复 ID 去重: 追加 -2, -3...
-    const seen = new Map<string, number>();
-    toc.forEach((h) => {
-      const count = seen.get(h.id) ?? 0;
-      if (count > 0) {
-        const el = docBodyRef.current?.querySelector(`#${CSS.escape(h.id)}`);
-        const newId = `${h.id}-${count + 1}`;
-        if (el) el.id = newId;
-      }
-      seen.set(h.id, count + 1);
-    });
 
     // IntersectionObserver: 激活当前可见标题（root = 正文滚动容器）
     if (observerRef.current) observerRef.current.disconnect();

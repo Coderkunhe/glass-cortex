@@ -13,6 +13,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { RiLockLine } from "@remixicon/react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import PasswordGate from "@/components/admin/PasswordGate";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import type { AdminTab } from "@/components/admin/AdminSidebar";
@@ -118,48 +119,50 @@ export default function AdminShell() {
       <div className="flex flex-1 min-h-0">
         <AdminSidebar activeTab={activeTab} onTab={handleTabChange} />
 
-        {/* 内容区 — overflow-y-auto 确保内容超出时滚动 */}
+        {/* 内容区 — ErrorBoundary 包裹确保子面板崩溃时保留 TopBar + Sidebar */}
         <main className="flex-1 min-w-0 min-h-0 p-gm-5 overflow-y-auto flex flex-col">
-          {activeTab === "health" && <HealthPanel />}
-          {activeTab === "docs" && (
-            selectedDoc ? (
-              <DocViewer
-                item={selectedDoc}
-                content={docContent}
-                loading={docLoading}
-                error={docError}
-                onBack={backToDocs}
-              />
-            ) : (
-              <DocsPanel onSelectDoc={loadDoc} onNavigate={handleTabChange} />
-            )
-          )}
-          {activeTab === "daily" && (
-            selectedDoc ? (
-              <DocViewer
-                item={selectedDoc}
-                content={docContent}
-                loading={docLoading}
-                error={docError}
-                onBack={backToDocs}
-              />
-            ) : (
-              <DailyPanel onSelectDoc={loadDoc} />
-            )
-          )}
-          {activeTab === "requirements-log" && (
-            selectedDoc ? (
-              <DocViewer
-                item={selectedDoc}
-                content={docContent}
-                loading={docLoading}
-                error={docError}
-                onBack={backToDocs}
-              />
-            ) : (
-              <RequirementsLogPanel onSelectDoc={loadDoc} />
-            )
-          )}
+          <ErrorBoundary fallbackVariant="card">
+            {activeTab === "health" && <HealthPanel />}
+            {activeTab === "docs" && (
+              selectedDoc ? (
+                <DocViewer
+                  item={selectedDoc}
+                  content={docContent}
+                  loading={docLoading}
+                  error={docError}
+                  onBack={backToDocs}
+                />
+              ) : (
+                <DocsPanel onSelectDoc={loadDoc} onNavigate={handleTabChange} />
+              )
+            )}
+            {activeTab === "daily" && (
+              selectedDoc ? (
+                <DocViewer
+                  item={selectedDoc}
+                  content={docContent}
+                  loading={docLoading}
+                  error={docError}
+                  onBack={backToDocs}
+                />
+              ) : (
+                <DailyPanel onSelectDoc={loadDoc} />
+              )
+            )}
+            {activeTab === "requirements-log" && (
+              selectedDoc ? (
+                <DocViewer
+                  item={selectedDoc}
+                  content={docContent}
+                  loading={docLoading}
+                  error={docError}
+                  onBack={backToDocs}
+                />
+              ) : (
+                <RequirementsLogPanel onSelectDoc={loadDoc} />
+              )
+            )}
+          </ErrorBoundary>
         </main>
       </div>
     </div>
