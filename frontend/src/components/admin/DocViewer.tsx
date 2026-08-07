@@ -15,10 +15,12 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createRoot } from "react-dom/client";
-import { RiArrowLeftLine } from "@remixicon/react";
+import { RiArrowLeftLine, RiFontSize } from "@remixicon/react";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { renderMarkdown } from "@/lib/renderMarkdown";
+import { DOC_FONT_SIZE_KEY } from "@/lib/constants";
 import { fmtBytes } from "./utils";
 import type { DocListItem, DocContentResponse } from "@/lib/api/types";
 
@@ -52,6 +54,22 @@ export default function DocViewer({
   const mermaidRootsRef = useRef<Map<HTMLElement, ReturnType<typeof createRoot>>>(new Map());
   const observerRef = useRef<IntersectionObserver | null>(null);
   useCodeHighlight(docBodyRef, [content]);
+
+  // ── 字号偏好 — 持久化到 localStorage，直接控制 prose 容器 font-size ──
+  //     绕过 Tailwind v4 JIT 类名扫描问题：inline style 的 font-size 直接
+  //     覆盖 prose 基值，不依赖 Tailwind 是否生成了 prose-sm/base/lg/xl。
+  const [fontSize, setFontSize] = useLocalStorage<string>(
+    DOC_FONT_SIZE_KEY,
+    "md",
+  );
+
+  /** 字号 → rem 值静态映射（直接用于 inline style，不依赖 Tailwind 类名生成） */
+  const FONT_SIZE_MAP: Record<string, string> = {
+    sm: "0.875rem", // 14px — 等效 prose-sm
+    md: "1rem", // 16px — 等效 prose-base
+    lg: "1.125rem", // 18px — 等效 prose-lg
+    xl: "1.25rem", // 20px — 等效 prose-xl
+  };
 
   // ── TOC state ──
   const [headings, setHeadings] = useState<TocHeading[]>([]);
@@ -176,6 +194,19 @@ export default function DocViewer({
             {item.path} · {item.lines} 行 · {fmtBytes(item.size_bytes)}
           </p>
         </div>
+        {/* 字号调节 */}
+        <button
+          onClick={() =>
+            setFontSize((prev) =>
+              prev === "sm" ? "md" : prev === "md" ? "lg" : prev === "lg" ? "xl" : "sm",
+            )
+          }
+          className="rounded-gm-sm p-gm-1 text-text-muted hover:text-text hover:bg-surface-alt transition-colors shrink-0"
+          aria-label={`字号：${fontSize === "sm" ? "小" : fontSize === "lg" ? "大" : fontSize === "xl" ? "特大" : "中"}`}
+          title={`字号：${fontSize === "sm" ? "小" : fontSize === "lg" ? "大" : fontSize === "xl" ? "特大" : "中"}`}
+        >
+          <RiFontSize className="text-gm-icon" />
+        </button>
       </div>
 
       {/* 文档内容区（TOC 侧栏 + 正文）— 各自独立滚动 */}
@@ -238,7 +269,8 @@ export default function DocViewer({
           {content && (
             <div
               ref={docBodyRef}
-              className="prose prose-sm dark:prose-invert max-w-3xl mx-auto
+              style={{ fontSize: FONT_SIZE_MAP[fontSize] }}
+              className="prose dark:prose-invert max-w-3xl mx-auto
                 prose-headings:scroll-mt-6
                 prose-p:leading-relaxed
                 prose-a:text-brand prose-a:no-underline hover:prose-a:underline

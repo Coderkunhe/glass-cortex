@@ -8,7 +8,6 @@
  */
 
 import type { Metadata } from "next";
-import Script from "next/script";
 import localFont from "next/font/local";
 import "remixicon/fonts/remixicon.css";
 import "./tokens.css";
@@ -65,17 +64,17 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
-      <head />
-      <body className="min-h-screen bg-bg text-text antialiased overflow-hidden">
-        <Script
-          id="theme-flicker-prevent"
-          strategy="beforeInteractive"
-        >
-          {`(function() {
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function() {
   var theme = localStorage.getItem('${THEME_STORAGE_KEY}') || '${DEFAULT_THEME}';
   document.documentElement.setAttribute('data-theme', theme);
-})();`}
-        </Script>
+})();`,
+          }}
+        />
+      </head>
+      <body className="min-h-screen bg-bg text-text antialiased overflow-hidden">
         {children}
       </body>
     </html>

@@ -10,7 +10,7 @@
  * @module app/admin/AdminShell
  */
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { RiLockLine } from "@remixicon/react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import PasswordGate from "@/components/admin/PasswordGate";
@@ -32,13 +32,18 @@ const AUTH_KEY = "gm-admin-authed";
 // ═══════════════════════════════════════════════════════════════════════
 
 export default function AdminShell() {
-  // ── 认证状态 — 从 sessionStorage 惰性初始化（关 tab 即失效）──
-  const [authed, setAuthed] = useState(() => {
-    if (typeof sessionStorage !== "undefined") {
-      return sessionStorage.getItem(AUTH_KEY) === "1";
+  // ── 认证状态 — 必须默认 false 以匹配 SSR（服务器无 sessionStorage），
+  //    客户端通过 useEffect 延迟读取 sessionStorage，避免 hydration mismatch。
+  const [authed, setAuthed] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem(AUTH_KEY) === "1") {
+      // 读取 sessionStorage 必须在 effect 中（SSR 无此 API）。默认 false 确保
+      // SSR 与客户端初始渲染一致（都渲染 PasswordGate），避免 hydration mismatch。
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setAuthed(true);
     }
-    return false;
-  });
+  }, []);
 
   // ── 当前激活的侧栏菜单项 ──
   const [activeTab, setActiveTab] = useState<AdminTab>("health");

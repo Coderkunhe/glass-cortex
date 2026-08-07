@@ -30,6 +30,9 @@ export const LEARN_SCROLL_POSITIONS_KEY = "gm-learn-scroll-positions";
 /** Learn 页阅读字号偏好 — "sm" | "md" | "lg"（默认 "md"）。 */
 export const LEARN_FONT_SIZE_KEY = "gm-learn-font-size";
 
+/** DocViewer 文档阅读字号偏好 — "sm" | "md" | "lg" | "xl"（默认 "md"）。 */
+export const DOC_FONT_SIZE_KEY = "gm-doc-font-size";
+
 /** Learn 页用户学习进度存储 key — Record<questionId, LearnProgressEntry>。 */
 export const LEARN_PROGRESS_KEY = "gm-learn-progress";
 
