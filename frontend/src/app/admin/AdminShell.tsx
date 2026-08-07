@@ -10,8 +10,10 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { createRoot } from "react-dom/client";
 import { RiLockLine, RiEyeLine, RiEyeOffLine, RiArrowLeftLine, RiRefreshLine } from "@remixicon/react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import { api } from "@/lib/api/client";
 import { renderMarkdown } from "@/lib/renderMarkdown";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
@@ -721,7 +723,45 @@ function DocViewer({
   onBack: () => void;
 }) {
   const docBodyRef = useRef<HTMLDivElement>(null);
+  const mermaidRootsRef = useRef<Map<HTMLElement, ReturnType<typeof createRoot>>>(new Map());
   useCodeHighlight(docBodyRef, [content]);
+
+  // ── Hydrate mermaid blocks injected by renderMarkdown ──
+  useEffect(() => {
+    if (!docBodyRef.current) return;
+    const containers = docBodyRef.current.querySelectorAll<HTMLDivElement>(
+      ".gm-mermaid-block",
+    );
+    if (containers.length === 0) return;
+
+    containers.forEach((container) => {
+      const base64 = container.getAttribute("data-chart");
+      const title = container.getAttribute("data-title") || "流程图";
+      if (!base64) {
+        console.warn("[mermaid-hydrate] DocViewer: 跳过无 data-chart 的 block", container);
+        return;
+      }
+      try {
+        const chart = decodeURIComponent(atob(base64));
+        let root = mermaidRootsRef.current.get(container);
+        if (!root) {
+          root = createRoot(container);
+          mermaidRootsRef.current.set(container, root);
+        }
+        root.render(
+          <MermaidDiagram chart={chart} title={title} maxHeight={0} />,
+        );
+        container.setAttribute("data-mermaid-hydrated", "true");
+      } catch (err) {
+        console.error("[mermaid-hydrate] DocViewer: 水合失败", { title, error: err });
+        container.innerHTML =
+          '<p class="text-gm-sm text-error">流程图加载失败</p>';
+        mermaidRootsRef.current.delete(container);
+      }
+    });
+    // Strict Mode: re-run reuses existing roots via ref (root.render() update),
+    // avoids createRoot() error on already-rooted containers.
+  }, [content]);
 
   return (
     <div className="rounded-gm-lg bg-surface-elevated border border-border overflow-hidden">
