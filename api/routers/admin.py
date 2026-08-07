@@ -107,6 +107,7 @@ async def list_docs() -> list[dict[str, object]]:
                 "size_bytes": stat.st_size,
                 "mtime": date.fromtimestamp(stat.st_mtime).isoformat(),
                 "lines": _count_lines(f),
+                "summary": _DOC_DESCRIPTIONS.get(f.name, ""),
             }
         )
 
@@ -124,6 +125,7 @@ async def list_docs() -> list[dict[str, object]]:
                     "size_bytes": stat.st_size,
                     "mtime": date.fromtimestamp(stat.st_mtime).isoformat(),
                     "lines": _count_lines(f),
+                    "summary": _DOC_DESCRIPTIONS.get(f.name, ""),
                 }
             )
         # 日报作为子列表，方便前端按月份折叠
@@ -151,6 +153,7 @@ async def list_docs() -> list[dict[str, object]]:
                     "size_bytes": stat.st_size,
                     "mtime": date.fromtimestamp(stat.st_mtime).isoformat(),
                     "lines": _count_lines(f),
+                    "summary": _DOC_DESCRIPTIONS.get(f.name, ""),
                 }
             )
         if archive_files:
@@ -222,3 +225,52 @@ def _count_lines(path: Path) -> int:
         return path.read_text(encoding="utf-8").count("\n") + 1
     except (OSError, UnicodeDecodeError):
         return 0
+
+
+# ── 文档说明（手写描述，非内容提取） ──
+_DOC_DESCRIPTIONS: dict[str, str] = {
+    "architecture.md": (
+        "系统架构全景图 — 组件依赖关系、ADR 决策记录、技术选型理由与实现现状追踪。"
+    ),
+    "methodology.md": (
+        "AI 辅助开发工作流方法论 — Batch 生命周期、五层自检金字塔、"
+        "违纪闭环机制、上下文管理策略。可迁移至其他 AI 协作项目。"
+    ),
+    "requirements-log.md": (
+        "需求变更链路追踪 — 每条需求的提出背景、实现方案、验证方式与批次归档，全生命周期可审计。"
+    ),
+    "roadmap.md": (
+        "产品路线图 — 按 Phase 组织的功能规划、执行状态与里程碑，从 MVP 到远期愿景的递进路径。"
+    ),
+    "lessons-learned.md": (
+        "可迁移通用经验库 — 跨项目复用的踩坑教训、反模式识别与最佳实践，含机械防呆转化追踪。"
+    ),
+    "pitfalls.md": (
+        "问题诊断手册 — 具体问题 → 根因分析 → 解决方案的完整链路，避免同类问题重复踩坑。"
+    ),
+    "violations.md": (
+        "违纪追踪面板 — 工程铁律违规记录、触发频次统计与闭环状态机，保障流程纪律可执行。"
+    ),
+    "master-backlog.md": (
+        "待办事项总表 —「发现即待办」条目、优先级排序、复杂度评估与来源批次追踪。"
+    ),
+    "ci-cd.md": ("CI/CD 流水线文档 — 自动化门禁配置、部署流程、环境管理与发布 checklist。"),
+    "core_issues.md": (
+        "核心问题追踪 — 项目关键阻塞问题、讨论记录与解决进展，团队对齐的单一真相源。"
+    ),
+    "model-comparison.md": (
+        "模型能力对比追踪 — 不同 LLM 在项目场景下的性能、成本与适用性评估，选型决策的唯一参考。"
+    ),
+    "research-strategy.md": (
+        "四支柱研究全景 — 研究命题定义、实验设计、数据采集与策略调整方向，驱动认知层持续演进。"
+    ),
+    "ui-ux-patterns.md": (
+        "UI/UX 通用模式手册 — 项目级设计模式、组件契约、交互态规范与可复用代码片段。"
+    ),
+    "desensitization-classification.md": (
+        "敏感信息分类与脱敏标准 — PII 识别规则、脱敏策略与合规要求，保障数据处理安全性。"
+    ),
+    "ONBOARDING.md": (
+        "新人导览文档 — 项目名片、功能全景、技术地图、协作方式与快速上手指南，一小时了解全貌。"
+    ),
+}

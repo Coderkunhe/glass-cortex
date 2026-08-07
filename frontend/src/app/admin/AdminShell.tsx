@@ -129,8 +129,8 @@ export default function AdminShell() {
       <div className="flex flex-1 min-h-0">
         <AdminSidebar activeTab={activeTab} onTab={handleTabChange} />
 
-        {/* 内容区 — flex flex-col + overflow-hidden + min-h-0 建立高度链 */}
-        <main className="flex-1 min-w-0 min-h-0 p-gm-5 overflow-hidden flex flex-col">
+        {/* 内容区 — overflow-y-auto 确保内容超出时滚动 */}
+        <main className="flex-1 min-w-0 min-h-0 p-gm-5 overflow-y-auto flex flex-col">
           {activeTab === "health" && <HealthPanel />}
           {activeTab === "docs" && (
             selectedDoc ? (

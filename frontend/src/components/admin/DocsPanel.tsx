@@ -169,16 +169,20 @@ function DocGroup({
       </button>
 
       {expanded && (
-        <div className="divide-y divide-border border-t border-border">
-          {/* 目录项（日报/归档等） */}
+        <div className="border-t border-border">
+          {/* 目录项（日报/归档等）— 保持紧凑行 */}
           {dirs.map((dir) => (
             <DocDirRow key={dir.path} dir={dir} onSelectDoc={onSelectDoc} />
           ))}
 
-          {/* 文件项 */}
-          {items.map((item) => (
-            <DocFileRow key={item.path} item={item} onClick={() => onSelectDoc(item)} />
-          ))}
+          {/* 文件卡片网格 */}
+          {items.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-gm-3 p-gm-4">
+              {items.map((item) => (
+                <DocFileCard key={item.path} item={item} onClick={() => onSelectDoc(item)} />
+              ))}
+            </div>
+          )}
 
           {items.length === 0 && dirs.length === 0 && (
             <div className="px-gm-5 py-gm-3 text-center text-gm-xs text-text-muted">
@@ -217,14 +221,23 @@ function DocDirRow({
       </button>
 
       {expanded && dir.children && (
-        <div className="border-t border-border bg-surface-lowered/30">
+        <div className="border-t border-border bg-surface-lowered/30 divide-y divide-border">
           {dir.children.map((child) => (
-            <DocFileRow
+            <button
               key={child.path}
-              item={child}
               onClick={() => onSelectDoc(child)}
-              indent
-            />
+              className="w-full flex items-center gap-gm-3 pl-gm-12 pr-gm-5 py-gm-2 hover:bg-surface-alt/30 transition-colors text-left"
+            >
+              <span className="text-gm-sm text-text truncate flex-1">{child.name}</span>
+              {child.summary && (
+                <span className="text-gm-xs text-text-muted/60 truncate max-w-[14rem] hidden lg:inline" title={child.summary}>
+                  {child.summary}
+                </span>
+              )}
+              <span className="text-gm-xs text-text-muted shrink-0 tabular-nums">{child.lines} 行</span>
+              <span className="text-gm-xs text-text-muted/60 shrink-0 w-12 text-right tabular-nums">{fmtBytes(child.size_bytes)}</span>
+              <span className="text-gm-xs text-text-muted/60 shrink-0 w-14 text-right">{fmtDate(child.mtime)}</span>
+            </button>
           ))}
         </div>
       )}
@@ -233,29 +246,67 @@ function DocDirRow({
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// DocFileRow — 文档文件行
+// DocFileCard — 文档卡片（用于顶级文档分组）
 // ═══════════════════════════════════════════════════════════════════════
 
-function DocFileRow({
+/** 分组→图标映射 */
+const GROUP_ICON: Record<string, string> = {
+  "核心文档": "📋",
+  "经验库": "📖",
+  "治理看板": "📊",
+  "参考手册": "📚",
+  "其他": "📄",
+};
+
+function DocFileCard({
   item,
   onClick,
-  indent = false,
 }: {
   item: DocListItem;
   onClick: () => void;
-  indent?: boolean;
 }) {
+  const icon = GROUP_ICON[item.group] ?? "📄";
+  const displayName = item.name.replace(/\.md$/, "");
+
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-gm-3 px-gm-5 py-gm-2.5 hover:bg-surface-alt/30 transition-colors text-left ${
-        indent ? "pl-gm-10" : ""
-      }`}
+      className="flex flex-col gap-gm-3 p-gm-5 rounded-gm-lg bg-surface-elevated border border-border
+                 hover:border-primary/30 hover:shadow-gm-md hover:bg-surface-alt/20
+                 transition-all text-left group"
     >
-      <span className="text-gm-sm text-text truncate flex-1">{item.name}</span>
-      <span className="text-gm-xs text-text-muted shrink-0">{item.lines} 行</span>
-      <span className="text-gm-xs text-text-muted/60 shrink-0 w-12 text-right">{fmtBytes(item.size_bytes)}</span>
-      <span className="text-gm-xs text-text-muted/60 shrink-0 w-14 text-right">{fmtDate(item.mtime)}</span>
+      {/* 标题行：图标 + 文档名 + 分组徽章 */}
+      <div className="flex items-start gap-gm-3 min-w-0">
+        <span className="text-gm-xl shrink-0 leading-none mt-0.5" aria-hidden>
+          {icon}
+        </span>
+        <div className="flex-1 min-w-0">
+          <span className="text-gm-base font-semibold text-text leading-snug group-hover:text-primary transition-colors">
+            {displayName}
+          </span>
+        </div>
+        <span className="text-gm-sm text-text-muted/60 bg-surface-lowered/60 rounded-gm-sm px-gm-2 py-0.5 shrink-0">
+          {item.group}
+        </span>
+      </div>
+
+      {/* 文档说明 */}
+      {item.summary ? (
+        <p className="text-gm-sm text-text-secondary leading-relaxed pl-gm-9">
+          {item.summary}
+        </p>
+      ) : (
+        <p className="text-gm-sm text-text-muted/40 italic pl-gm-9">暂无说明</p>
+      )}
+
+      {/* 元信息行 */}
+      <div className="flex items-center gap-gm-3 text-gm-sm text-text-muted/60 pl-gm-9 mt-auto">
+        <span className="tabular-nums">{item.lines} 行</span>
+        <span aria-hidden>·</span>
+        <span className="tabular-nums text-success">{fmtBytes(item.size_bytes)}</span>
+        <span aria-hidden>·</span>
+        <span>{fmtDate(item.mtime)}</span>
+      </div>
     </button>
   );
 }

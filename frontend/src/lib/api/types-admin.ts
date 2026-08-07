@@ -67,6 +67,8 @@ export interface DocListItem {
   size_bytes: number;
   mtime: string;
   lines: number;
+  /** 从文档首段提取的概要（≤120 字符） */
+  summary?: string;
   /** 目录项标记 */
   is_directory?: boolean;
   /** 目录内文档数 */
