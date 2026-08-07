@@ -482,6 +482,7 @@
 | 前端 — Admin 管理页面 | ✅ 完成 | 2026-08-07 | `frontend/src/app/admin/AdminShell.tsx` + `page.tsx` — 密码门禁（NEXT_PUBLIC_ADMIN_PASSWORD + sessionStorage）+ 健康仪表盘（摘要卡片 + 门禁明细 + 最近提交）+ 文档浏览器（分组折叠 + 在线阅读 + Prism 代码高亮）+ ThemeToggle 主题切换 + 手动刷新 — Phase 68 B3-B4 |
 | 前端 — Admin 侧栏菜单布局 | ✅ 完成 | 2026-08-07 | `frontend/src/components/admin/AdminSidebar.tsx` — 可折叠分组 + 二级菜单 · `AdminTab` 类型 · 侧栏 active 指示条（border-l-2 border-primary）— Phase 68 B7 |
 | 前端 — Admin 组件拆分 | ✅ 完成 | 2026-08-07 | `components/admin/` 目录 — HealthPanel + DocsPanel + DocViewer + PasswordGate + utils — AdminShell 925→159 行编排层 — Phase 68 B7 |
+| 前端 — Admin 侧栏快捷入口 | ✅ 完成 | 2026-08-07 | `AdminTab` 扩展 daily/requirements-log · `handleTabChange` 快捷加载 · 日报/需求日志一键直达 DocViewer — Phase 68 B8 |
 
 ## 架构决策记录
 
