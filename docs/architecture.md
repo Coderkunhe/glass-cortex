@@ -480,6 +480,8 @@
 | UI 共享组件四态补齐 | ✅ 完成 | 2026-07-15 | 8 文件 14 处：CopyButton/RefreshButton/ThemeToggle/WindowSizeInput/ErrorDisplay/ImageViewer/CollapsibleSection/ConfirmModal — 统一 `focus-visible:ring-2` + `active:scale-[0.98]` — Phase 66 B122 |
 | API — Admin 管理路由 | ✅ 完成 | 2026-08-07 | `api/routers/admin.py` — 3 端点：`GET /api/admin/health`（check-docs JSON 透传，超时/异常保护）+ `GET /api/admin/docs`（文档清单分组归类）+ `GET /api/admin/docs/{name}`（内容读取，路径沙箱防穿越）— Phase 68 B2 |
 | 前端 — Admin 管理页面 | ✅ 完成 | 2026-08-07 | `frontend/src/app/admin/AdminShell.tsx` + `page.tsx` — 密码门禁（NEXT_PUBLIC_ADMIN_PASSWORD + sessionStorage）+ 健康仪表盘（摘要卡片 + 门禁明细 + 最近提交）+ 文档浏览器（分组折叠 + 在线阅读 + Prism 代码高亮）+ ThemeToggle 主题切换 + 手动刷新 — Phase 68 B3-B4 |
+| 前端 — Admin 侧栏菜单布局 | ✅ 完成 | 2026-08-07 | `frontend/src/components/admin/AdminSidebar.tsx` — 可折叠分组 + 二级菜单 · `AdminTab` 类型 · 侧栏 active 指示条（border-l-2 border-primary）— Phase 68 B7 |
+| 前端 — Admin 组件拆分 | ✅ 完成 | 2026-08-07 | `components/admin/` 目录 — HealthPanel + DocsPanel + DocViewer + PasswordGate + utils — AdminShell 925→159 行编排层 — Phase 68 B7 |
 
 ## 架构决策记录
 
