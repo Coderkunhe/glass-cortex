@@ -20,3 +20,6 @@ node_modules/
 .next/
 out/
 deploy-package/
+
+# Private docs (not for public repo)
+docs/ONBOARDING.md
