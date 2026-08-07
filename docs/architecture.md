@@ -495,6 +495,8 @@
 | 前端 — 文档清单卡片化 | ✅ 完成 | 2026-08-07 | `DocFileRow` → `DocFileCard` — 图标 + 标题 + 分组徽章 + 概要 + 元信息 · 2 列网格 · hover 态 · scroll 修复 — Phase 68 B15 |
 | 前端 — 需求日志统一列表 | ✅ 完成 | 2026-08-07 | `RequirementsLogPanel.tsx` — 当前日志卡片（brand 边框 + "当前"徽章）+ 历史归档表（Phase 倒序）· 四态 · `filterGroup: string \| string[]` 扩展 — Phase 68 B16 |
 | 前端 — DocsPanel 摘要卡片 | ✅ 完成 | 2026-08-07 | `SUMMARY_CARD_CONFIGS` + `renderSummaryCard` — 日报/需求日志摘要卡片（图标+标题+概要+统计行+跳转按钮）替代目录树 — Phase 68 B17 |
+| 前端 — Admin 图标统一 | ✅ 完成 | 2026-08-08 | `DocsPanel.tsx` GROUP_ICON 5 组 + SUMMARY_CARD_CONFIGS 2 卡 + `RequirementsLogPanel.tsx` 当前日志卡片 — emoji 全量切换为 `@remixicon/react` 组件，与 AdminSidebar/主站图标体系一致 — Phase 68 B18 |
+| 前端 — Admin 文档检索 | ✅ 完成 | 2026-08-08 | `docSearch.ts` Fuse 索引工具 + `SearchModal.tsx` Cmd+K 全局搜索模态窗 + `DocsPanel.tsx` 内联搜索框 — 名称/摘要模糊搜索，键盘导航(↑↓EnterEsc)，浏览模式 top 20 — Phase 68 B19 |
 
 ## 架构决策记录
 
