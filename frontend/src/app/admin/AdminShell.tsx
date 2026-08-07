@@ -19,6 +19,7 @@ import type { AdminTab } from "@/components/admin/AdminSidebar";
 import HealthPanel from "@/components/admin/HealthPanel";
 import DocsPanel from "@/components/admin/DocsPanel";
 import DailyPanel from "@/components/admin/DailyPanel";
+import RequirementsLogPanel from "@/components/admin/RequirementsLogPanel";
 import DocViewer from "@/components/admin/DocViewer";
 import { api } from "@/lib/api/client";
 import type { DocListItem, DocContentResponse } from "@/lib/api/types";
@@ -72,12 +73,11 @@ export default function AdminShell() {
     }
   }, []);
 
-  /** 返回文档列表 — docs/daily 保持当前 tab，requirements-log 切回 docs */
+  /** 返回文档列表 — 保持当前 tab 上下文 */
   const backToDocs = useCallback(() => {
     setSelectedDoc(null);
     setDocContent(null);
     setDocError(null);
-    setActiveTab((prev) => (prev === "requirements-log" ? "docs" : prev));
   }, []);
 
   /** 退出登录 */
@@ -95,25 +95,13 @@ export default function AdminShell() {
     setAuthed(true);
   }, []);
 
-  /** 侧栏菜单切换 — 快捷入口（需求日志）自动触发文档加载；日报展示文档列表供浏览 */
+  /** 侧栏菜单切换 — 日报展示文档列表供浏览 */
   const handleTabChange = useCallback((tab: AdminTab) => {
     setActiveTab(tab);
     setSelectedDoc(null);
     setDocContent(null);
     setDocError(null);
-
-    if (tab === "requirements-log") {
-      loadDoc({
-        name: "需求日志",
-        path: "docs/requirements-log.md",
-        group: "核心文档",
-        is_directory: false,
-        lines: 0,
-        size_bytes: 0,
-        mtime: "",
-      });
-    }
-  }, [loadDoc]);
+  }, []);
 
   // ── 渲染 ──
 
@@ -159,14 +147,18 @@ export default function AdminShell() {
               <DailyPanel onSelectDoc={loadDoc} />
             )
           )}
-          {activeTab === "requirements-log" && selectedDoc && (
-            <DocViewer
-              item={selectedDoc}
-              content={docContent}
-              loading={docLoading}
-              error={docError}
-              onBack={backToDocs}
-            />
+          {activeTab === "requirements-log" && (
+            selectedDoc ? (
+              <DocViewer
+                item={selectedDoc}
+                content={docContent}
+                loading={docLoading}
+                error={docError}
+                onBack={backToDocs}
+              />
+            ) : (
+              <RequirementsLogPanel onSelectDoc={loadDoc} />
+            )
           )}
         </main>
       </div>

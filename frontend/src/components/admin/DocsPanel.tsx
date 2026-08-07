@@ -37,8 +37,8 @@ export default function DocsPanel({
   filterGroup,
 }: {
   onSelectDoc: (item: DocListItem) => void;
-  /** 可选：只展示指定分组（如 "日报"） */
-  filterGroup?: string;
+  /** 可选：只展示指定分组（如 "日报" 或 ["核心文档", "归档"]） */
+  filterGroup?: string | string[];
 }) {
   const [items, setItems] = useState<DocListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,11 +54,11 @@ export default function DocsPanel({
         if (!cancelled) {
           // filterGroup 模式下过滤到只保留目标分组（含 group 匹配的目录 + 文件）
           const filtered = filterGroup
-            ? json.filter(
-                (item: DocListItem) =>
-                  item.group === filterGroup ||
-                  (item.is_directory && item.children?.some((c: DocListItem) => c.group === filterGroup))
-              )
+            ? json.filter((item: DocListItem) => {
+                const groups = Array.isArray(filterGroup) ? filterGroup : [filterGroup];
+                return groups.includes(item.group) ||
+                  (item.is_directory && item.children?.some((c: DocListItem) => groups.includes(c.group)));
+              })
             : json;
           setItems(filtered);
         }
