@@ -32,7 +32,14 @@ const GROUP_ORDER: Record<string, number> = {
 // DocsPanel — 主组件
 // ═══════════════════════════════════════════════════════════════════════
 
-export default function DocsPanel({ onSelectDoc }: { onSelectDoc: (item: DocListItem) => void }) {
+export default function DocsPanel({
+  onSelectDoc,
+  filterGroup,
+}: {
+  onSelectDoc: (item: DocListItem) => void;
+  /** 可选：只展示指定分组（如 "日报"） */
+  filterGroup?: string;
+}) {
   const [items, setItems] = useState<DocListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +51,17 @@ export default function DocsPanel({ onSelectDoc }: { onSelectDoc: (item: DocList
       setError(null);
       try {
         const json = await api.getDocs();
-        if (!cancelled) setItems(json);
+        if (!cancelled) {
+          // filterGroup 模式下过滤到只保留目标分组（含 group 匹配的目录 + 文件）
+          const filtered = filterGroup
+            ? json.filter(
+                (item: DocListItem) =>
+                  item.group === filterGroup ||
+                  (item.is_directory && item.children?.some((c: DocListItem) => c.group === filterGroup))
+              )
+            : json;
+          setItems(filtered);
+        }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "加载失败");
       } finally {
@@ -53,7 +70,7 @@ export default function DocsPanel({ onSelectDoc }: { onSelectDoc: (item: DocList
     }
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [filterGroup]);
 
   // ── 按 group 分组排序 ──
   const grouped = useMemo(() => {

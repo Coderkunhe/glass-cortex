@@ -71,9 +71,8 @@ export default function AdminShell() {
     }
   }, []);
 
-  /** 返回文档列表（同时切回 docs 标签页） */
+  /** 返回文档列表（保持当前 tab 不变） */
   const backToDocs = useCallback(() => {
-    setActiveTab("docs");
     setSelectedDoc(null);
     setDocContent(null);
     setDocError(null);
@@ -94,25 +93,14 @@ export default function AdminShell() {
     setAuthed(true);
   }, []);
 
-  /** 侧栏菜单切换 — 快捷入口（日报/需求日志）自动触发文档加载 */
+  /** 侧栏菜单切换 — 快捷入口（需求日志）自动触发文档加载；日报展示文档列表供浏览 */
   const handleTabChange = useCallback((tab: AdminTab) => {
     setActiveTab(tab);
     setSelectedDoc(null);
     setDocContent(null);
     setDocError(null);
 
-    if (tab === "daily") {
-      const today = new Date().toISOString().slice(0, 10);
-      loadDoc({
-        name: `日报 — ${today}`,
-        path: `docs/daily/${today}.md`,
-        group: "日报",
-        is_directory: false,
-        lines: 0,
-        size_bytes: 0,
-        mtime: today,
-      });
-    } else if (tab === "requirements-log") {
+    if (tab === "requirements-log") {
       loadDoc({
         name: "需求日志",
         path: "docs/requirements-log.md",
@@ -143,7 +131,7 @@ export default function AdminShell() {
         {/* 内容区 — flex flex-col + overflow-hidden + min-h-0 建立高度链 */}
         <main className="flex-1 min-w-0 min-h-0 p-gm-5 overflow-hidden flex flex-col">
           {activeTab === "health" && <HealthPanel />}
-          {activeTab === "docs" && (
+          {(activeTab === "docs" || activeTab === "daily") && (
             selectedDoc ? (
               <DocViewer
                 item={selectedDoc}
@@ -153,10 +141,13 @@ export default function AdminShell() {
                 onBack={backToDocs}
               />
             ) : (
-              <DocsPanel onSelectDoc={loadDoc} />
+              <DocsPanel
+                onSelectDoc={loadDoc}
+                filterGroup={activeTab === "daily" ? "日报" : undefined}
+              />
             )
           )}
-          {(activeTab === "daily" || activeTab === "requirements-log") && (
+          {activeTab === "requirements-log" && (
             <DocViewer
               item={selectedDoc!}
               content={docContent}
