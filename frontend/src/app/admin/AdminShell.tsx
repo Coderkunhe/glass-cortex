@@ -72,11 +72,12 @@ export default function AdminShell() {
     }
   }, []);
 
-  /** 返回文档列表（保持当前 tab 不变） */
+  /** 返回文档列表 — docs/daily 保持当前 tab，requirements-log 切回 docs */
   const backToDocs = useCallback(() => {
     setSelectedDoc(null);
     setDocContent(null);
     setDocError(null);
+    setActiveTab((prev) => (prev === "requirements-log" ? "docs" : prev));
   }, []);
 
   /** 退出登录 */
@@ -158,9 +159,9 @@ export default function AdminShell() {
               <DailyPanel onSelectDoc={loadDoc} />
             )
           )}
-          {activeTab === "requirements-log" && (
+          {activeTab === "requirements-log" && selectedDoc && (
             <DocViewer
-              item={selectedDoc!}
+              item={selectedDoc}
               content={docContent}
               loading={docLoading}
               error={docError}
