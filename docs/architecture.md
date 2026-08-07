@@ -478,6 +478,8 @@
 | 移动端 QuestionList 精简 | ✅ 完成 | 2026-07-15 | `QuestionList.tsx` — 4 处 CSS 响应式 class：过滤芯片行 gap/px/py 收紧 · 章节进度条 ×2 `hidden lg:block` · 最近阅读 section `hidden lg:block` · 非目录 chrome 从 ~200px (40%) 降至 ~120px (25%)，目录可视面积 +~60% — Phase 66 B120 |
 | 过渡 token 标准化 (总² 启动) | ✅ 完成 | 2026-07-15 | `components.css` + `ImageViewer.tsx` + `MermaidDiagram.tsx` + `ContentDashboard.tsx` + `OnionPanel.tsx` + `ProjectMapDrawer.tsx` + `CostWaterfallPanel.tsx` — 10 处硬编码过渡时长 → 5 档 `var(--gm-duration-*)` token · 全站 167 交互元素四态扫描（36% focus-visible / 13% active）排 B122-B125 — Phase 66 B121 |
 | UI 共享组件四态补齐 | ✅ 完成 | 2026-07-15 | 8 文件 14 处：CopyButton/RefreshButton/ThemeToggle/WindowSizeInput/ErrorDisplay/ImageViewer/CollapsibleSection/ConfirmModal — 统一 `focus-visible:ring-2` + `active:scale-[0.98]` — Phase 66 B122 |
+| API — Admin 管理路由 | ✅ 完成 | 2026-08-07 | `api/routers/admin.py` — 3 端点：`GET /api/admin/health`（check-docs JSON 透传，超时/异常保护）+ `GET /api/admin/docs`（文档清单分组归类）+ `GET /api/admin/docs/{name}`（内容读取，路径沙箱防穿越）— Phase 68 B2 |
+| 前端 — Admin 管理页面 | ✅ 完成 | 2026-08-07 | `frontend/src/app/admin/AdminShell.tsx` + `page.tsx` — 密码门禁（NEXT_PUBLIC_ADMIN_PASSWORD + sessionStorage）+ 健康仪表盘（摘要卡片 + 门禁明细 + 最近提交）+ 文档浏览器（分组折叠 + 在线阅读 + Prism 代码高亮）+ ThemeToggle 主题切换 + 手动刷新 — Phase 68 B3-B4 |
 
 ## 架构决策记录
 

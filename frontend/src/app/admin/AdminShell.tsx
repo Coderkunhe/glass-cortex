@@ -9,10 +9,12 @@
  * @module app/admin/AdminShell
  */
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { RiLockLine, RiEyeLine, RiEyeOffLine, RiArrowLeftLine } from "@remixicon/react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { RiLockLine, RiEyeLine, RiEyeOffLine, RiArrowLeftLine, RiRefreshLine } from "@remixicon/react";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import { api } from "@/lib/api/client";
 import { renderMarkdown } from "@/lib/renderMarkdown";
+import { useCodeHighlight } from "@/hooks/useCodeHighlight";
 import type {
   AdminHealthResponse,
   DocListItem,
@@ -266,13 +268,16 @@ function TopBar({
           </nav>
         </div>
 
-        {/* 退出 */}
-        <button
-          onClick={onLogout}
-          className="rounded-gm-sm px-gm-3 py-gm-1 text-gm-xs text-text-muted hover:text-red-500 hover:bg-red-50/30 transition-all"
-        >
-          退出
-        </button>
+        {/* 操作区：主题切换 + 退出 */}
+        <div className="flex items-center gap-gm-2">
+          <ThemeToggle />
+          <button
+            onClick={onLogout}
+            className="rounded-gm-sm px-gm-3 py-gm-1 text-gm-xs text-text-muted hover:text-red-500 hover:bg-red-50/30 transition-all"
+          >
+            退出
+          </button>
+        </div>
       </div>
     </header>
   );
@@ -286,6 +291,21 @@ function HealthPanel() {
   const [data, setData] = useState<AdminHealthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const json = await api.getAdminHealth();
+      setData(json);
+      setLastUpdated(new Date());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "加载失败");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -294,7 +314,7 @@ function HealthPanel() {
       setError(null);
       try {
         const json = await api.getAdminHealth();
-        if (!cancelled) setData(json);
+        if (!cancelled) { setData(json); setLastUpdated(new Date()); }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "加载失败");
       } finally {
@@ -376,6 +396,25 @@ function HealthPanel() {
 
   return (
     <div className="space-y-gm-5">
+      {/* 操作栏：刷新 + 最后更新时间 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-gm-3">
+          <button
+            onClick={refresh}
+            disabled={loading}
+            className="inline-flex items-center gap-gm-1.5 rounded-gm-md border border-border bg-surface-elevated px-gm-3 py-gm-1.5 text-gm-xs text-text-secondary hover:bg-surface-alt transition-all disabled:opacity-50"
+          >
+            <RiRefreshLine className={`text-gm-icon ${loading ? "animate-spin" : ""}`} />
+            刷新
+          </button>
+          {lastUpdated && (
+            <span className="text-gm-xs text-text-muted">
+              最后更新：{lastUpdated.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* 摘要卡片网格 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-gm-3">
         {summaryCards.map((card) => (
@@ -681,6 +720,9 @@ function DocViewer({
   error: string | null;
   onBack: () => void;
 }) {
+  const docBodyRef = useRef<HTMLDivElement>(null);
+  useCodeHighlight(docBodyRef, [content]);
+
   return (
     <div className="rounded-gm-lg bg-surface-elevated border border-border overflow-hidden">
       {/* 文档头部 */}
@@ -723,6 +765,7 @@ function DocViewer({
 
         {content && (
           <div
+            ref={docBodyRef}
             className="prose prose-sm dark:prose-invert max-w-none"
             dangerouslySetInnerHTML={{ __html: renderMarkdown(content.content) }}
           />
