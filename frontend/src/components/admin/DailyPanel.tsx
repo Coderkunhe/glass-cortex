@@ -343,12 +343,12 @@ function DayCell({
   onClick?: () => void;
 }) {
   const base =
-    "flex flex-col gap-gm-0_5 p-gm-2 bg-surface-elevated min-h-[4.5rem] transition-colors";
+    "flex flex-col gap-gm-1 p-gm-2_5 bg-surface-elevated min-h-[5.5rem] transition-colors";
 
   if (!cell.hasReport) {
     return (
       <div className={`${base} text-text-muted/30 select-none`}>
-        <span className="text-gm-xs tabular-nums">{cell.day}</span>
+        <span className="text-gm-sm tabular-nums">{cell.day}</span>
       </div>
     );
   }
@@ -368,7 +368,7 @@ function DayCell({
     >
       {/* 日期数字 */}
       <span
-        className={`text-gm-sm font-semibold tabular-nums leading-none ${
+        className={`text-gm-md font-semibold tabular-nums leading-none ${
           isToday ? "text-brand" : "text-text"
         }`}
       >
@@ -378,10 +378,10 @@ function DayCell({
       {/* 元信息：行数 + 文件大小 */}
       {cell.item && (
         <div className="flex flex-col gap-gm-0_5 mt-auto">
-          <span className="text-gm-2xs text-text-muted leading-none">
+          <span className="text-gm-xs text-text-secondary leading-none">
             {cell.item.lines} 行
           </span>
-          <span className="text-gm-2xs text-text-muted/60 leading-none">
+          <span className="text-gm-xs text-text-muted leading-none">
             {fmtBytes(cell.item.size_bytes)}
           </span>
         </div>
