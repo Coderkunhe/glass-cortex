@@ -10,7 +10,17 @@
  */
 
 import { useState, useEffect, useMemo } from "react";
-import { RiLockLine, RiArrowRightLine } from "@remixicon/react";
+import {
+  RiLockLine,
+  RiArrowRightLine,
+  RiCalendarLine,
+  RiArticleLine,
+  RiFileListLine,
+  RiBookOpenLine,
+  RiDashboardLine,
+  RiBookReadLine,
+  RiFileLine,
+} from "@remixicon/react";
 import { api } from "@/lib/api/client";
 import { fmtBytes, fmtDate } from "./utils";
 import type { DocListItem } from "@/lib/api/types";
@@ -33,7 +43,7 @@ const GROUP_ORDER: Record<string, number> = {
 
 interface SummaryCardConfig {
   groupKey: string;
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   targetTab: AdminTab;
   buttonLabel: string;
@@ -43,7 +53,7 @@ interface SummaryCardConfig {
 const SUMMARY_CARD_CONFIGS: Record<string, SummaryCardConfig> = {
   "日报": {
     groupKey: "日报",
-    icon: "📅",
+    icon: <RiCalendarLine size={20} />,
     title: "工作日报",
     targetTab: "daily",
     buttonLabel: "查看日历",
@@ -57,7 +67,7 @@ const SUMMARY_CARD_CONFIGS: Record<string, SummaryCardConfig> = {
   },
   "需求日志": {
     groupKey: "需求日志",
-    icon: "📋",
+    icon: <RiArticleLine size={20} />,
     title: "需求日志",
     targetTab: "requirements-log",
     buttonLabel: "查看全部",
@@ -350,12 +360,12 @@ function SummaryCard({
 // ═══════════════════════════════════════════════════════════════════════
 
 /** 分组→图标映射 */
-const GROUP_ICON: Record<string, string> = {
-  "核心文档": "📋",
-  "经验库": "📖",
-  "治理看板": "📊",
-  "参考手册": "📚",
-  "其他": "📄",
+const GROUP_ICON: Record<string, React.ReactNode> = {
+  "核心文档": <RiFileListLine size={18} />,
+  "经验库": <RiBookOpenLine size={18} />,
+  "治理看板": <RiDashboardLine size={18} />,
+  "参考手册": <RiBookReadLine size={18} />,
+  "其他": <RiFileLine size={18} />,
 };
 
 function DocFileCard({
@@ -365,7 +375,7 @@ function DocFileCard({
   item: DocListItem;
   onClick: () => void;
 }) {
-  const icon = GROUP_ICON[item.group] ?? "📄";
+  const icon = GROUP_ICON[item.group] ?? <RiFileLine size={18} />;
   const displayName = item.name.replace(/\.md$/, "");
 
   return (

@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { RiArticleLine } from "@remixicon/react";
 import { api } from "@/lib/api/client";
 import { fmtBytes, fmtDate } from "./utils";
 import type { DocListItem } from "@/lib/api/types";
@@ -194,8 +195,8 @@ export default function RequirementsLogPanel({
         >
           <div className="flex items-center gap-gm-4 px-gm-5 py-gm-4">
             {/* 图标 */}
-            <span className="shrink-0 text-gm-2xl group-hover:scale-110 transition-transform">
-              📋
+            <span className="shrink-0 group-hover:scale-110 transition-transform">
+              <RiArticleLine size={20} />
             </span>
             {/* 内容 */}
             <span className="flex-1 min-w-0">
