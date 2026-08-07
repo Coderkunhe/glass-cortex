@@ -1538,3 +1538,38 @@ pre:focus-within .gm-code-copy-btn {
   background-size: 200% 100%;
   animation: gm-shimmer 2s ease-in-out infinite;
 }
+
+/* ═══ Phase 68 B12 — DocViewer 文档阅读排版（serif 模式） ═══
+ *
+ * 仅在 .prose.font-serif 下生效（即 DocViewer 文档正文）。
+ * chat-prose 不受影响，保持紧凑的 sans-serif 聊天风格。
+ * 覆盖 :is(.chat-prose, .prose) 中部分紧凑默认值，
+ * 为长文阅读提供更宽松的行高与段间距。
+ *
+ * 特异性 0,2,0 (双类) > 0,1,1 (:is 单类)，确保覆盖生效。
+ */
+
+.prose.font-serif {
+  line-height: 1.8;
+}
+
+.prose.font-serif p {
+  margin-bottom: 0.8em;
+}
+
+/* 标题在 serif 阅读模式下需要更大的顶部间距 */
+.prose.font-serif h2 {
+  margin-top: 1.5em;
+  margin-bottom: 0.6em;
+}
+
+.prose.font-serif h3 {
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+}
+
+.prose.font-serif li {
+  margin: 0.25em 0;
+}
+
+/* 代码块/表格/引用块保留紧凑样式（功能性内容不适用宽松阅读排版） */

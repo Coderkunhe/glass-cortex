@@ -72,8 +72,8 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ activeTab, onTab }: AdminSidebarProps) {
   return (
-    <aside className="w-52 xl:w-56 shrink-0 border-r border-border bg-surface-lowered hidden lg:block">
-      <div className="sticky top-[56px] max-h-[calc(100vh-56px)] overflow-y-auto py-gm-3">
+    <aside className="w-[var(--spacing-sidebar-w)] shrink-0 border-r border-border bg-surface-lowered hidden lg:block h-full overflow-y-auto">
+      <div className="py-gm-3">
         <nav>
           {MENU_GROUPS.map((group) => (
             <SidebarGroup
@@ -105,45 +105,50 @@ function SidebarGroup({
   const [expanded, setExpanded] = useState(true);
 
   return (
-    <div className="mb-gm-1">
+    <div className="mb-gm-2">
       {/* 分组标题 — 可点击折叠 */}
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center gap-gm-1.5 px-gm-3 py-gm-1.5 text-left hover:bg-surface-alt/30 transition-colors"
+        className="w-full flex items-center gap-gm-1.5 px-gm-3 py-gm-1.5 text-left hover:bg-surface-alt/30 transition-colors rounded-gm-sm"
       >
         <span className="text-gm-icon text-text-muted transition-transform duration-200">
           {expanded ? <RiArrowDownSLine size={14} /> : <RiArrowRightSLine size={14} />}
         </span>
-        <span className="text-gm-xs font-semibold text-text-muted uppercase tracking-wide">
+        <span className="text-gm-xs font-semibold text-text-muted tracking-wide">
           {group.group}
         </span>
       </button>
 
-      {/* 菜单项列表 */}
-      {expanded && (
-        <ul className="mt-gm-0.5">
-          {group.items.map((item) => {
-            const isActive = activeTab === item.key;
-            return (
-              <li key={item.key}>
-                <button
-                  onClick={() => onTab(item.key)}
-                  className={`w-full flex items-center gap-gm-2.5 px-gm-3 py-gm-2 text-left text-gm-sm transition-colors border-l-2 ${
-                    isActive
-                      ? "border-primary text-primary bg-primary/8 font-medium"
-                      : "border-transparent text-text-secondary hover:text-text hover:bg-surface-alt/50"
-                  }`}
-                >
-                  <span className={isActive ? "text-primary" : "text-text-muted"}>
-                    {item.icon}
-                  </span>
-                  <span>{item.label}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      {/* 菜单项列表 — CSS Grid 折叠动画 */}
+      <div
+        className="grid transition-[grid-template-rows] duration-200 ease-out"
+        style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}
+      >
+        <div className="overflow-hidden">
+          <ul className="mt-gm-0.5">
+            {group.items.map((item) => {
+              const isActive = activeTab === item.key;
+              return (
+                <li key={item.key}>
+                  <button
+                    onClick={() => onTab(item.key)}
+                    className={`w-full flex items-center gap-gm-2.5 px-gm-3 py-gm-2 text-left text-gm-sm transition-colors border-l-2 ${
+                      isActive
+                        ? "border-primary text-primary bg-primary/8 font-medium rounded-r-gm-sm"
+                        : "border-transparent text-text-secondary hover:text-text hover:bg-surface-alt/50 rounded-r-gm-sm"
+                    }`}
+                  >
+                    <span className={isActive ? "text-primary" : "text-text-muted"}>
+                      {item.icon}
+                    </span>
+                    <span>{item.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }

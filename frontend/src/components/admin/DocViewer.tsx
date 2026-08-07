@@ -213,7 +213,7 @@ export default function DocViewer({
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* TOC 侧栏 */}
         {hasToc && !loading && !error && (
-          <aside className="w-52 xl:w-56 shrink-0 border-r border-border bg-surface-lowered/30 overflow-y-auto">
+          <aside className="w-[var(--spacing-sidebar-w)] shrink-0 border-r border-border bg-surface-lowered/30 overflow-y-auto">
             <div className="p-gm-3">
               <p className="text-gm-xs font-semibold text-text-muted mb-gm-2 px-gm-1 sticky top-0 bg-surface-lowered/30 backdrop-blur py-gm-1 -mx-gm-1 px-gm-2 z-10">
                 目录
@@ -222,12 +222,12 @@ export default function DocViewer({
                 <ul className="space-y-gm-0.5">
                   {headings.map((h) => {
                     const isActive = activeId === h.id;
-                    const indent = h.level === 1 ? "pl-gm-1" : h.level === 2 ? "pl-gm-4" : "pl-gm-7";
+                    const indent = h.level === 1 ? "pl-gm-2" : h.level === 2 ? "pl-gm-5" : "pl-gm-8";
                     return (
                       <li key={h.id}>
                         <button
                           onClick={() => scrollToHeading(h.id)}
-                          className={`w-full text-left text-gm-xs py-gm-1 pr-gm-1 rounded-gm-xs transition-colors border-l-2 ${indent} ${
+                          className={`w-full text-left text-gm-sm py-gm-1 pr-gm-1 rounded-gm-xs transition-colors border-l-2 ${indent} ${
                             isActive
                               ? "border-primary text-primary bg-primary/8 font-medium"
                               : "border-transparent text-text-muted hover:text-text hover:bg-surface-alt/50"
@@ -270,13 +270,7 @@ export default function DocViewer({
             <div
               ref={docBodyRef}
               style={{ fontSize: FONT_SIZE_MAP[fontSize] }}
-              className="prose dark:prose-invert max-w-3xl mx-auto
-                prose-headings:scroll-mt-6
-                prose-p:leading-relaxed
-                prose-a:text-brand prose-a:no-underline hover:prose-a:underline
-                prose-code:rounded prose-code:px-gm-1
-                prose-pre:border prose-pre:border-border prose-pre:bg-surface-lowered
-                prose-img:rounded-gm-lg"
+              className="prose max-w-3xl mx-auto font-serif"
               dangerouslySetInnerHTML={{ __html: renderMarkdown(content.content) }}
             />
           )}

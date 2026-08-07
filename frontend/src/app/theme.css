@@ -89,4 +89,5 @@
   /* ── 字体 ── */
   --font-sans: var(--font-geist-sans, system-ui, -apple-system, sans-serif);
   --font-mono: var(--font-geist-mono, ui-monospace, monospace);
+  --font-serif: "Songti SC", "STSong", "SimSun", "Noto Serif SC", Georgia, ui-serif, serif;
 }
