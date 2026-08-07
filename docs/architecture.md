@@ -483,6 +483,18 @@
 | 前端 — Admin 侧栏菜单布局 | ✅ 完成 | 2026-08-07 | `frontend/src/components/admin/AdminSidebar.tsx` — 可折叠分组 + 二级菜单 · `AdminTab` 类型 · 侧栏 active 指示条（border-l-2 border-primary）— Phase 68 B7 |
 | 前端 — Admin 组件拆分 | ✅ 完成 | 2026-08-07 | `components/admin/` 目录 — HealthPanel + DocsPanel + DocViewer + PasswordGate + utils — AdminShell 925→159 行编排层 — Phase 68 B7 |
 | 前端 — Admin 侧栏快捷入口 | ✅ 完成 | 2026-08-07 | `AdminTab` 扩展 daily/requirements-log · `handleTabChange` 快捷加载 · 日报/需求日志一键直达 DocViewer — Phase 68 B8 |
+| 前端 — DocViewer Mermaid 水合 | ✅ 完成 | 2026-08-07 | `AdminShell.tsx` 内 `createRoot` + `MermaidDiagram` 管线 — sentinel 扫描 → base64 解码 → createRoot 动态挂载 · ChatMessage.tsx:61-93 完全同构 — Phase 68 B5 |
+| 前端 — DocViewer TOC 导航 | ✅ 完成 | 2026-08-07 | `renderMarkdown.ts` 标题 ID 生成 · DocViewer 两栏布局（sticky TOC + 正文）· IntersectionObserver 激活追踪 · 点击平滑滚动 — Phase 68 B6 |
+| 前端 — Admin 图标对齐 + Mermaid 修复 | ✅ 完成 | 2026-08-07 | `AdminSidebar.tsx` 图标 18→16px · `DocViewer.tsx` `.gm-mermaid-block[data-chart]` 属性过滤 + cleanup 卸载 · `ChatMessage.tsx` mermaid 清理管线同步 — Phase 68 B9 |
+| 前端 — DocViewer 独立滚动 + 标题去重 | ✅ 完成 | 2026-08-07 | `AdminShell.tsx` `<main>` flex 高度链 + `min-h-0` 解锁滚动 · `DocViewer.tsx` TOC/正文各自 overflow-y-auto · `renderMarkdown.ts` 标题 ID 去重 — Phase 68 B10 |
+| 前端 — DocViewer 字号 + hydration 修复 | ✅ 完成 | 2026-08-07 | prose 标题/正文/代码块字号调节 · Script 标签 warning 修复 — Phase 68 B11 |
+| 前端 — Admin UI 美化 | ✅ 完成 | 2026-08-07 | 菜单字体/间距/折叠样式 · 目录项字体/间距 · 文档排版 · 侧栏/目录/正文 三级字体搭配拉通 — Phase 68 B12 |
+| 前端 — 日报列表修复 | ✅ 完成 | 2026-08-07 | `AdminShell.tsx` 移除 daily tab 硬编码今日日报 · `DocsPanel.tsx` 新增 `filterGroup` prop 按分组筛选 — Phase 68 B13 |
+| 前端 — 日报日历面板 | ✅ 完成 | 2026-08-07 | `DailyPanel.tsx` — 纯 JS 日期计算 · 月网格 · 中文周标题 · DayCell（有日报/无日报/今天/空白）四态 · 骨架屏 — Phase 68 B14 |
+| API — Admin 文档概要提取 | ✅ 完成 | 2026-08-07 | `_extract_summary()` 提取 .md 首段 ≤120 字符概要 · `list_docs()` summary 字段 · `DocListItem.summary?: string` — Phase 68 B15 |
+| 前端 — 文档清单卡片化 | ✅ 完成 | 2026-08-07 | `DocFileRow` → `DocFileCard` — 图标 + 标题 + 分组徽章 + 概要 + 元信息 · 2 列网格 · hover 态 · scroll 修复 — Phase 68 B15 |
+| 前端 — 需求日志统一列表 | ✅ 完成 | 2026-08-07 | `RequirementsLogPanel.tsx` — 当前日志卡片（brand 边框 + "当前"徽章）+ 历史归档表（Phase 倒序）· 四态 · `filterGroup: string \| string[]` 扩展 — Phase 68 B16 |
+| 前端 — DocsPanel 摘要卡片 | ✅ 完成 | 2026-08-07 | `SUMMARY_CARD_CONFIGS` + `renderSummaryCard` — 日报/需求日志摘要卡片（图标+标题+概要+统计行+跳转按钮）替代目录树 — Phase 68 B17 |
 
 ## 架构决策记录
 
