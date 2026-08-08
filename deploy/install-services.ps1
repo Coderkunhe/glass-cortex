@@ -31,14 +31,16 @@ Write-Host "=== GlassCortex Windows Service Registration ===" -ForegroundColor C
 
 # ── 环境预检 ──
 if (!(Test-Path $nssm)) {
-    Write-Error "NSSM not found at $nssm --- download from https://nssm.cc/download"
+    throw "NSSM not found at $nssm --- download from https://nssm.cc/download"
 }
 if (!(Test-Path $PythonPath)) {
-    Write-Error "Python venv not found at $PythonPath --- run deploy.ps1 first"
+    throw "Python venv not found at $PythonPath --- run deploy.ps1 first"
 }
 $standaloneServer = "$AppRoot\frontend\.next\standalone\server.js"
-if (!(Test-Path $standaloneServer)) {
-    Write-Error "Next.js standalone build not found at $standaloneServer --- run: cd $AppRoot\frontend && npm run build"
+$hasFrontend = Test-Path $standaloneServer
+if (!$hasFrontend) {
+    Write-Warning "Next.js standalone build not found --- skipping GlassCortexWeb service registration"
+    Write-Warning "  To build frontend: cd $AppRoot\frontend && npm run build (requires Node.js)"
 }
 
 # ── 辅助函数 ──
@@ -110,27 +112,33 @@ Install-Service `
 # ── 2. GlassCortex Web (Next.js standalone) ──
 # 使用 Next.js standalone 产物直接运行 server.js，不依赖 node_modules 或 next 二进制
 # Ref: https://nextjs.org/docs/pages/api-reference/config/next-config-js/output#automatically-copying-traced-files
-Install-Service `
-    -Name "GlassCortexWeb" `
-    -DisplayName "GlassCortex Web (Next.js standalone)" `
-    -Path $NodePath `
-    -Args "$AppRoot\frontend\.next\standalone\server.js" `
-    -Dir "$AppRoot\frontend\.next\standalone" `
-    -EnvVars @{
-        "PORT" = "3000"
-        "HOSTNAME" = "127.0.0.1"
-        "NODE_ENV" = "production"
-    }
+if ($hasFrontend) {
+    Install-Service `
+        -Name "GlassCortexWeb" `
+        -DisplayName "GlassCortex Web (Next.js standalone)" `
+        -Path $NodePath `
+        -Args "$AppRoot\frontend\.next\standalone\server.js" `
+        -Dir "$AppRoot\frontend\.next\standalone" `
+        -EnvVars @{
+            "PORT" = "3000"
+            "HOSTNAME" = "127.0.0.1"
+            "NODE_ENV" = "production"
+        }
+}
 
 # ── 启动服务 ──
 Write-Host "`nStarting services..." -ForegroundColor Cyan
 & $nssm start GlassCortexAPI 2>&1 | Out-Null
-& $nssm start GlassCortexWeb 2>&1 | Out-Null
+if ($hasFrontend) {
+    & $nssm start GlassCortexWeb 2>&1 | Out-Null
+}
 Start-Sleep -Seconds 3
 
 # ── 验证 ──
 Write-Host "`n=== Service Status ===" -ForegroundColor Cyan
-foreach ($svc in @("GlassCortexAPI", "GlassCortexWeb")) {
+$servicesToCheck = @("GlassCortexAPI")
+if ($hasFrontend) { $servicesToCheck += "GlassCortexWeb" }
+foreach ($svc in $servicesToCheck) {
     $s = Get-Service -Name $svc -ErrorAction SilentlyContinue
     if ($s) {
         $color = if ($s.Status -eq "Running") { "Green" } else { "Red" }

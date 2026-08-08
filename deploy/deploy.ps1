@@ -102,7 +102,7 @@ if ($SkipClone) {
 }
 
 if (!(Test-Path $AppRoot)) {
-    Write-Error "App root not found: $AppRoot"
+    throw "App root not found: $AppRoot"
 }
 
 # ═══════════════════════════════════════════════════════
@@ -208,7 +208,7 @@ if ($SkipBuild) {
     $nodeVersion = & node --version 2>$null
     if (!$nodeVersion) {
         Pop-Location
-        Write-Error "Node.js not found --- install from https://nodejs.org/ or use -SkipBuild"
+        throw "Node.js not found --- install from https://nodejs.org/ or use -SkipBuild"
     }
     Write-Host "  Node.js $nodeVersion" -ForegroundColor Green
 
@@ -224,7 +224,7 @@ if ($SkipBuild) {
     npm run build
     if ($LASTEXITCODE -ne 0) {
         Pop-Location
-        Write-Error "Frontend build failed --- check output above"
+        throw "Frontend build failed --- check output above"
     }
 
     # 验证 standalone 产物
@@ -233,7 +233,7 @@ if ($SkipBuild) {
         Write-Host "  Standalone output: $(Resolve-Path $standaloneDir)" -ForegroundColor Green
     } else {
         Pop-Location
-        Write-Error "Standalone output not found --- check next.config.ts output setting"
+        throw "Standalone output not found --- check next.config.ts output setting"
     }
 
     # 拷贝 static 目录到 standalone（Next.js standalone 模式需要手动处理）
@@ -267,6 +267,9 @@ Write-Host "`n[5/6] Registering Windows Services..." -ForegroundColor Cyan
 $installScript = "$AppRoot\deploy\install-services.ps1"
 if (Test-Path $installScript) {
     & $installScript -AppRoot $AppRoot
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "install-services.ps1 reported errors --- check output above"
+    }
 } else {
     Write-Warning "install-services.ps1 not found --- please register services manually"
 }
@@ -297,12 +300,12 @@ for ($i = 1; $i -le 12; $i++) {
 if ($apiHealthy) {
     Write-Host "  API   /health  -> 200 OK" -ForegroundColor Green
 } else {
-    Write-Warning "  API   /health  -> not responding after 60s --- check C:\apps\glasscortex\logs\GlassCortexAPI-stderr.log"
+    Write-Warning "  API   /health  -> not responding after 60s --- check $AppRoot\logs\GlassCortexAPI-stderr.log"
 }
 if ($webHealthy) {
     Write-Host "  Web   /        -> 200 OK" -ForegroundColor Green
 } else {
-    Write-Warning "  Web   /        -> not responding after 60s --- check C:\apps\glasscortex\logs\GlassCortexWeb-stderr.log"
+    Write-Warning "  Web   /        -> not responding after 60s --- check $AppRoot\logs\GlassCortexWeb-stderr.log"
 }
 
 # ═══════════════════════════════════════════════════════
