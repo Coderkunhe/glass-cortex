@@ -385,7 +385,7 @@ describe("DocsPanel", () => {
       await waitFor(() => {
         expect(screen.getByTestId("docs-search-input")).toBeInTheDocument();
       });
-      expect(screen.getByPlaceholderText("过滤文档...")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("搜索文档...")).toBeInTheDocument();
     });
 
     it("filters documents by name when typing in search", async () => {

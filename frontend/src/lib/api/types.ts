@@ -114,4 +114,5 @@ export type {
   DocFreshness,
   DocListItem,
   DocContentResponse,
+  DocSearchResult,
 } from "./types-admin";

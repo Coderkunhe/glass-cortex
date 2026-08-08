@@ -56,6 +56,7 @@ import type {
   AdminHealthResponse,
   DocListItem,
   DocContentResponse,
+  DocSearchResult,
 } from "./types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -543,4 +544,8 @@ export const api = {
   /** Admin 获取单个文档 Markdown 原始内容 */
   getDocContent: (name: string) =>
     request<DocContentResponse>(`/admin/docs/${encodeURIComponent(name)}`),
+
+  /** Admin 全局文档全文搜索 (GET /admin/search?q=) */
+  searchDocs: (q: string) =>
+    request<DocSearchResult[]>(`/admin/search?q=${encodeURIComponent(q)}`),
 };

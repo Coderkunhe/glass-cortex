@@ -90,18 +90,19 @@ export default function AdminSidebar({ activeTab, onTab, mobile = false }: Admin
         </nav>
       </div>
 
-      {/* Cmd+K 快捷键提示 — 固定在侧栏底部 */}
+      {/* Cmd+K 快捷键提示 — 固定在侧栏底部，斜体提示风格 */}
       <div
-        className="shrink-0 border-t border-border px-gm-3 py-gm-2.5"
+        className="shrink-0 border-t border-border px-gm-3 py-gm-3 bg-surface-alt/20"
         data-testid="sidebar-search-hint"
       >
-        <div className="flex items-center gap-gm-2 text-gm-sm text-text-muted/70">
-          <RiSearchLine size={14} className="shrink-0" />
-          <span>搜索文档</span>
-          <kbd className="ml-auto bg-surface-elevated rounded-gm-xs px-gm-1.5 py-0.5 font-mono text-gm-xs border border-border text-text-muted/50">
+        <p className="text-gm-base text-text-muted italic flex items-center gap-gm-2">
+          <RiSearchLine size={16} className="shrink-0" />
+          <span>按</span>
+          <kbd className="bg-surface-elevated rounded-gm-xs px-gm-1.5 py-0.5 font-mono text-gm-sm border border-border text-text">
             ⌘K
           </kbd>
-        </div>
+          <span>搜索全部文档</span>
+        </p>
       </div>
     </aside>
   );

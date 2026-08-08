@@ -13,7 +13,7 @@
  * @module components/admin/DocViewer
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { createRoot } from "react-dom/client";
 import { RiArrowLeftLine, RiFontSize, RiSearchLine, RiArrowUpSLine, RiArrowDownSLine, RiCloseLine } from "@remixicon/react";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
@@ -131,6 +131,16 @@ function clearHighlights(root: Element, marks: HTMLElement[]): void {
   root.normalize();
 }
 
+// ── 常量 ──────────────────────────────────────────────────────────────
+
+/** 字号 → rem 值静态映射（直接用于 inline style，不依赖 Tailwind 类名生成） */
+const FONT_SIZE_MAP: Record<string, string> = {
+  sm: "0.875rem", // 14px — 等效 prose-sm
+  md: "1rem", // 16px — 等效 prose-base
+  lg: "1.125rem", // 18px — 等效 prose-lg
+  xl: "1.25rem", // 20px — 等效 prose-xl
+};
+
 // ── Props ─────────────────────────────────────────────────────────────
 
 interface DocViewerProps {
@@ -140,6 +150,34 @@ interface DocViewerProps {
   error: string | null;
   onBack: () => void;
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// ProseContent — memo 子组件，隔离搜索 state 变更与 prose 重渲染
+//
+//   dangerouslySetInnerHTML 在任何重渲染时都会重置 DOM →
+//   抹掉 highlightInDOM 插入的 <mark> 元素。将 prose 提取为
+//   React.memo 组件，仅 content/fontSize 变更时重渲染，searchQuery
+//   / matchCount 变更不影响 prose DOM 稳定。
+// ═══════════════════════════════════════════════════════════════════════
+
+const ProseContent = memo(function ProseContent({
+  content: docContent,
+  fontSize: fs,
+  docBodyRef: bodyRef,
+}: {
+  content: DocContentResponse;
+  fontSize: string;
+  docBodyRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  return (
+    <div
+      ref={bodyRef}
+      style={{ fontSize: FONT_SIZE_MAP[fs] }}
+      className="prose max-w-3xl mx-auto font-serif"
+      dangerouslySetInnerHTML={{ __html: renderMarkdown(docContent.content) }}
+    />
+  );
+});
 
 export default function DocViewer({
   item,
@@ -161,28 +199,21 @@ export default function DocViewer({
     "md",
   );
 
-  /** 字号 → rem 值静态映射（直接用于 inline style，不依赖 Tailwind 类名生成） */
-  const FONT_SIZE_MAP: Record<string, string> = {
-    sm: "0.875rem", // 14px — 等效 prose-sm
-    md: "1rem", // 16px — 等效 prose-base
-    lg: "1.125rem", // 18px — 等效 prose-lg
-    xl: "1.25rem", // 20px — 等效 prose-xl
-  };
-
   // ── TOC state ──
   const [headings, setHeadings] = useState<TocHeading[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   // ── 文档内搜索 state ──
-  //     matchCount / currentMatch 使用 ref 而非 state，避免 setState
-  //     触发重渲染 → dangerouslySetInnerHTML 重置 → 抹掉 mark 元素。
-  const [searchActive, setSearchActive] = useState(false);
+  //     matchCount / currentMatch 双轨：ref 避免 dangerouslySetInnerHTML
+  //     重渲染抹掉 mark 元素；state 驱动导航按钮显示/隐藏（按钮在
+  //     prose 外部，重渲染安全）。
   const [searchQuery, setSearchQuery] = useState("");
+  const [matchCount, setMatchCount] = useState(0);
+  const [currentMatch, setCurrentMatch] = useState(0);
   const matchCountRef = useRef(0);
   const currentMatchRef = useRef(0); // 1-indexed display
   const searchMarksRef = useRef<HTMLElement[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const matchDisplayRef = useRef<HTMLSpanElement>(null);
 
   // ── Hydrate mermaid blocks injected by renderMarkdown ──
   useEffect(() => {
@@ -290,22 +321,6 @@ export default function DocViewer({
     searchMarksRef.current = [];
   }
 
-  /** 同步 ref 值到匹配显示 DOM 元素 — 操作 ref + DOM，不依赖 state */
-  const updateMatchDisplay = useCallback((): void => {
-    const el = matchDisplayRef.current;
-    if (!el) return;
-    if (matchCountRef.current > 0) {
-      el.textContent = `${currentMatchRef.current} / ${matchCountRef.current}`;
-      el.setAttribute("data-match-state", "found");
-    } else if (searchQuery.trim()) {
-      el.textContent = "无匹配";
-      el.setAttribute("data-match-state", "empty");
-    } else {
-      el.textContent = "";
-      el.removeAttribute("data-match-state");
-    }
-  }, [searchQuery]);
-
   /** 导航到上一个/下一个匹配项 */
   const navigateMatch = useCallback(
     (direction: 1 | -1) => {
@@ -323,39 +338,15 @@ export default function DocViewer({
             : cur - 1;
 
       currentMatchRef.current = newIdx;
+      setCurrentMatch(newIdx);
       focusMatch(marks, newIdx - 1);
-      updateMatchDisplay();
     },
-    [updateMatchDisplay],
+    [],
   );
 
-  // ── 文档内搜索：激活时自动聚焦输入框 ──
+  // ── 文档内搜索：搜索词/内容变化 → 高亮匹配项 ──
   useEffect(() => {
-    if (searchActive) {
-      // 打开搜索时重置状态 — 模态类交互的标准模式，与 SearchModal L92-94 一致
-      /* eslint-disable react-hooks/set-state-in-effect */
-      setSearchQuery("");
-      /* eslint-enable react-hooks/set-state-in-effect */
-      matchCountRef.current = 0;
-      currentMatchRef.current = 0;
-      updateMatchDisplay();
-      clearHighlightsForCurrent();
-      const id = requestAnimationFrame(() => searchInputRef.current?.focus());
-      return () => cancelAnimationFrame(id);
-    } else {
-      // 关闭搜索时清除高亮
-      clearHighlightsForCurrent();
-      setSearchQuery("");
-      matchCountRef.current = 0;
-      currentMatchRef.current = 0;
-      updateMatchDisplay();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchActive]);
-
-  // ── 文档内搜索：搜索词变化 → 高亮匹配项 ──
-  useEffect(() => {
-    if (!searchActive || !docBodyRef.current) return;
+    if (!docBodyRef.current) return;
 
     // 清除上次高亮
     clearHighlightsForCurrent();
@@ -364,23 +355,27 @@ export default function DocViewer({
     if (!trimmed) {
       matchCountRef.current = 0;
       currentMatchRef.current = 0;
-      updateMatchDisplay();
+      /* eslint-disable-next-line react-hooks/set-state-in-effect */
+      setMatchCount(0);
+       
+      setCurrentMatch(0);
       return;
     }
 
     const marks = highlightInDOM(docBodyRef.current, trimmed);
     searchMarksRef.current = marks;
     matchCountRef.current = marks.length;
+    currentMatchRef.current = marks.length > 0 ? 1 : 0;
+     
+    setMatchCount(marks.length);
+     
+    setCurrentMatch(marks.length > 0 ? 1 : 0);
 
     if (marks.length > 0) {
-      currentMatchRef.current = 1;
       focusMatch(marks, 0);
-    } else {
-      currentMatchRef.current = 0;
     }
-    updateMatchDisplay();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, content, searchActive]);
+     
+  }, [searchQuery, content]);
 
   // ── TOC 点击 → 平滑滚动到标题 ──
   const scrollToHeading = useCallback((id: string) => {
@@ -410,6 +405,71 @@ export default function DocViewer({
             {item.path} · {item.lines} 行 · {fmtBytes(item.size_bytes)}
           </p>
         </div>
+        {/* 文档内搜索 — 常驻，放在字号调节之前 */}
+        <div
+          className="flex items-center gap-gm-1.5 rounded-gm-md border border-border/60
+                      bg-surface-lowered/50 px-gm-2.5 py-gm-1
+                      focus-within:border-primary/30 focus-within:bg-surface-elevated
+                      transition-colors"
+        >
+          <RiSearchLine size={14} className="text-text-muted shrink-0" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            className="w-28 bg-transparent text-gm-sm text-text
+                       placeholder:text-text-muted/50 outline-none"
+            placeholder="查找..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (e.shiftKey) {
+                  navigateMatch(-1);
+                } else {
+                  navigateMatch(1);
+                }
+              }
+            }}
+            data-testid="doc-search-input"
+          />
+          {/* 匹配导航 — 仅在有匹配时显示（state 驱动，prose 外安全重渲染） */}
+          {matchCount > 0 && (
+            <>
+              <span
+                className="text-gm-xs text-text-muted/70 tabular-nums shrink-0"
+                data-testid="doc-search-match-count"
+              >
+                {currentMatch} / {matchCount}
+              </span>
+              <button
+                onClick={() => navigateMatch(-1)}
+                className="rounded-gm-sm p-gm-0.5 text-text-muted hover:text-text hover:bg-surface-alt transition-colors shrink-0"
+                aria-label="上一个匹配"
+                data-testid="doc-search-prev"
+              >
+                <RiArrowUpSLine size={14} />
+              </button>
+              <button
+                onClick={() => navigateMatch(1)}
+                className="rounded-gm-sm p-gm-0.5 text-text-muted hover:text-text hover:bg-surface-alt transition-colors shrink-0"
+                aria-label="下一个匹配"
+                data-testid="doc-search-next"
+              >
+                <RiArrowDownSLine size={14} />
+              </button>
+            </>
+          )}
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="rounded-gm-sm p-gm-0.5 text-text-muted hover:text-text hover:bg-surface-alt transition-colors shrink-0"
+              aria-label="清除搜索"
+            >
+              <RiCloseLine size={14} />
+            </button>
+          )}
+        </div>
         {/* 字号调节 */}
         <button
           onClick={() =>
@@ -423,81 +483,7 @@ export default function DocViewer({
         >
           <RiFontSize className="text-gm-icon" />
         </button>
-        {/* 文档内搜索 */}
-        <button
-          onClick={() => setSearchActive((v) => !v)}
-          className={`rounded-gm-sm p-gm-1 transition-colors shrink-0 ${
-            searchActive
-              ? "text-primary bg-primary/8"
-              : "text-text-muted hover:text-text hover:bg-surface-alt"
-          }`}
-          aria-label="文档内搜索"
-          title="文档内搜索 (Cmd+F)"
-        >
-          <RiSearchLine className="text-gm-icon" />
-        </button>
       </div>
-
-      {/* 搜索栏 — 激活时展示 */}
-      {searchActive && (
-        <div className="flex items-center gap-gm-2 px-gm-5 py-gm-2 border-b border-border bg-surface-lowered/30">
-          <RiSearchLine size={14} className="text-text-muted shrink-0" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            className="flex-1 bg-transparent text-gm-sm text-text
-                       placeholder:text-text-muted/50 outline-none"
-            placeholder="在文档中查找..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                if (e.shiftKey) {
-                  navigateMatch(-1);
-                } else {
-                  navigateMatch(1);
-                }
-              }
-            }}
-            data-testid="doc-search-input"
-          />
-          {/* 匹配计数 — ref 驱动，避免 setState 触发 dangerouslySetInnerHTML 重渲染 */}
-          <span
-            ref={matchDisplayRef}
-            className="text-gm-xs text-text-muted/70 tabular-nums shrink-0"
-            data-testid="doc-search-match-count"
-          />
-          {/* 上下导航 */}
-          <button
-            onClick={() => navigateMatch(-1)}
-            className="rounded-gm-sm p-gm-0.5 text-text-muted hover:text-text hover:bg-surface-alt transition-colors shrink-0"
-            aria-label="上一个匹配"
-            data-testid="doc-search-prev"
-          >
-            <RiArrowUpSLine size={14} />
-          </button>
-          <button
-            onClick={() => navigateMatch(1)}
-            className="rounded-gm-sm p-gm-0.5 text-text-muted hover:text-text hover:bg-surface-alt transition-colors shrink-0"
-            aria-label="下一个匹配"
-            data-testid="doc-search-next"
-          >
-            <RiArrowDownSLine size={14} />
-          </button>
-          {/* 关闭按钮 */}
-          <button
-            onClick={() => setSearchActive(false)}
-            className="rounded-gm-sm p-gm-0.5 text-text-muted hover:text-text hover:bg-surface-alt transition-colors shrink-0"
-            aria-label="关闭搜索"
-            data-testid="doc-search-close"
-          >
-            <RiCloseLine size={14} />
-          </button>
-        </div>
-      )}
 
       {/* 文档内容区（TOC 侧栏 + 正文）— 各自独立滚动 */}
       <div className="flex flex-1 overflow-hidden min-h-0">
@@ -557,12 +543,7 @@ export default function DocViewer({
           )}
 
           {content && (
-            <div
-              ref={docBodyRef}
-              style={{ fontSize: FONT_SIZE_MAP[fontSize] }}
-              className="prose max-w-3xl mx-auto font-serif"
-              dangerouslySetInnerHTML={{ __html: renderMarkdown(content.content) }}
-            />
+            <ProseContent content={content} fontSize={fontSize} docBodyRef={docBodyRef} />
           )}
         </div>
       </div>

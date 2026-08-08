@@ -5,9 +5,27 @@
  */
 
 import { describe, it, expect, afterEach, vi, beforeEach } from "vitest";
-import { render, screen, cleanup, fireEvent } from "@testing-library/react";
+import { render, screen, cleanup, fireEvent, act } from "@testing-library/react";
+import type { DocListItem, DocSearchResult as ApiDocSearchResult } from "@/lib/api/types";
+
+// ── Mock API client — 默认返回空（Fuse fallback） ─────────────────
+
+const { mockSearchDocs } = vi.hoisted(() => ({
+  mockSearchDocs: vi.fn(),
+}));
+
+vi.mock("@/lib/api/client", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api/client")>();
+  return {
+    ...actual,
+    api: {
+      ...actual.api,
+      searchDocs: (...args: unknown[]) => mockSearchDocs(...args),
+    },
+  };
+});
+
 import SearchModal from "@/components/admin/SearchModal";
-import type { DocListItem } from "@/lib/api/types";
 
 afterEach(cleanup);
 
@@ -76,6 +94,8 @@ function renderOpen(overrides?: Partial<{ docs: DocListItem[] }>) {
 beforeEach(() => {
   onClose.mockClear();
   onSelectDoc.mockClear();
+  mockSearchDocs.mockReset();
+  mockSearchDocs.mockResolvedValue([]); // 默认返回空 → Fuse fallback
 });
 
 // ── 渲染 ──────────────────────────────────────────────────────────────
@@ -141,6 +161,85 @@ describe("search", () => {
     // Browse mode restored — should have results again
     const results = screen.getByTestId("search-modal-results");
     expect(results.children.length).toBeGreaterThan(0);
+  });
+
+  it("falls back to Fuse when API returns empty results", () => {
+    mockSearchDocs.mockResolvedValue([]);
+    renderOpen();
+    const input = screen.getByTestId("search-modal-input");
+    fireEvent.change(input, { target: { value: "architecture" } });
+    // Fuse fallback — should find the architecture doc
+    expect(screen.getByText("architecture")).toBeInTheDocument();
+  });
+});
+
+// ── API 全文搜索 ─────────────────────────────────────────────────────
+
+describe("api full-text search", () => {
+  const apiResult: ApiDocSearchResult = {
+    path: "docs/pitfalls.md",
+    name: "pitfalls.md",
+    group: "经验库",
+    summary: "踩坑记录",
+    snippet: "上下文溢出\n模拟引擎支持三种策略...\n详见 architecture.md",
+    match_count: 3,
+  };
+
+  it("shows API search results with snippet", async () => {
+    vi.useFakeTimers();
+    mockSearchDocs.mockResolvedValue([apiResult]);
+    renderOpen();
+
+    const input = screen.getByTestId("search-modal-input");
+    fireEvent.change(input, { target: { value: "溢出" } });
+
+    // 跳过 200ms debounce → API resolve → React 批量更新
+    await act(() => vi.advanceTimersByTimeAsync(250));
+
+    // API 结果已渲染，同步断言（snippet 含换行，用 contains 匹配）
+    expect(screen.getByText("pitfalls")).toBeInTheDocument();
+    expect(screen.getByText("3 处匹配")).toBeInTheDocument();
+    expect(screen.getByText(/上下文溢出/)).toBeInTheDocument();
+
+    vi.useRealTimers();
+  });
+
+  it("shows loading spinner while API is fetching", () => {
+    vi.useFakeTimers();
+    // Promise never resolves — perpetually loading
+    mockSearchDocs.mockReturnValue(new Promise(() => {}));
+    renderOpen();
+
+    const input = screen.getByTestId("search-modal-input");
+    fireEvent.change(input, { target: { value: "溢出" } });
+
+    // After debounce, searching = true, spinner shown
+    act(() => vi.advanceTimersByTime(250));
+
+    // The spinner icon class should include 'animate-spin'
+    const spinnerSvg = document.querySelector(".animate-spin");
+    expect(spinnerSvg).not.toBeNull();
+
+    vi.useRealTimers();
+  });
+
+  it("keyboard Enter selects API result and closes modal", async () => {
+    vi.useFakeTimers();
+    mockSearchDocs.mockResolvedValue([apiResult]);
+    renderOpen();
+
+    const input = screen.getByTestId("search-modal-input");
+    fireEvent.change(input, { target: { value: "溢出" } });
+
+    await act(() => vi.advanceTimersByTimeAsync(250));
+    expect(screen.getByText("pitfalls")).toBeInTheDocument();
+
+    const card = screen.getByRole("dialog");
+    fireEvent.keyDown(card, { key: "Enter" });
+    expect(onSelectDoc).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    vi.useRealTimers();
   });
 });
 

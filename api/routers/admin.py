@@ -191,6 +191,76 @@ async def get_doc(name: str) -> dict[str, object]:
     }
 
 
+@router.get("/search")
+async def search_docs(q: str = "") -> list[dict[str, object]]:
+    """全局文档全文搜索。
+
+    遍历 docs/ 下所有 .md 文件（含 daily/、archive/ 子目录），对正文做
+    大小写不敏感全文匹配。按匹配行数降序排列，返回 snippet（首条匹配行
+    ± 前后一行上下文，最长 300 字符）。
+
+    设计意图：补充前端 Cmd+K SearchModal 的客户端 Fuse.js 搜索——Fuse 仅搜
+    文档名 + 摘要，此端点提供正文级全文检索。
+    """
+    query = q.strip()
+    if not query:
+        return []
+
+    query_lower = query.lower()
+    results: list[dict[str, object]] = []
+
+    # 收集所有 .md 文件（遍历 docs/ 目录树）
+    all_files: list[tuple[Path, str]] = []  # (Path, rel_path)
+    for dirpath, dirnames, filenames in os.walk(DOCS_DIR):
+        # 跳过隐藏目录
+        dirnames[:] = [d for d in dirnames if not d.startswith(".")]
+        for fname in filenames:
+            if fname.endswith(".md"):
+                fp = Path(dirpath) / fname
+                rel = str(fp.relative_to(PROJECT_ROOT))
+                all_files.append((fp, rel))
+
+    for filepath, rel_path in all_files:
+        try:
+            content = filepath.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+
+        lines_list = content.split("\n")
+        matched_indices: list[int] = []
+
+        for i, line in enumerate(lines_list):
+            if query_lower in line.lower():
+                matched_indices.append(i)
+
+        if not matched_indices:
+            continue
+
+        # snippet：首条匹配行 ± 1 行上下文
+        first = matched_indices[0]
+        ctx_start = max(0, first - 1)
+        ctx_end = min(len(lines_list), first + 2)
+        snippet = "\n".join(lines_list[ctx_start:ctx_end]).strip()
+        if len(snippet) > 300:
+            snippet = snippet[:297] + "..."
+
+        results.append(
+            {
+                "path": rel_path,
+                "name": filepath.name,
+                "group": _classify_path(rel_path, filepath.name),
+                "summary": _DOC_DESCRIPTIONS.get(filepath.name, ""),
+                "snippet": snippet,
+                "match_count": len(matched_indices),
+            }
+        )
+
+    # 按匹配行数降序
+    results.sort(key=lambda r: -int(str(r["match_count"])))
+
+    return results
+
+
 # ═══════════════════════════════════════════════════════════════════
 # helpers
 # ═══════════════════════════════════════════════════════════════════
@@ -217,6 +287,15 @@ _GROUP_MAP: dict[str, str] = {
 
 def _classify_group(filename: str) -> str:
     return _GROUP_MAP.get(filename, "其他")
+
+
+def _classify_path(rel_path: str, filename: str) -> str:
+    """根据文件路径判定分组（含子目录覆盖）。"""
+    if "/daily/" in rel_path or rel_path.startswith("docs/daily/"):
+        return "日报"
+    if "/archive/" in rel_path or rel_path.startswith("docs/archive/"):
+        return "需求日志"
+    return _classify_group(filename)
 
 
 def _count_lines(path: Path) -> int:

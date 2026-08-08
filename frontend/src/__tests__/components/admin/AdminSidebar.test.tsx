@@ -131,7 +131,7 @@ describe("AdminSidebar", () => {
       renderSidebar();
       const hint = screen.getByTestId("sidebar-search-hint");
       expect(hint).toBeInTheDocument();
-      expect(hint.textContent).toContain("搜索文档");
+      expect(hint.textContent).toContain("搜索全部文档");
       expect(hint.textContent).toContain("⌘K");
     });
 

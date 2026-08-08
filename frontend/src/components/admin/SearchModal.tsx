@@ -11,9 +11,10 @@
  */
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { RiSearchLine } from "@remixicon/react";
+import { RiSearchLine, RiLoader4Line } from "@remixicon/react";
 import { createDocSearchIndex, type DocSearchResult } from "@/lib/content/docSearch";
-import type { DocListItem } from "@/lib/api/types";
+import type { DocListItem, DocSearchResult as ApiDocSearchResult } from "@/lib/api/types";
+import { api } from "@/lib/api/client";
 
 // ── 常量 ──────────────────────────────────────────────────────────────
 
@@ -65,12 +66,15 @@ export default function SearchModal({
     return createDocSearchIndex(docs);
   }, [docs]);
 
-  // 搜索结果（空输入 → 浏览模式 top N，有输入 → Fuse 搜索）
-  const results: { item: DocListItem; score?: number }[] = useMemo(() => {
+  // ── API 全文搜索 state ──
+  const [apiResults, setApiResults] = useState<ApiDocSearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  // ── 搜索结果：空输入 → 浏览模式（Fuse top N），有输入 → API 优先 ──
+  const fuseResults: { item: DocListItem; score?: number }[] = useMemo(() => {
     if (!fuseIndex) return [];
     const trimmed = query.trim();
     if (trimmed === "") {
-      // 浏览模式：按分组权重排序展示 top BROWSE_LIMIT
       return [...docs]
         .sort(
           (a, b) =>
@@ -79,12 +83,51 @@ export default function SearchModal({
         .slice(0, BROWSE_LIMIT)
         .map((item) => ({ item }));
     }
-    const fuseResults: DocSearchResult[] = fuseIndex.search(trimmed);
-    return fuseResults.slice(0, SEARCH_LIMIT).map((r) => ({
+    const fuseR: DocSearchResult[] = fuseIndex.search(trimmed);
+    return fuseR.slice(0, SEARCH_LIMIT).map((r) => ({
       item: r.item,
       score: r.score,
     }));
   }, [fuseIndex, docs, query]);
+
+  // 统一结果：空输入用 Fuse 浏览，有输入优先 API（加载中 fallback Fuse）
+  const results = useMemo(() => {
+    const trimmed = query.trim();
+    if (!trimmed) return { kind: "browse" as const, items: fuseResults };
+    if (apiResults.length > 0) return { kind: "api" as const, items: apiResults };
+    if (searching) return { kind: "searching" as const, items: fuseResults };
+    return { kind: "fuse" as const, items: fuseResults };
+  }, [query, fuseResults, apiResults, searching]);
+
+  // ── 有输入时调 /api/admin/search（200ms debounce）──
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      /* eslint-disable-next-line react-hooks/set-state-in-effect */
+      setApiResults([]);
+       
+      setSearching(false);
+      return;
+    }
+
+     
+    setSearching(true);
+    const timer = setTimeout(() => {
+      api.searchDocs(trimmed)
+        .then((res) => {
+          setApiResults(res);
+          setSearching(false);
+        })
+        .catch(() => {
+          setApiResults([]);
+          setSearching(false);
+        });
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [query]);
 
   // 打开时重置状态 + 自动聚焦（模态窗打开时同步重置是标准模式）
   useEffect(() => {
@@ -117,13 +160,38 @@ export default function SearchModal({
     el?.scrollIntoView({ block: "nearest" });
   }, [selectedIndex]);
 
+  /** 统一"选中文档并关闭"——兼容 Fuse 结果与 API 搜索结果 */
+  const selectAndClose = useCallback(
+    (idx: number) => {
+      const items = results.items;
+      if (idx < 0 || idx >= items.length) return;
+      const entry = items[idx];
+      // Fuse 结果 { item: DocListItem, score? }
+      if (entry && typeof entry === "object" && "item" in entry) {
+        onSelectDoc((entry as { item: DocListItem }).item);
+        onClose();
+        return;
+      }
+      // API 结果 ApiDocSearchResult — 按 path 匹配 DocListItem
+      if (entry && typeof entry === "object" && "path" in entry) {
+        const doc = docs.find(
+          (d) => d.path === (entry as ApiDocSearchResult).path,
+        );
+        if (doc) onSelectDoc(doc);
+        onClose();
+      }
+    },
+    [results, onSelectDoc, onClose, docs],
+  );
+
   // 键盘导航
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      const items = results.items;
       switch (e.key) {
         case "ArrowDown":
           e.preventDefault();
-          setSelectedIndex((i) => Math.min(i + 1, results.length - 1));
+          setSelectedIndex((i) => Math.min(i + 1, items.length - 1));
           break;
         case "ArrowUp":
           e.preventDefault();
@@ -131,25 +199,18 @@ export default function SearchModal({
           break;
         case "Enter":
           e.preventDefault();
-          if (results[selectedIndex]) {
-            onSelectDoc(results[selectedIndex].item);
-            onClose();
-          }
+          selectAndClose(selectedIndex);
           break;
       }
     },
-    [results, selectedIndex, onSelectDoc, onClose],
-  );
-
-  const handleSelect = useCallback(
-    (item: DocListItem) => {
-      onSelectDoc(item);
-      onClose();
-    },
-    [onSelectDoc, onClose],
+    [results, selectedIndex, selectAndClose],
   );
 
   if (!isOpen) return null;
+
+  const resultItems = results.items;
+  const isApiMode = results.kind === "api";
+  const showSpinner = results.kind === "searching" && query.trim();
 
   return (
     <div
@@ -163,11 +224,12 @@ export default function SearchModal({
         data-testid="search-modal-backdrop"
       />
 
-      {/* 卡片 */}
+      {/* 卡片 — API 模式加宽以容纳 snippet */}
       <div
-        className="relative z-10 w-full max-w-lg mx-gm-4
+        className={`relative z-10 w-full mx-gm-4
                    bg-surface border border-border rounded-gm-lg
-                   shadow-gm-lg animate-gm-fade-in flex flex-col max-h-[70vh]"
+                   shadow-gm-lg animate-gm-fade-in flex flex-col max-h-[70vh]
+                   ${isApiMode ? "max-w-2xl" : "max-w-lg"}`}
         role="dialog"
         aria-modal="true"
         aria-label="搜索文档"
@@ -175,13 +237,17 @@ export default function SearchModal({
       >
         {/* 搜索框 */}
         <div className="flex items-center gap-gm-3 px-gm-4 py-gm-3 border-b border-border">
-          <RiSearchLine className="text-gm-icon text-text-muted shrink-0" />
+          {showSpinner ? (
+            <RiLoader4Line className="text-gm-icon text-primary animate-spin shrink-0" />
+          ) : (
+            <RiSearchLine className="text-gm-icon text-text-muted shrink-0" />
+          )}
           <input
             ref={inputRef}
             type="text"
             className="flex-1 bg-transparent text-gm-base text-text
                        placeholder:text-text-muted/50 outline-none"
-            placeholder="搜索文档名称或说明..."
+            placeholder={isApiMode ? "搜索文档正文..." : "搜索文档名称或说明..."}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -202,7 +268,7 @@ export default function SearchModal({
           className="flex-1 overflow-y-auto divide-y divide-border"
           data-testid="search-modal-results"
         >
-          {results.length === 0 ? (
+          {resultItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-gm-12 gap-gm-3 text-text-muted">
               <RiSearchLine className="text-gm-2xl" />
               <p className="text-gm-sm">
@@ -216,13 +282,55 @@ export default function SearchModal({
                 </p>
               )}
             </div>
+          ) : isApiMode ? (
+            /* ── API 全文搜索结果：显示 snippet ── */
+            (resultItems as ApiDocSearchResult[]).map((r, idx) => {
+              const displayName = r.name.replace(/\.md$/, "");
+              return (
+                <button
+                  key={r.path}
+                  onClick={() => selectAndClose(idx)}
+                  className={`w-full flex items-start gap-gm-3 px-gm-4 py-gm-3 text-left
+                              transition-colors hover:bg-surface-alt/30
+                              ${idx === selectedIndex
+                                ? "bg-primary/8 border-l-2 border-primary"
+                                : "border-l-2 border-transparent"
+                              }`}
+                  data-testid={`search-result-${idx}`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-gm-2">
+                      <span className="text-gm-sm font-medium text-text truncate">
+                        {displayName}
+                      </span>
+                      {r.match_count > 1 && (
+                        <span className="shrink-0 text-gm-2xs text-text-muted/50">
+                          {r.match_count} 处匹配
+                        </span>
+                      )}
+                    </div>
+                    {r.snippet && (
+                      <span className="text-gm-xs text-text-muted/70 line-clamp-2 mt-gm-0.5 block font-mono whitespace-pre-wrap break-all">
+                        {r.snippet}
+                      </span>
+                    )}
+                  </div>
+                  <span className="shrink-0 text-gm-2xs text-text-muted/50 bg-surface-lowered/60
+                                   rounded-gm-xs px-gm-1.5 py-0.5 mt-0.5">
+                    {r.group}
+                  </span>
+                </button>
+              );
+            })
           ) : (
-            results.map(({ item }, idx) => {
+            /* ── 浏览模式 / Fuse 搜索：现有卡片样式 ── */
+            resultItems.map((entry, idx) => {
+              const item = (entry as { item: DocListItem }).item;
               const displayName = item.name.replace(/\.md$/, "");
               return (
                 <button
                   key={item.path}
-                  onClick={() => handleSelect(item)}
+                  onClick={() => selectAndClose(idx)}
                   className={`w-full flex items-start gap-gm-3 px-gm-4 py-gm-3 text-left
                               transition-colors hover:bg-surface-alt/30
                               ${idx === selectedIndex

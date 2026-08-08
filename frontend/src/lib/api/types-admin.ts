@@ -86,3 +86,17 @@ export interface DocContentResponse {
   content: string;
   lines: number;
 }
+
+// ── Doc Search (GET /admin/search?q=) ────────────────────────────────
+
+/** GET /admin/search?q= 单条搜索结果 */
+export interface DocSearchResult {
+  path: string;
+  name: string;
+  group: string;
+  summary: string;
+  /** 首条匹配行 ± 1 行上下文的文本片段（最长 300 字符） */
+  snippet: string;
+  /** 文档中匹配行数 */
+  match_count: number;
+}

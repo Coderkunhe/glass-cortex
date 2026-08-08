@@ -233,49 +233,60 @@ export default function DocsPanel({
     );
   }
 
+  // ── 内联搜索输入（挂载到核心文档组头右侧 / 空态上方）──
+  const searchInputEl = (
+    <div
+      className="flex items-center gap-gm-2 rounded-gm-md border border-border/60
+                  bg-surface-lowered/50 px-gm-2.5 py-gm-1
+                  focus-within:border-primary/30 focus-within:bg-surface-elevated
+                  transition-colors"
+    >
+      <RiSearchLine size={14} className="text-text-muted shrink-0" />
+      <input
+        type="text"
+        className="w-32 bg-transparent text-gm-sm text-text
+                   placeholder:text-text-muted/50 outline-none"
+        placeholder="搜索文档..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        data-testid="docs-search-input"
+      />
+      {searchQuery && (
+        <button
+          onClick={() => setSearchQuery("")}
+          className="p-gm-0.5 rounded-gm-sm text-text-muted
+                     hover:text-text hover:bg-surface-lowered transition-colors"
+          aria-label="清除搜索"
+        >
+          <RiCloseLine size={14} />
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-gm-4">
-      {/* 内联搜索 — 紧凑模式，右上角 */}
-      <div className="flex justify-end">
-        <div
-          className="flex items-center gap-gm-2 rounded-gm-md border border-border/60
-                      bg-surface-lowered/50 px-gm-3 py-gm-1.5
-                      focus-within:border-primary/30 focus-within:bg-surface-elevated
-                      transition-colors"
-        >
-          <RiSearchLine size={14} className="text-text-muted shrink-0" />
-          <input
-            type="text"
-            className="w-40 bg-transparent text-gm-sm text-text
-                       placeholder:text-text-muted/50 outline-none"
-            placeholder="过滤文档..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            data-testid="docs-search-input"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="p-gm-0.5 rounded-gm-sm text-text-muted
-                         hover:text-text hover:bg-surface-lowered transition-colors"
-              aria-label="清除搜索"
-            >
-              <RiCloseLine size={14} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* 搜索结果为空 */}
+      {/* 搜索结果为空 — 搜索框留在上方供用户修改查询 */}
       {searchQuery.trim() && filteredGrouped.length === 0 ? (
-        <div className="rounded-gm-lg bg-surface-elevated border border-border p-gm-8 text-center">
-          <RiSearchLine className="text-gm-2xl text-text-muted mx-auto mb-gm-2" />
-          <p className="text-gm-sm text-text-muted">未找到匹配的文档</p>
-          <p className="text-gm-xs text-text-muted/60 mt-gm-1">试试其他关键词</p>
-        </div>
+        <>
+          <div className="flex justify-start">{searchInputEl}</div>
+          <div className="rounded-gm-lg bg-surface-elevated border border-border p-gm-8 text-center">
+            <RiSearchLine className="text-gm-2xl text-text-muted mx-auto mb-gm-2" />
+            <p className="text-gm-sm text-text-muted">未找到匹配的文档</p>
+            <p className="text-gm-xs text-text-muted/60 mt-gm-1">试试其他关键词</p>
+          </div>
+        </>
       ) : (
-        filteredGrouped.map(([group, { items: groupItems, dirs }]) => (
-        <DocGroup key={group} group={group} items={groupItems} dirs={dirs} onSelectDoc={onSelectDoc} onNavigate={onNavigate} />
+        filteredGrouped.map(([group, { items: groupItems, dirs }], idx) => (
+        <DocGroup
+          key={group}
+          group={group}
+          items={groupItems}
+          dirs={dirs}
+          onSelectDoc={onSelectDoc}
+          onNavigate={onNavigate}
+          searchSlot={idx === 0 ? searchInputEl : undefined}
+        />
       ))
       )}
     </div>
@@ -292,12 +303,15 @@ function DocGroup({
   dirs,
   onSelectDoc,
   onNavigate,
+  searchSlot,
 }: {
   group: string;
   items: DocListItem[];
   dirs: DocListItem[];
   onSelectDoc: (item: DocListItem) => void;
   onNavigate: (tab: AdminTab) => void;
+  /** 可选：组头右侧内联搜索框（由 DocsPanel 传入，仅第一组使用） */
+  searchSlot?: React.ReactNode;
 }) {
   const [expanded, setExpanded] = useState(true);
 
@@ -306,18 +320,23 @@ function DocGroup({
 
   return (
     <div className="rounded-gm-lg bg-surface-elevated border border-border overflow-hidden">
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between px-gm-5 py-gm-3 hover:bg-surface-alt/30 transition-colors text-left"
-      >
-        <div className="flex items-center gap-gm-2">
+      <div className="flex items-center px-gm-5 py-gm-3 hover:bg-surface-alt/30 transition-colors">
+        <button
+          onClick={() => setExpanded((v) => !v)}
+          className="flex items-center gap-gm-2 text-left flex-1 min-w-0"
+        >
           <span className={`text-gm-xs transition-transform ${expanded ? "rotate-90" : ""}`}>▶</span>
           <h3 className="text-gm-sm font-semibold text-text">{group}</h3>
           <span className="text-gm-xs text-text-muted">
             {items.length + dirs.length} 个文件
           </span>
-        </div>
-      </button>
+        </button>
+        {searchSlot && (
+          <div className="ml-gm-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+            {searchSlot}
+          </div>
+        )}
+      </div>
 
       {expanded && (
         <div className="border-t border-border">

@@ -246,75 +246,35 @@ describe("DocViewer", () => {
       expect(div.querySelectorAll(".gm-search-mark").length).toBe(1);
     });
 
-    it("renders search toggle button in header", () => {
+    it("renders search input always visible in header", () => {
       renderViewer();
-      const searchBtn = screen.getByLabelText("文档内搜索");
-      expect(searchBtn).toBeInTheDocument();
-    });
-
-    it("opens search bar when toggle is clicked", () => {
-      renderViewer();
-      const searchBtn = screen.getByLabelText("文档内搜索");
-      fireEvent.click(searchBtn);
       expect(screen.getByTestId("doc-search-input")).toBeInTheDocument();
     });
 
-    it("shows search bar with input and navigation controls", () => {
+    it("shows nav buttons when search has matches", () => {
       renderViewer();
-      fireEvent.click(screen.getByLabelText("文档内搜索"));
-      expect(screen.getByPlaceholderText("在文档中查找...")).toBeInTheDocument();
-      expect(screen.getByTestId("doc-search-prev")).toBeInTheDocument();
-      expect(screen.getByTestId("doc-search-next")).toBeInTheDocument();
-      expect(screen.getByTestId("doc-search-close")).toBeInTheDocument();
-    });
-
-    it("closes search bar when close button is clicked", () => {
-      renderViewer();
-      fireEvent.click(screen.getByLabelText("文档内搜索"));
-      expect(screen.getByTestId("doc-search-input")).toBeInTheDocument();
-      fireEvent.click(screen.getByTestId("doc-search-close"));
-      expect(screen.queryByTestId("doc-search-input")).not.toBeInTheDocument();
-    });
-
-    it("closes search bar when toggle is clicked again", () => {
-      renderViewer();
-      const searchBtn = screen.getByLabelText("文档内搜索");
-      fireEvent.click(searchBtn);
-      expect(screen.getByTestId("doc-search-input")).toBeInTheDocument();
-      fireEvent.click(searchBtn);
-      expect(screen.queryByTestId("doc-search-input")).not.toBeInTheDocument();
-    });
-
-    it("highlights active search toggle when search is open", () => {
-      renderViewer();
-      const searchBtn = screen.getByLabelText("文档内搜索");
-      fireEvent.click(searchBtn);
-      expect(searchBtn.className).toMatch(/text-primary/);
-    });
-
-    it("shows '无匹配' when searching for non-existent text", () => {
-      renderViewer();
-      fireEvent.click(screen.getByLabelText("文档内搜索"));
-      const input = screen.getByTestId("doc-search-input");
-      fireEvent.change(input, {
-        target: { value: "zzz_non_existent_xyz" },
-      });
-      expect(screen.getByText("无匹配")).toBeInTheDocument();
-    });
-
-    it("shows match count instead of '无匹配' when text found", () => {
-      renderViewer();
-      fireEvent.click(screen.getByLabelText("文档内搜索"));
       const input = screen.getByTestId("doc-search-input");
       fireEvent.change(input, { target: { value: "第一节" } });
 
-      // Content contains "第一节" → matchCount > 0 → should NOT show "无匹配"
-      expect(screen.queryByText("无匹配")).not.toBeInTheDocument();
+      // Nav buttons appear when there are matches
+      expect(screen.getByTestId("doc-search-prev")).toBeInTheDocument();
+      expect(screen.getByTestId("doc-search-next")).toBeInTheDocument();
+      // Match count shows "1 / 1" format
+      expect(screen.getByTestId("doc-search-match-count")).toBeInTheDocument();
+    });
+
+    it("hides nav buttons when search is cleared", () => {
+      renderViewer();
+      const input = screen.getByTestId("doc-search-input");
+      fireEvent.change(input, { target: { value: "第一节" } });
+      expect(screen.getByTestId("doc-search-prev")).toBeInTheDocument();
+
+      fireEvent.change(input, { target: { value: "" } });
+      expect(screen.queryByTestId("doc-search-prev")).not.toBeInTheDocument();
     });
 
     it("highlights matching text with mark elements in prose", () => {
       renderViewer();
-      fireEvent.click(screen.getByLabelText("文档内搜索"));
       const input = screen.getByTestId("doc-search-input");
       fireEvent.change(input, { target: { value: "第一节" } });
 
@@ -325,21 +285,18 @@ describe("DocViewer", () => {
       expect(marks.length).toBeGreaterThan(0);
     });
 
-    it("resets state when toggling search off and back on", () => {
+    it("clears highlights when clearing search input", () => {
       renderViewer();
-      const searchBtn = screen.getByLabelText("文档内搜索");
+      const input = screen.getByTestId("doc-search-input");
+      fireEvent.change(input, { target: { value: "第一节" } });
 
-      // Open, type, close
-      fireEvent.click(searchBtn);
-      fireEvent.change(screen.getByTestId("doc-search-input"), {
-        target: { value: "第一节" },
-      });
-      fireEvent.click(searchBtn);
+      let marks = document.querySelectorAll("mark.gm-search-mark");
+      expect(marks.length).toBeGreaterThan(0);
 
-      // Reopen — should have empty input
-      fireEvent.click(searchBtn);
-      const input = screen.getByTestId("doc-search-input") as HTMLInputElement;
-      expect(input.value).toBe("");
+      // Clear via the clear button (✕)
+      fireEvent.click(screen.getByLabelText("清除搜索"));
+      marks = document.querySelectorAll("mark.gm-search-mark");
+      expect(marks.length).toBe(0);
     });
   });
 
