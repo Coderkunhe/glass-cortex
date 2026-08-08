@@ -175,10 +175,15 @@ if (Test-Path $checkScript) {
 # =======================================================
 
 if ($SkipClone) {
-    # Auto-detect AppRoot when SkipClone: use script parent dir if default path missing
-    if (!(Test-Path $AppRoot)) {
-        $detectedRoot = Split-Path $PSScriptRoot -Parent
-        Write-Host "[*] Default AppRoot ($AppRoot) not found, using script location: $detectedRoot" -ForegroundColor Yellow
+    # Auto-detect AppRoot when SkipClone:
+    # Check if default AppRoot actually contains project files (api/ dir),
+    # not just whether the directory exists. An empty directory from a
+    # previous attempt should NOT block auto-detection.
+    $detectedRoot = Split-Path $PSScriptRoot -Parent
+    if (!(Test-Path "$AppRoot\api")) {
+        if ($AppRoot -ne $detectedRoot) {
+            Write-Host "[*] Default AppRoot ($AppRoot) has no project files, using script location: $detectedRoot" -ForegroundColor Yellow
+        }
         $AppRoot = $detectedRoot
     }
     Write-Host "[1/6] Skipping clone (--SkipClone)" -ForegroundColor Yellow
