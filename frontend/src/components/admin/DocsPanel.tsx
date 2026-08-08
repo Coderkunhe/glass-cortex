@@ -560,7 +560,7 @@ function DocFileCard({
           disabled={cardDownloading}
           className="shrink-0 flex items-center gap-gm-1.5 text-gm-sm font-medium
                      text-primary bg-primary/8 rounded-gm-md px-gm-3 py-gm-1.5
-                     hover:bg-primary hover:text-white
+                     hover:bg-primary/12
                      transition-all disabled:opacity-40 disabled:cursor-not-allowed
                      active:scale-[0.97]"
           data-testid={`card-download-${item.name.replace(/\.md$/, "")}`}
