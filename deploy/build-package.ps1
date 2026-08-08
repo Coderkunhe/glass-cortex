@@ -32,11 +32,15 @@ param(
     [string]$TargetPlatform = "auto",
     [switch]$SkipBuild = $false,
     [switch]$SkipModel = $false,
-    [switch]$SkipWheels = $false
+    [switch]$SkipWheels = $false,
+    [switch]$Patch = $false
 )
 
 $ErrorActionPreference = "Stop"
 $startTime = Get-Date
+
+# Patch mode: incremental update (skip wheels + model, flat zip)
+$PATCH_MODE = $Patch.IsPresent
 
 # --- Path resolution ---
 if (!$AppRoot) {
@@ -393,9 +397,21 @@ if (Test-Path $zipPath) {
 }
 
 # Use Compress-Archive (PowerShell 5+ built-in)
-# Note: Compress-Archive must run from parent dir so zip paths start from packageName/
+# Patch mode: flat zip (no parent directory) -- extract directly into AppRoot
+# Full mode: parent directory wrapper -- extract to C:\apps\, then rename
 Write-Host "  Compressing $packageName -> $packageName.zip ..." -ForegroundColor Yellow
-Compress-Archive -Path ".\$packageName\*" -DestinationPath $zipPath -CompressionLevel Optimal
+
+if ($PATCH_MODE) {
+    # Flat zip: cd into staging dir, zip everything directly
+    Push-Location $stagingDir
+    Compress-Archive -Path ".\*" -DestinationPath $zipPath -CompressionLevel Optimal
+    Pop-Location
+} else {
+    # Wrapped zip: parent directory preserved
+    Push-Location $OutputDir
+    Compress-Archive -Path ".\$packageName" -DestinationPath $zipPath -CompressionLevel Optimal
+    Pop-Location
+}
 
 if (!(Test-Path $zipPath)) {
     Write-Error "Zip creation failed --- $zipPath not found"
@@ -428,11 +444,24 @@ Write-Host @"
 ========================================
 
 Next Steps:
-  1. Copy $packageName.zip to target Windows Server (USB / SMB / SFTP)
+$(
+if ($PATCH_MODE) {
+@"  [PATCH MODE] Incremental update --- flat zip, extract directly into AppRoot:
+  1. Copy $packageName.zip to target Windows Server
+  2. On Server (Admin PowerShell):
+     Expand-Archive -Force -Path C:\temp\$packageName.zip -DestinationPath C:\apps\glasscortex\
+     C:\apps\glasscortex\deploy\deploy.ps1 -SkipClone -SkipBuild
+  (No parent directory in zip --- files land directly in AppRoot, overwriting existing)
+"@
+} else {
+@"  1. Copy $packageName.zip to target Windows Server (USB / SMB / SFTP)
   2. On Server (Admin PowerShell):
      Expand-Archive -Path C:\temp\$packageName.zip -DestinationPath C:\apps\
      Rename-Item C:\apps\$packageName C:\apps\glasscortex
      C:\apps\glasscortex\deploy\deploy.ps1 -SkipClone -SkipBuild
   3. Configure Nginx per deploy\README.md S2.2
+"@
+}
+)
 
 "@ -ForegroundColor Cyan

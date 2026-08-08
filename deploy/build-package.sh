@@ -465,11 +465,26 @@ if [[ -f "$ZIP_PATH" ]]; then
 fi
 
 info "Compressing $PACKAGE_NAME → $PACKAGE_NAME.zip ..."
-# macOS: COPYFILE_DISABLE 阻止资源 fork 文件 (__MACOSX/ ._* ) 进入 zip
-if [[ "$(uname)" == "Darwin" ]]; then
-    COPYFILE_DISABLE=1 zip -rq "$ZIP_PATH" "$PACKAGE_NAME"
+
+if [[ "$PATCH_MODE" == true ]]; then
+    # Patch mode: flat zip (no parent directory wrapper)
+    # User extracts directly into AppRoot: Expand-Archive -Force <zip> -DestinationPath C:\apps\glasscortex\
+    cd "$STAGING_DIR"
+    if [[ "$(uname)" == "Darwin" ]]; then
+        COPYFILE_DISABLE=1 zip -rq "$ZIP_PATH" .
+    else
+        zip -rq "$ZIP_PATH" .
+    fi
+    cd "$OUTPUT_DIR"
 else
-    zip -rq "$ZIP_PATH" "$PACKAGE_NAME"
+    # Full mode: parent directory wrapper (standard for fresh installs)
+    # User extracts to parent: Expand-Archive <zip> -DestinationPath C:\apps\ → creates C:\apps\glasscortex-deploy-YYYYMMDD\
+    cd "$OUTPUT_DIR"
+    if [[ "$(uname)" == "Darwin" ]]; then
+        COPYFILE_DISABLE=1 zip -rq "$ZIP_PATH" "$PACKAGE_NAME"
+    else
+        zip -rq "$ZIP_PATH" "$PACKAGE_NAME"
+    fi
 fi
 
 if [[ ! -f "$ZIP_PATH" ]]; then
@@ -509,10 +524,19 @@ banner "========================================"
 echo ""
 
 echo -e "${CYAN}Next Steps:${NC}"
-echo "  1. Copy $PACKAGE_NAME.zip to target Windows Server (USB / SMB / SFTP)"
-echo "  2. On Server (Admin PowerShell):"
-echo "     Expand-Archive -Path C:\\temp\\$PACKAGE_NAME.zip -DestinationPath C:\\apps\\"
-echo "     Rename-Item C:\\apps\\$PACKAGE_NAME C:\\apps\\glasscortex"
-echo "     C:\\apps\\glasscortex\\deploy\\deploy.ps1 -SkipClone -SkipBuild"
-echo "  3. Configure Nginx per deploy\\README.md §2.2"
+if [[ "$PATCH_MODE" == true ]]; then
+    echo "  [PATCH MODE] Incremental update --- flat zip, extract directly into AppRoot:"
+    echo "  1. Copy $PACKAGE_NAME.zip to target Windows Server"
+    echo "  2. On Server (Admin PowerShell):"
+    echo "     Expand-Archive -Force -Path C:\\temp\\$PACKAGE_NAME.zip -DestinationPath C:\\apps\\glasscortex\\"
+    echo "     C:\\apps\\glasscortex\\deploy\\deploy.ps1 -SkipClone -SkipBuild"
+    echo "  (No parent directory in zip --- files land directly in AppRoot, overwriting existing)"
+else
+    echo "  1. Copy $PACKAGE_NAME.zip to target Windows Server (USB / SMB / SFTP)"
+    echo "  2. On Server (Admin PowerShell):"
+    echo "     Expand-Archive -Path C:\\temp\\$PACKAGE_NAME.zip -DestinationPath C:\\apps\\"
+    echo "     Rename-Item C:\\apps\\$PACKAGE_NAME C:\\apps\\glasscortex"
+    echo "     C:\\apps\\glasscortex\\deploy\\deploy.ps1 -SkipClone -SkipBuild"
+    echo "  3. Configure Nginx per deploy\\README.md §2.2"
+fi
 echo ""

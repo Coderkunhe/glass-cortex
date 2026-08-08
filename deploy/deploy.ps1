@@ -126,10 +126,30 @@ if ($preflightErrors.Count -gt 0) {
         Write-Host "    - $err" -ForegroundColor Red
     }
     Write-Host ""
-    Write-Host "  The deployment package appears incomplete." -ForegroundColor Red
-    Write-Host "  Make sure you extracted the zip correctly:" -ForegroundColor Yellow
-    Write-Host "    Expand-Archive -Path <zip> -DestinationPath C:\apps\" -ForegroundColor Yellow
-    Write-Host "  Or re-run build-package.ps1 on the build machine." -ForegroundColor Yellow
+    Write-Host "  Current AppRoot: $AppRoot" -ForegroundColor Yellow
+
+    # Check for common causes
+    $appRootContents = Get-ChildItem -Path $AppRoot -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name
+    Write-Host "  AppRoot contains: $($appRootContents -join ', ')" -ForegroundColor DarkGray
+
+    # Check for nested directory (patch zip extracted with parent wrapper)
+    $nestedDirs = Get-ChildItem -Path $AppRoot -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -like "glasscortex-deploy-*" }
+    if ($nestedDirs) {
+        Write-Host ""
+        Write-Host "  DETECTED: Patch zip extracted with parent directory wrapper." -ForegroundColor Yellow
+        Write-Host "  The actual files are at: $AppRoot\$($nestedDirs[0].Name)\" -ForegroundColor Yellow
+        Write-Host "  Fix: move contents up one level:" -ForegroundColor Green
+        Write-Host "    Copy-Item -Recurse -Force $AppRoot\$($nestedDirs[0].Name)\* $AppRoot\" -ForegroundColor White
+        Write-Host "  Then re-run: .\deploy\deploy.ps1" -ForegroundColor White
+    } else {
+        Write-Host ""
+        Write-Host "  The deployment package appears incomplete." -ForegroundColor Red
+        Write-Host "  For patch (incremental) updates:" -ForegroundColor Yellow
+        Write-Host "    Expand-Archive -Force -Path <zip> -DestinationPath <AppRoot>\" -ForegroundColor Yellow
+        Write-Host "  For full deployments:" -ForegroundColor Yellow
+        Write-Host "    Expand-Archive -Path <zip> -DestinationPath C:\apps\" -ForegroundColor Yellow
+        Write-Host "  Or re-run build-package.ps1 on the build machine." -ForegroundColor Yellow
+    }
     throw "Pre-flight check failed -- package integrity cannot be verified"
 }
 
