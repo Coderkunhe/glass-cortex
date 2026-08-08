@@ -16,6 +16,8 @@
     "@remixicon/react": "^4.9.0",
     "echarts": "^6.1.0",
     "fuse.js": "^7.4.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "mermaid": "^11.15.0",
     "next": "16.2.9",
     "react": "19.2.4",

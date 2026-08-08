@@ -46,11 +46,11 @@ vi.mock("@/lib/renderMarkdown", () => ({
   }),
 }));
 
-const printPdfMock = vi.fn();
+const downloadPdfMock = vi.fn();
 
 vi.mock("@/lib/printPdf", () => ({
-  printPdf: (html: string, title: string) => {
-    printPdfMock(html, title);
+  downloadPdf: (html: string, title: string) => {
+    downloadPdfMock(html, title);
     return Promise.resolve();
   },
 }));
@@ -66,7 +66,7 @@ afterEach(() => {
   mockFontSize = "md";
   markdownOverride = null;
   setFontSizeMock.mockClear();
-  printPdfMock.mockClear();
+  downloadPdfMock.mockClear();
 });
 
 // ── Test data ───────────────────────────────────────────────────────
@@ -197,13 +197,13 @@ describe("DocViewer", () => {
       expect(btn).toBeDisabled();
     });
 
-    it("calls printPdf with rendered HTML and document name on click", () => {
-      printPdfMock.mockClear();
+    it("calls downloadPdf with rendered HTML and document name on click", () => {
+      downloadPdfMock.mockClear();
       renderViewer({ content: MOCK_CONTENT });
       fireEvent.click(screen.getByTestId("doc-pdf-download"));
-      expect(printPdfMock).toHaveBeenCalledTimes(1);
+      expect(downloadPdfMock).toHaveBeenCalledTimes(1);
       // First arg should be rendered markdown HTML
-      expect(printPdfMock).toHaveBeenCalledWith(
+      expect(downloadPdfMock).toHaveBeenCalledWith(
         expect.stringContaining("第一节"),
         MOCK_ITEM.name,
       );

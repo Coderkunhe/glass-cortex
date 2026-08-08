@@ -20,7 +20,7 @@ import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { renderMarkdown } from "@/lib/renderMarkdown";
-import { printPdf } from "@/lib/printPdf";
+import { downloadPdf } from "@/lib/printPdf";
 import { DOC_FONT_SIZE_KEY } from "@/lib/constants";
 import { fmtBytes } from "./utils";
 import type { DocListItem, DocContentResponse } from "@/lib/api/types";
@@ -486,12 +486,12 @@ export default function DocViewer({
         </button>
         {/* PDF 下载 — 仅在有内容时可用 */}
         <button
-          onClick={() => content && printPdf(renderMarkdown(content.content), item.name)}
+          onClick={() => { if (content) void downloadPdf(renderMarkdown(content.content), item.name); }}
           disabled={!content}
           className="rounded-gm-sm p-gm-1 text-text-muted hover:text-text hover:bg-surface-alt transition-colors shrink-0
                      disabled:opacity-30 disabled:cursor-not-allowed"
           aria-label="下载 PDF"
-          title="下载 PDF（通过浏览器打印 → 存储为 PDF）"
+          title="下载 PDF"
           data-testid="doc-pdf-download"
         >
           <RiFileDownloadLine className="text-gm-icon" />
