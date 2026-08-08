@@ -201,6 +201,45 @@ done
 mkdir -p "$STAGING_DIR/data"
 mkdir -p "$STAGING_DIR/logs"
 
+# Phase 67 Batch 24: Generate START_HERE.txt at package root
+# This is the FIRST file users see when unzipping.
+# It prevents the common mistake of manually running uvicorn before venv exists.
+cat > "$STAGING_DIR/START_HERE.txt" << 'START_EOF'
+============================================================
+  STOP! READ THIS FIRST --- GlassCortex Deployment Package
+============================================================
+
+  DO NOT manually run python, uvicorn, or node commands!
+
+  The venv\ directory is NOT included in this zip
+  (Python venvs are not portable across machines).
+
+  Instead, open an Admin PowerShell and run:
+
+      .\deploy\deploy.ps1
+
+  This script will AUTO-DETECT that this is a package
+  deployment and will:
+
+    1. Create Python venv + install all dependencies
+    2. Set up the embedding model cache
+    3. Use the pre-built Next.js frontend
+    4. Register Windows Services (if NSSM is installed)
+
+  Full instructions: deploy\README.md
+
+  Common mistake:
+    > python -m uvicorn api.main:app
+    -> "No module named uvicorn" or "python not found"
+    -> This is EXPECTED: venv does not exist yet.
+    -> Run .\deploy\deploy.ps1 first!
+
+  Integrity check (optional):
+    .\deploy\check-package.ps1
+
+============================================================
+START_EOF
+info "Generated START_HERE.txt (entry guard)"
 
 	# 生成 Windows 专用 requirements（不含 Linux-only uvloop）
 	grep -v "uvloop" "$STAGING_DIR/requirements-lock.txt" > "$STAGING_DIR/requirements-win.txt"
@@ -245,6 +284,7 @@ if [[ "$SKIP_WHEELS" == false ]]; then
 	    grep -v "uvloop" "$APP_ROOT/requirements-lock.txt" > "$WIN_REQ_FILE"
 	    info "Filtered uvloop from Windows requirements (Linux/macOS only)"
 
+	    set +e
 	    $PYTHON_CMD -m pip download \
 	        --no-deps \
 	        -r "$WIN_REQ_FILE" \
@@ -257,6 +297,40 @@ if [[ "$SKIP_WHEELS" == false ]]; then
 	                echo -e "  ${GRAY}$line${NC}"
 	            fi
 	        done
+	    set -e
+
+	    # Fallback: pure-Python packages (e.g. annotated-doc) don't publish
+	    # platform-specific wheels. Retry without --only-binary to get source
+	    # tarballs for any package not yet downloaded as a wheel.
+	    MISSING=()
+	    while IFS= read -r pkg; do
+	        [[ -z "$pkg" ]] && continue
+	        pkg_name="${pkg%%==*}"
+	        pkg_ver="${pkg##*==}"
+	        # Check if wheel already downloaded
+	        if ! find "$WHEELS_DIR" -name "${pkg_name//-/_}*${pkg_ver}*.whl" -type f 2>/dev/null | grep -q . && \
+	           ! find "$WHEELS_DIR" -name "${pkg_name//-/_}-${pkg_ver}.tar.gz" -type f 2>/dev/null | grep -q .; then
+	            MISSING+=("$pkg")
+	        fi
+	    done < "$WIN_REQ_FILE"
+	    if [[ ${#MISSING[@]} -gt 0 ]]; then
+	        info "Retrying ${#MISSING[@]} package(s) without --only-binary (pure Python, no win_amd64 wheel)..."
+	        for pkg in "${MISSING[@]}"; do
+	            set +e
+	            $PYTHON_CMD -m pip download \
+	                --no-deps \
+	                --dest "$WHEELS_DIR" \
+	                --platform win_amd64 \
+	                --python-version $PY_VER \
+	                "$pkg" \
+	                2>&1 | while IFS= read -r line; do
+	                    if echo "$line" | grep -qE "ERROR|Successfully downloaded|Saved|Could not find"; then
+	                        echo -e "    ${GRAY}$line${NC}"
+	                    fi
+	                done || true
+	            set -e
+	        done
+	    fi
 
 	    WHEEL_COUNT=$(find "$WHEELS_DIR" -name "*.whl" -type f 2>/dev/null | wc -l | tr -d " ")
 	    TAR_COUNT=$(find "$WHEELS_DIR" -name "*.tar.gz" -type f 2>/dev/null | wc -l | tr -d " ")

@@ -30,6 +30,35 @@ param(
 $ErrorActionPreference = "Stop"
 $startTime = Get-Date
 
+# =======================================================
+# ENTRY GUARD --- ALWAYS START HERE
+# Phase 67 Batch 24: Prevent manual uvicorn/node startup
+#   The venv\ directory does NOT exist in a fresh package.
+#   You MUST run deploy.ps1 first to create venv + install deps.
+#   Skipping this script and manually running python/uvicorn
+#   WILL fail with "file not found" errors.
+# =======================================================
+
+Write-Host @"
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*                                                       *
+*   STOP! This is the ONLY supported entry point.       *
+*   DO NOT manually run python, uvicorn, or node.       *
+*   The venv does NOT exist yet in a fresh package.     *
+*                                                       *
+*   This script will create the venv and install all    *
+*   dependencies. Skipping it WILL cause failures.      *
+*                                                       *
+*   If you just unzipped the deployment package:        *
+*     -> Press Enter to continue with deploy.ps1        *
+*     -> It auto-detects package mode and sets up       *
+*        everything: venv + pip + frontend + services.  *
+*                                                       *
+* * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+"@ -ForegroundColor Yellow
+
 # --- Package mode auto-detection ---
 # Condition: no .git dir (not a clone) -> auto-enable SkipClone + SkipBuild
 #       has wheels/ -> subsequent steps use offline pip; has models/huggingface/ -> pre-cached model
@@ -70,6 +99,55 @@ if ($isPackageMode) {
     } else {
         Write-Warning "                  models/huggingface/ NOT found --- model download on first run"
     }
+}
+
+# =======================================================
+# Step 0: Pre-flight package integrity check
+# =======================================================
+
+Write-Host "`n[0/6] Pre-flight package integrity check..." -ForegroundColor Cyan
+
+$preflightErrors = @()
+
+# Verify critical directories exist before doing anything
+if (!(Test-Path "$AppRoot\api")) {
+    $preflightErrors += "api/ directory missing -- deployment package may be incomplete"
+}
+if (!(Test-Path "$AppRoot\src")) {
+    $preflightErrors += "src/ directory missing -- deployment package may be incomplete"
+}
+if (!(Test-Path "$AppRoot\requirements-lock.txt")) {
+    $preflightErrors += "requirements-lock.txt missing -- cannot install Python dependencies"
+}
+
+if ($preflightErrors.Count -gt 0) {
+    Write-Host "  Pre-flight check FAILED:" -ForegroundColor Red
+    foreach ($err in $preflightErrors) {
+        Write-Host "    - $err" -ForegroundColor Red
+    }
+    Write-Host ""
+    Write-Host "  The deployment package appears incomplete." -ForegroundColor Red
+    Write-Host "  Make sure you extracted the zip correctly:" -ForegroundColor Yellow
+    Write-Host "    Expand-Archive -Path <zip> -DestinationPath C:\apps\" -ForegroundColor Yellow
+    Write-Host "  Or re-run build-package.ps1 on the build machine." -ForegroundColor Yellow
+    throw "Pre-flight check failed -- package integrity cannot be verified"
+}
+
+Write-Host "  api/ + src/ + requirements-lock.txt: OK" -ForegroundColor Green
+
+# If check-package.ps1 exists, run it for detailed diagnostics
+$checkScript = "$AppRoot\deploy\check-package.ps1"
+if (Test-Path $checkScript) {
+    Write-Host "  Running detailed integrity check..." -ForegroundColor DarkGray
+    & $checkScript -AppRoot $AppRoot
+    $checkExit = $LASTEXITCODE
+    if ($checkExit -eq 1) {
+        throw "Package integrity check failed (exit code 1) -- cannot proceed. See errors above."
+    } elseif ($checkExit -eq 2) {
+        Write-Host "  Integrity check found warnings -- these will be fixed by deploy.ps1" -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "  check-package.ps1 not found -- skipping detailed check" -ForegroundColor DarkGray
 }
 
 # =======================================================
@@ -318,9 +396,21 @@ if ($servicesRegistered) {
     }
 } else {
     Write-Host "`n[6/6] Smoke test skipped (no services registered)" -ForegroundColor Yellow
-    Write-Host "  Start API manually:" -ForegroundColor Yellow
-    Write-Host "    $AppRoot\venv\Scripts\python.exe -m uvicorn api.main:app --host 127.0.0.1 --port 8000" -ForegroundColor Yellow
-    Write-Host "  Or install NSSM and re-run: .\deploy\install-services.ps1 -AppRoot $AppRoot" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "  Services were not registered as Windows services." -ForegroundColor Yellow
+    Write-Host "  However, deploy.ps1 HAS set up the environment:" -ForegroundColor Green
+    Write-Host "    - Python venv: $AppRoot\venv\" -ForegroundColor DarkGray
+    Write-Host "    - Dependencies: installed via pip" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "  To start services manually (for testing):" -ForegroundColor Cyan
+    Write-Host "    $AppRoot\venv\Scripts\python.exe -m uvicorn api.main:app --host 127.0.0.1 --port 8000" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  To register as Windows services (recommended for production):" -ForegroundColor Cyan
+    Write-Host "    Install NSSM from https://nssm.cc/download" -ForegroundColor DarkGray
+    Write-Host "    .\deploy\install-services.ps1 -AppRoot $AppRoot" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  NEVER manually create a venv or run uvicorn BEFORE deploy.ps1." -ForegroundColor Yellow
+    Write-Host "  deploy.ps1 is ALWAYS the first step after unzipping the package." -ForegroundColor Yellow
 }
 
 # =======================================================

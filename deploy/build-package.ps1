@@ -149,6 +149,47 @@ foreach ($file in $rootFiles) {
 New-Item -ItemType Directory -Force -Path (Join-Path $stagingDir "data") | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $stagingDir "logs") | Out-Null
 
+# Phase 67 Batch 24: Generate START_HERE.txt at package root
+# This is the FIRST file users see when unzipping.
+# It prevents the common mistake of manually running uvicorn before venv exists.
+$startHerePath = Join-Path $stagingDir "START_HERE.txt"
+@"
+============================================================
+  STOP! READ THIS FIRST --- GlassCortex Deployment Package
+============================================================
+
+  DO NOT manually run python, uvicorn, or node commands!
+
+  The venv\ directory is NOT included in this zip
+  (Python venvs are not portable across machines).
+
+  Instead, open an Admin PowerShell and run:
+
+      .\deploy\deploy.ps1
+
+  This script will AUTO-DETECT that this is a package
+  deployment and will:
+
+    1. Create Python venv + install all dependencies
+    2. Set up the embedding model cache
+    3. Use the pre-built Next.js frontend
+    4. Register Windows Services (if NSSM is installed)
+
+  Full instructions: deploy\README.md
+
+  Common mistake:
+    > python -m uvicorn api.main:app
+    -> "No module named uvicorn" or "python not found"
+    -> This is EXPECTED: venv does not exist yet.
+    -> Run .\deploy\deploy.ps1 first!
+
+  Integrity check (optional):
+    .\deploy\check-package.ps1
+
+============================================================
+"@ | Set-Content -Path $startHerePath -Encoding UTF8
+Write-Host "  Generated START_HERE.txt (entry guard)" -ForegroundColor DarkGray
+
 Pop-Location
 Write-Host "  Source copy complete" -ForegroundColor Green
 
