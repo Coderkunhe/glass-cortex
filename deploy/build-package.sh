@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # GlassCortex 构建打包脚本 — macOS/Linux 构建机侧
-# Phase 67 Batch 3
+# Phase 67 Batch 3 · Batch 18 (standalone flatten + exclusion fix)
 #
 # 适用场景：macOS/Linux 构建机（有 git + npm + 网络）打包，
 #           目标 Windows Server（免 git / 免 npm / 免编译）直接解压部署
@@ -177,13 +177,13 @@ if [[ -d "frontend" ]]; then
     info "Copying frontend/ (excluding node_modules, .next)..."
     mkdir -p "$STAGING_DIR/frontend"
     FRONTEND_EXCLUDES=()
-    for d in "node_modules" ".next" ".env.local" ".env.production" "tsconfig.tsbuildinfo"; do
+    for d in "node_modules" ".next" ".env.local" ".env.production" "tsconfig.tsbuildinfo" "test-results" "data" ".claude" "Bn"; do
         FRONTEND_EXCLUDES+=(--exclude="$d")
     done
     rsync -a "${FRONTEND_EXCLUDES[@]}" frontend/ "$STAGING_DIR/frontend/" 2>/dev/null || {
         # fallback: copy everything then remove exclusions
         cp -R frontend/ "$STAGING_DIR/frontend/"
-        rm -rf "$STAGING_DIR/frontend/node_modules" "$STAGING_DIR/frontend/.next" 2>/dev/null || true
+        rm -rf "$STAGING_DIR/frontend/node_modules" "$STAGING_DIR/frontend/.next" "$STAGING_DIR/frontend/test-results" "$STAGING_DIR/frontend/data" "$STAGING_DIR/frontend/.claude" "$STAGING_DIR/frontend/Bn" 2>/dev/null || true
     }
 fi
 
@@ -350,7 +350,7 @@ if [[ "$SKIP_BUILD" == false ]]; then
 
     info "Copying standalone output to staging..."
     shopt -s dotglob   # * 不匹配 .next 隐藏目录，dotglob 开启后完整拷贝
-    cp -R "$STANDALONE_DIR"/* "$STAGING_STANDALONE_DIR/"
+    cp -R "$STANDALONE_DIR"/frontend/* "$STAGING_STANDALONE_DIR/"
     shopt -u dotglob
 
     # 拷贝 static/ 到 standalone/.next/static/ (Next.js 16 standalone 从 ./.next/static 读取)

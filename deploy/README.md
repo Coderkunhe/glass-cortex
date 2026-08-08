@@ -1,7 +1,7 @@
 # GlassCortex Windows Server 部署手册
 
 > **适用场景**：内网 Windows Server 2019/2022 · 单机部署 · FastAPI + Next.js standalone + Nginx 反代
-> **产物版本**：Phase 67 Batch 7（2026-07-14）
+> **产物版本**：Phase 67 Batch 18（2026-08-08）
 > **目标读者**：运维/SA，未接触过项目源码也能照抄跑通
 
 ---
@@ -245,12 +245,31 @@ chmod +x deploy/build-package.sh
 | 步骤 | 内容 | 说明 |
 |:--|:--|:--|
 | [1/7] | 准备 staging 目录 | 清理旧临时文件 |
-| [2/7] | 拷贝源码 | 排除 .git / venv / node_modules / __pycache__ / data / logs |
+| [2/7] | 拷贝源码 | 排除 .git / venv / node_modules / __pycache__ / data / logs / test-results / .claude / Bn（B18 补全） |
 | [3/7] | 下载 Python wheels | `pip download` → `wheels/`，服务器侧离线安装 |
 | [4/7] | 下载嵌入模型 | `all-MiniLM-L6-v2` (~90MB) → `models/huggingface/` |
-| [5/7] | 构建前端 | `npm ci` + `npm run build` → standalone 产物 |
+| [5/7] | 构建前端 | `npm ci` + `npm run build` → standalone 产物（B18 展平 `standalone/frontend/` → `standalone/`） |
 | [6/7] | 创建 zip | `Compress-Archive` → `glasscortex-deploy-YYYYMMDD.zip` |
 | [7/7] | 清理 staging | 删除临时目录 |
+
+**`--patch` 增量模式**（B18 新增文档）：
+
+```bash
+# 仅打包运行时文件（src/ api/ deploy/ + frontend standalone），跳过 wheels + 模型下载
+./deploy/build-package.sh --patch -v 20260808-patch
+```
+
+| 对比 | 全量 (`默认`) | 增量 (`--patch`) |
+|:--|:--|:--|
+| **源码** | src/ api/ tests/ docs/ deploy/ frontend/ | src/ api/ deploy/ frontend/（仅运行时） |
+| **Python wheels** | ✅ 下载到 wheels/ | ❌ 跳过（服务器已有 venv） |
+| **嵌入模型** | ✅ 下载到 models/ | ❌ 跳过（服务器已缓存） |
+| **前端构建** | ✅ npm ci + build | ✅ npm ci + build（必需） |
+| **产物大小** | ~500MB | ~25MB |
+| **适用场景** | 首次部署 / 新服务器 | 已有部署的版本更新 |
+| **服务器要求** | 免 git / 免 npm / 免编译 | 需已有 venv + 模型缓存 + Node.js 22.x |
+
+> **注意**：`--patch` 包不含 `node_modules`（前端源码部分），但包含 standalone 自包含的 `node_modules`（仅生产依赖）。服务器上的 `npm install` 不受影响。
 
 产物 `glasscortex-deploy-YYYYMMDD.zip` 解压后即为完整项目目录，含预构建前端 + Python wheels + 嵌入模型缓存。
 
@@ -551,7 +570,7 @@ Copy-Item C:\apps\glasscortex\data\index.usearch "C:\backups\index-$stamp.usearc
 | `usearch import failed` in deploy [2/6] | 缺 VC++ Build Tools 或 Python 版本不匹配 | 安装 VC++ Build Tools 2019+，`pip install --force-reinstall usearch` |
 | `npm ci` 失败 `EACCES / EPERM` | Node.js 权限问题或杀软拦截 | 以管理员打开 PowerShell；将 `C:\apps\glasscortex` 加入杀软白名单 |
 | `next build` 报 `standalone: not defined` | `frontend/next.config.ts` 未含 `output: "standalone"` | B1 已配好；若被覆盖，检查该文件 |
-| GlassCortexWeb 启动即崩，stderr 有 `Cannot find module '.../server.js'` | Next.js standalone 产物路径不对 | 确认 `frontend\.next\standalone\server.js` 存在。不存在则重跑 `.\deploy\deploy.ps1 -SkipClone -SkipBuild=$false` |
+| GlassCortexWeb 启动即崩，stderr 有 `Cannot find module '.../server.js'` | Next.js standalone 产物路径不对 | ① 确认 `frontend\.next\standalone\server.js` 存在（不是 `standalone/frontend/server.js`）② 若嵌套在 `standalone/frontend/` 子目录——构建脚本版本过旧（<B18），升级到 `deploy/build-package.sh` B18+ 后重打包 ③ 紧急修复：`Move-Item frontend\.next\standalone\frontend\* frontend\.next\standalone\` 展平后重启 |
 | GlassCortexAPI 启动即崩，stderr 有 `KeyError: 'DEEPSEEK_API_KEY'` | `.env` 未创建或未填 | `notepad C:\apps\glasscortex\.env` 补 key，`Restart-Service GlassCortexAPI` |
 | GlassCortexAPI 启动即崩，stderr 有 `HuggingFace Hub` 相关网络错 | 无外网 + 无本地模型缓存 | 走 [离线模型 SOP](./offline-model.md) |
 | `http://localhost/api/health` 404 | Nginx location 匹配问题 | 检查 `nginx.conf` `location /api/` 段的 `proxy_pass http://fastapi/;` 末尾斜杠必须有 |
