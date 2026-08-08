@@ -377,4 +377,81 @@ describe("DocsPanel", () => {
       });
     });
   });
+
+  describe("inline search", () => {
+    it("renders search input with placeholder", async () => {
+      mockGetDocs.mockResolvedValue(MOCK_DOCS);
+      renderPanel();
+      await waitFor(() => {
+        expect(screen.getByTestId("docs-search-input")).toBeInTheDocument();
+      });
+      expect(screen.getByPlaceholderText("过滤文档...")).toBeInTheDocument();
+    });
+
+    it("filters documents by name when typing in search", async () => {
+      mockGetDocs.mockResolvedValue(MOCK_DOCS);
+      renderPanel();
+
+      await waitFor(() => {
+        expect(screen.getByText("architecture")).toBeInTheDocument();
+      });
+
+      const input = screen.getByTestId("docs-search-input");
+      fireEvent.change(input, { target: { value: "lesson" } });
+
+      // architecture should be filtered out, lessons-learned should remain
+      await waitFor(() => {
+        expect(screen.queryByText("architecture")).not.toBeInTheDocument();
+      });
+      expect(screen.getByText("lessons-learned")).toBeInTheDocument();
+    });
+
+    it("shows clear button when search has input", async () => {
+      mockGetDocs.mockResolvedValue(MOCK_DOCS);
+      renderPanel();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("docs-search-input")).toBeInTheDocument();
+      });
+
+      const input = screen.getByTestId("docs-search-input");
+      fireEvent.change(input, { target: { value: "test" } });
+
+      const clearBtn = screen.getByLabelText("清除搜索");
+      expect(clearBtn).toBeInTheDocument();
+    });
+
+    it("clears search when clear button is clicked", async () => {
+      mockGetDocs.mockResolvedValue(MOCK_DOCS);
+      renderPanel();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("docs-search-input")).toBeInTheDocument();
+      });
+
+      const input = screen.getByTestId("docs-search-input") as HTMLInputElement;
+      fireEvent.change(input, { target: { value: "test" } });
+      expect(input.value).toBe("test");
+
+      fireEvent.click(screen.getByLabelText("清除搜索"));
+      expect(input.value).toBe("");
+    });
+
+    it("shows empty search result message when no match", async () => {
+      mockGetDocs.mockResolvedValue(MOCK_DOCS);
+      renderPanel();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("docs-search-input")).toBeInTheDocument();
+      });
+
+      const input = screen.getByTestId("docs-search-input");
+      fireEvent.change(input, { target: { value: "zzz_nonexistent_xyz" } });
+
+      await waitFor(() => {
+        expect(screen.getByText("未找到匹配的文档")).toBeInTheDocument();
+      });
+      expect(screen.getByText("试试其他关键词")).toBeInTheDocument();
+    });
+  });
 });

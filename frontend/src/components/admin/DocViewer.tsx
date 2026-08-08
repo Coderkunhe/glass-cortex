@@ -15,7 +15,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createRoot } from "react-dom/client";
-import { RiArrowLeftLine, RiFontSize } from "@remixicon/react";
+import { RiArrowLeftLine, RiFontSize, RiSearchLine, RiArrowUpSLine, RiArrowDownSLine, RiCloseLine } from "@remixicon/react";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
@@ -31,6 +31,104 @@ interface TocHeading {
   id: string;
   text: string;
   level: number; // 1-3
+}
+
+// ── DOM 文本搜索工具 ─────────────────────────────────────────────────
+
+/** 转义正则特殊字符 */
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * 在 DOM 元素内搜索文本并高亮所有匹配项。
+ *
+ * 使用 TreeWalker 遍历文本节点，将匹配文本包裹为 <mark> 元素。
+ * 返回所有 mark 元素数组供导航和清除使用。
+ */
+export function highlightInDOM(root: Element, query: string): HTMLElement[] {
+  const marks: HTMLElement[] = [];
+  const escaped = escapeRegex(query);
+
+  // 第一步：收集含有匹配文本的文本节点（先收集再替换，避免 TreeWalker 失效）
+  const textNodes: Text[] = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Text;
+    const parent = node.parentElement;
+    if (!parent) continue;
+    if (parent.closest("script,style,noscript,mark,.gm-search-mark")) continue;
+    const text = node.textContent || "";
+    if (new RegExp(escaped, "gi").test(text)) {
+      textNodes.push(node);
+    }
+  }
+
+  // 第二步：对每个文本节点做替换
+  const matchRegex = new RegExp(escaped, "gi");
+  for (const node of textNodes) {
+    const text = node.textContent || "";
+    matchRegex.lastIndex = 0;
+
+    const fragment = document.createDocumentFragment();
+    let lastIdx = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = matchRegex.exec(text)) !== null) {
+      if (match.index > lastIdx) {
+        fragment.appendChild(
+          document.createTextNode(text.slice(lastIdx, match.index)),
+        );
+      }
+      const mark = document.createElement("mark");
+      mark.className = "gm-search-mark bg-yellow-200/60 rounded-gm-xs";
+      mark.textContent = match[0];
+      fragment.appendChild(mark);
+      marks.push(mark);
+      lastIdx = match.index + match[0].length;
+    }
+
+    if (lastIdx < text.length) {
+      fragment.appendChild(document.createTextNode(text.slice(lastIdx)));
+    }
+
+    if (node.parentNode) {
+      node.parentNode.replaceChild(fragment, node);
+    }
+  }
+
+  return marks;
+}
+
+/** 滚动到指定 mark 并高亮当前匹配项 */
+function focusMatch(marks: HTMLElement[], index: number): void {
+  marks.forEach((m, i) => {
+    if (i === index) {
+      m.className =
+        "gm-search-mark bg-yellow-300 ring-2 ring-yellow-400/50 rounded-gm-xs";
+    } else {
+      m.className = "gm-search-mark bg-yellow-200/60 rounded-gm-xs";
+    }
+  });
+  try {
+    marks[index]?.scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch {
+    // scrollIntoView 在 jsdom 中可能不可用，静默忽略
+  }
+}
+
+/** 清除所有高亮标记，还原原始文本节点 */
+function clearHighlights(root: Element, marks: HTMLElement[]): void {
+  for (const mark of marks) {
+    const parent = mark.parentNode;
+    if (parent) {
+      parent.replaceChild(
+        document.createTextNode(mark.textContent || ""),
+        mark,
+      );
+    }
+  }
+  root.normalize();
 }
 
 // ── Props ─────────────────────────────────────────────────────────────
@@ -74,6 +172,17 @@ export default function DocViewer({
   // ── TOC state ──
   const [headings, setHeadings] = useState<TocHeading[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  // ── 文档内搜索 state ──
+  //     matchCount / currentMatch 使用 ref 而非 state，避免 setState
+  //     触发重渲染 → dangerouslySetInnerHTML 重置 → 抹掉 mark 元素。
+  const [searchActive, setSearchActive] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const matchCountRef = useRef(0);
+  const currentMatchRef = useRef(0); // 1-indexed display
+  const searchMarksRef = useRef<HTMLElement[]>([]);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const matchDisplayRef = useRef<HTMLSpanElement>(null);
 
   // ── Hydrate mermaid blocks injected by renderMarkdown ──
   useEffect(() => {
@@ -167,6 +276,112 @@ export default function DocViewer({
     return () => observer.disconnect();
   }, [content]);
 
+  // ═════════════════════════════════════════════════════════════════════
+  // 文档内搜索 — 工具函数（必须在 effects 之前声明）
+  // ═════════════════════════════════════════════════════════════════════
+
+  /** 清除当前高亮 — 函数声明提升确保下方 effect 可调用 */
+  function clearHighlightsForCurrent(): void {
+    const root = docBodyRef.current;
+    const marks = searchMarksRef.current;
+    if (root && marks.length > 0) {
+      clearHighlights(root, marks);
+    }
+    searchMarksRef.current = [];
+  }
+
+  /** 同步 ref 值到匹配显示 DOM 元素 — 操作 ref + DOM，不依赖 state */
+  const updateMatchDisplay = useCallback((): void => {
+    const el = matchDisplayRef.current;
+    if (!el) return;
+    if (matchCountRef.current > 0) {
+      el.textContent = `${currentMatchRef.current} / ${matchCountRef.current}`;
+      el.setAttribute("data-match-state", "found");
+    } else if (searchQuery.trim()) {
+      el.textContent = "无匹配";
+      el.setAttribute("data-match-state", "empty");
+    } else {
+      el.textContent = "";
+      el.removeAttribute("data-match-state");
+    }
+  }, [searchQuery]);
+
+  /** 导航到上一个/下一个匹配项 */
+  const navigateMatch = useCallback(
+    (direction: 1 | -1) => {
+      const marks = searchMarksRef.current;
+      if (marks.length === 0) return;
+
+      const cur = currentMatchRef.current;
+      const newIdx =
+        direction === 1
+          ? cur >= marks.length
+            ? 1
+            : cur + 1
+          : cur <= 1
+            ? marks.length
+            : cur - 1;
+
+      currentMatchRef.current = newIdx;
+      focusMatch(marks, newIdx - 1);
+      updateMatchDisplay();
+    },
+    [updateMatchDisplay],
+  );
+
+  // ── 文档内搜索：激活时自动聚焦输入框 ──
+  useEffect(() => {
+    if (searchActive) {
+      // 打开搜索时重置状态 — 模态类交互的标准模式，与 SearchModal L92-94 一致
+      /* eslint-disable react-hooks/set-state-in-effect */
+      setSearchQuery("");
+      /* eslint-enable react-hooks/set-state-in-effect */
+      matchCountRef.current = 0;
+      currentMatchRef.current = 0;
+      updateMatchDisplay();
+      clearHighlightsForCurrent();
+      const id = requestAnimationFrame(() => searchInputRef.current?.focus());
+      return () => cancelAnimationFrame(id);
+    } else {
+      // 关闭搜索时清除高亮
+      clearHighlightsForCurrent();
+      setSearchQuery("");
+      matchCountRef.current = 0;
+      currentMatchRef.current = 0;
+      updateMatchDisplay();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchActive]);
+
+  // ── 文档内搜索：搜索词变化 → 高亮匹配项 ──
+  useEffect(() => {
+    if (!searchActive || !docBodyRef.current) return;
+
+    // 清除上次高亮
+    clearHighlightsForCurrent();
+
+    const trimmed = searchQuery.trim();
+    if (!trimmed) {
+      matchCountRef.current = 0;
+      currentMatchRef.current = 0;
+      updateMatchDisplay();
+      return;
+    }
+
+    const marks = highlightInDOM(docBodyRef.current, trimmed);
+    searchMarksRef.current = marks;
+    matchCountRef.current = marks.length;
+
+    if (marks.length > 0) {
+      currentMatchRef.current = 1;
+      focusMatch(marks, 0);
+    } else {
+      currentMatchRef.current = 0;
+    }
+    updateMatchDisplay();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, content, searchActive]);
+
   // ── TOC 点击 → 平滑滚动到标题 ──
   const scrollToHeading = useCallback((id: string) => {
     const el = docBodyRef.current?.querySelector(`#${CSS.escape(id)}`);
@@ -208,7 +423,81 @@ export default function DocViewer({
         >
           <RiFontSize className="text-gm-icon" />
         </button>
+        {/* 文档内搜索 */}
+        <button
+          onClick={() => setSearchActive((v) => !v)}
+          className={`rounded-gm-sm p-gm-1 transition-colors shrink-0 ${
+            searchActive
+              ? "text-primary bg-primary/8"
+              : "text-text-muted hover:text-text hover:bg-surface-alt"
+          }`}
+          aria-label="文档内搜索"
+          title="文档内搜索 (Cmd+F)"
+        >
+          <RiSearchLine className="text-gm-icon" />
+        </button>
       </div>
+
+      {/* 搜索栏 — 激活时展示 */}
+      {searchActive && (
+        <div className="flex items-center gap-gm-2 px-gm-5 py-gm-2 border-b border-border bg-surface-lowered/30">
+          <RiSearchLine size={14} className="text-text-muted shrink-0" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            className="flex-1 bg-transparent text-gm-sm text-text
+                       placeholder:text-text-muted/50 outline-none"
+            placeholder="在文档中查找..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (e.shiftKey) {
+                  navigateMatch(-1);
+                } else {
+                  navigateMatch(1);
+                }
+              }
+            }}
+            data-testid="doc-search-input"
+          />
+          {/* 匹配计数 — ref 驱动，避免 setState 触发 dangerouslySetInnerHTML 重渲染 */}
+          <span
+            ref={matchDisplayRef}
+            className="text-gm-xs text-text-muted/70 tabular-nums shrink-0"
+            data-testid="doc-search-match-count"
+          />
+          {/* 上下导航 */}
+          <button
+            onClick={() => navigateMatch(-1)}
+            className="rounded-gm-sm p-gm-0.5 text-text-muted hover:text-text hover:bg-surface-alt transition-colors shrink-0"
+            aria-label="上一个匹配"
+            data-testid="doc-search-prev"
+          >
+            <RiArrowUpSLine size={14} />
+          </button>
+          <button
+            onClick={() => navigateMatch(1)}
+            className="rounded-gm-sm p-gm-0.5 text-text-muted hover:text-text hover:bg-surface-alt transition-colors shrink-0"
+            aria-label="下一个匹配"
+            data-testid="doc-search-next"
+          >
+            <RiArrowDownSLine size={14} />
+          </button>
+          {/* 关闭按钮 */}
+          <button
+            onClick={() => setSearchActive(false)}
+            className="rounded-gm-sm p-gm-0.5 text-text-muted hover:text-text hover:bg-surface-alt transition-colors shrink-0"
+            aria-label="关闭搜索"
+            data-testid="doc-search-close"
+          >
+            <RiCloseLine size={14} />
+          </button>
+        </div>
+      )}
 
       {/* 文档内容区（TOC 侧栏 + 正文）— 各自独立滚动 */}
       <div className="flex flex-1 overflow-hidden min-h-0">

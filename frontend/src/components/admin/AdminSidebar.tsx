@@ -20,6 +20,7 @@ import {
   RiArticleLine,
   RiArrowDownSLine,
   RiArrowRightSLine,
+  RiSearchLine,
 } from "@remixicon/react";
 
 // ── 类型 ──────────────────────────────────────────────────────────────
@@ -74,8 +75,9 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ activeTab, onTab, mobile = false }: AdminSidebarProps) {
   return (
-    <aside className={`${mobile ? "block" : "hidden lg:block"} w-[var(--spacing-sidebar-w)] shrink-0 border-r border-border bg-surface-lowered h-full overflow-y-auto`}>
-      <div className="py-gm-3">
+    <aside className={`${mobile ? "block" : "hidden lg:block"} w-[var(--spacing-sidebar-w)] shrink-0 border-r border-border bg-surface-lowered h-full flex flex-col`}>
+      {/* 菜单区 — flex-1 占据剩余空间，独立滚动 */}
+      <div className="flex-1 overflow-y-auto py-gm-3">
         <nav>
           {MENU_GROUPS.map((group) => (
             <SidebarGroup
@@ -86,6 +88,20 @@ export default function AdminSidebar({ activeTab, onTab, mobile = false }: Admin
             />
           ))}
         </nav>
+      </div>
+
+      {/* Cmd+K 快捷键提示 — 固定在侧栏底部 */}
+      <div
+        className="shrink-0 border-t border-border px-gm-3 py-gm-2.5"
+        data-testid="sidebar-search-hint"
+      >
+        <div className="flex items-center gap-gm-2 text-gm-sm text-text-muted/70">
+          <RiSearchLine size={14} className="shrink-0" />
+          <span>搜索文档</span>
+          <kbd className="ml-auto bg-surface-elevated rounded-gm-xs px-gm-1.5 py-0.5 font-mono text-gm-xs border border-border text-text-muted/50">
+            ⌘K
+          </kbd>
+        </div>
       </div>
     </aside>
   );

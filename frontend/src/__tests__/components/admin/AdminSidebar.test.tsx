@@ -125,4 +125,21 @@ describe("AdminSidebar", () => {
       expect(headers.length).toBeGreaterThanOrEqual(2);
     });
   });
+
+  describe("search hint", () => {
+    it("renders search hint at the bottom of the sidebar", () => {
+      renderSidebar();
+      const hint = screen.getByTestId("sidebar-search-hint");
+      expect(hint).toBeInTheDocument();
+      expect(hint.textContent).toContain("搜索文档");
+      expect(hint.textContent).toContain("⌘K");
+    });
+
+    it("has a search icon in the hint", () => {
+      renderSidebar();
+      const hint = screen.getByTestId("sidebar-search-hint");
+      const svg = hint.querySelector("svg");
+      expect(svg).not.toBeNull();
+    });
+  });
 });

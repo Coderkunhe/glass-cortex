@@ -235,29 +235,35 @@ export default function DocsPanel({
 
   return (
     <div className="space-y-gm-4">
-      {/* 内联搜索框 */}
-      <div className="flex items-center gap-gm-2 rounded-gm-lg bg-surface-elevated
-                      border border-border px-gm-4 py-gm-2.5">
-        <RiSearchLine className="text-gm-icon text-text-muted shrink-0" />
-        <input
-          type="text"
-          className="flex-1 bg-transparent text-gm-sm text-text
-                     placeholder:text-text-muted/50 outline-none"
-          placeholder="搜索文档名称或说明..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          data-testid="docs-search-input"
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery("")}
-            className="p-gm-0.5 rounded-gm-sm text-text-muted
-                       hover:text-text hover:bg-surface-lowered transition-colors"
-            aria-label="清除搜索"
-          >
-            <RiCloseLine size={14} />
-          </button>
-        )}
+      {/* 内联搜索 — 紧凑模式，右上角 */}
+      <div className="flex justify-end">
+        <div
+          className="flex items-center gap-gm-2 rounded-gm-md border border-border/60
+                      bg-surface-lowered/50 px-gm-3 py-gm-1.5
+                      focus-within:border-primary/30 focus-within:bg-surface-elevated
+                      transition-colors"
+        >
+          <RiSearchLine size={14} className="text-text-muted shrink-0" />
+          <input
+            type="text"
+            className="w-40 bg-transparent text-gm-sm text-text
+                       placeholder:text-text-muted/50 outline-none"
+            placeholder="过滤文档..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            data-testid="docs-search-input"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="p-gm-0.5 rounded-gm-sm text-text-muted
+                         hover:text-text hover:bg-surface-lowered transition-colors"
+              aria-label="清除搜索"
+            >
+              <RiCloseLine size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 搜索结果为空 */}
