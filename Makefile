@@ -18,6 +18,7 @@ help:
 	@echo "  make test      仅 pytest"
 	@echo "  make check-comments  规范性注释检查（协作纪律 17，ruff pydocstyle）"
 	@echo "  make check-docs  文档完整性 + 需求验证覆盖 + L2/L3/L4/L5 检查"
+	@echo "  make check-docs-patch  增量文档检查（快速，仅检查变更文件）"
 	@echo "  make check-contracts  L3 契约签名变更影响分析"
 	@echo "  make contract-snapshot  更新契约签名快照基线"
 	@echo "  make dev        一键启动 API + 前端（开发模式）"
@@ -111,6 +112,12 @@ check-docs:
 check-docs-quiet:
 	@PYTHONPATH=. ./venv/bin/python tools/check_docs.py 2>&1 | grep -E '✅|❌|⚠️|💡' || true
 	@echo "💡 完整输出: make check-docs"
+
+# ── 增量文档检查（快速 pre-commit，仅检查变更文件 ~1-2s vs 全量 ~10-15s）─────
+check-docs-patch:
+	@PYTHONPATH=. ./venv/bin/python tools/check_docs.py --changed-only
+	@echo "✅ check-docs-patch 完成（仅扫描变更文件）"
+	@echo "💡 完整检查: make check-docs"
 
 # ── FastAPI REST API (Phase 28 M1) ──────────────────────────────
 api:
