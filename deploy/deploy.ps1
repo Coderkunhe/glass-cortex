@@ -77,6 +77,12 @@ if ($isPackageMode) {
 # ═══════════════════════════════════════════════════════
 
 if ($SkipClone) {
+    # Auto-detect AppRoot when SkipClone: use script parent dir if default path missing
+    if (!(Test-Path $AppRoot)) {
+        $detectedRoot = Split-Path $PSScriptRoot -Parent
+        Write-Host "[*] Default AppRoot ($AppRoot) not found, using script location: $detectedRoot" -ForegroundColor Yellow
+        $AppRoot = $detectedRoot
+    }
     Write-Host "[1/6] Skipping clone (--SkipClone)" -ForegroundColor Yellow
 } else {
     Write-Host "`n[1/6] Cloning repository..." -ForegroundColor Cyan
