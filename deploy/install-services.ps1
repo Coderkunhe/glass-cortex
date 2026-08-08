@@ -27,7 +27,7 @@ param(
 $ErrorActionPreference = "Stop"
 $nssm = $NssmPath
 
-Write-Host "=== GlassCortex Windows Service 注册 ===" -ForegroundColor Cyan
+Write-Host "=== GlassCortex Windows Service Registration ===" -ForegroundColor Cyan
 
 # ── 环境预检 ──
 if (!(Test-Path $nssm)) {
