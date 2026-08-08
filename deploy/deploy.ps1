@@ -198,56 +198,66 @@ if (Test-Path $pkgModelDir) {
 # ═══════════════════════════════════════════════════════
 
 Write-Host "`n[4/6] Building frontend..." -ForegroundColor Cyan
-Push-Location "$AppRoot\frontend"
 
-# 检查 Node.js
-$nodeVersion = & node --version 2>$null
-if (!$nodeVersion) {
-    Write-Error "Node.js not found --- install from https://nodejs.org/"
-}
-Write-Host "  Node.js $nodeVersion" -ForegroundColor Green
+if ($SkipBuild) {
+    Write-Host "  Skipping frontend build (--SkipBuild)" -ForegroundColor Yellow
+} elseif (Test-Path "$AppRoot\frontend\package.json") {
+    Push-Location "$AppRoot\frontend"
 
-# npm install (standalone 构建需要完整 devDeps；构建完成后 node_modules 可选清理)
-if (!(Test-Path "node_modules")) {
-    Write-Host "  Installing npm dependencies (including devDeps for build)..." -ForegroundColor Yellow
-    npm ci
-}
+    # 检查 Node.js
+    $nodeVersion = & node --version 2>$null
+    if (!$nodeVersion) {
+        Pop-Location
+        Write-Error "Node.js not found --- install from https://nodejs.org/ or use -SkipBuild"
+    }
+    Write-Host "  Node.js $nodeVersion" -ForegroundColor Green
 
-# Build (standalone)
-Write-Host "  Running next build (standalone)..." -ForegroundColor Yellow
-$env:NODE_ENV = "production"
-npm run build
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Frontend build failed --- check output above"
-}
+    # npm install (standalone 构建需要完整 devDeps；构建完成后 node_modules 可选清理)
+    if (!(Test-Path "node_modules")) {
+        Write-Host "  Installing npm dependencies (including devDeps for build)..." -ForegroundColor Yellow
+        npm ci
+    }
 
-# 验证 standalone 产物
-$standaloneDir = ".next\standalone"
-if (Test-Path $standaloneDir) {
-    Write-Host "  Standalone output: $(Resolve-Path $standaloneDir)" -ForegroundColor Green
+    # Build (standalone)
+    Write-Host "  Running next build (standalone)..." -ForegroundColor Yellow
+    $env:NODE_ENV = "production"
+    npm run build
+    if ($LASTEXITCODE -ne 0) {
+        Pop-Location
+        Write-Error "Frontend build failed --- check output above"
+    }
+
+    # 验证 standalone 产物
+    $standaloneDir = ".next\standalone"
+    if (Test-Path $standaloneDir) {
+        Write-Host "  Standalone output: $(Resolve-Path $standaloneDir)" -ForegroundColor Green
+    } else {
+        Pop-Location
+        Write-Error "Standalone output not found --- check next.config.ts output setting"
+    }
+
+    # 拷贝 static 目录到 standalone（Next.js standalone 模式需要手动处理）
+    # Ref: https://nextjs.org/docs/pages/api-reference/config/next-config-js/output
+    $staticDir = ".next\static"
+    $standaloneStaticDir = "$standaloneDir\.next\static"
+    if (Test-Path $staticDir) {
+        Write-Host "  Copying static assets to standalone..." -ForegroundColor Yellow
+        New-Item -ItemType Directory -Force -Path (Split-Path $standaloneStaticDir) | Out-Null
+        Copy-Item -Recurse -Force $staticDir $standaloneStaticDir
+    }
+
+    # 拷贝 public/ 到 standalone
+    $publicStandaloneDir = "$standaloneDir\public"
+    if (Test-Path "public") {
+        Write-Host "  Copying public/ to standalone..." -ForegroundColor Yellow
+        New-Item -ItemType Directory -Force -Path $publicStandaloneDir | Out-Null
+        Copy-Item -Recurse -Force "public\*" $publicStandaloneDir
+    }
+
+    Pop-Location
 } else {
-    Write-Error "Standalone output not found --- check next.config.ts output setting"
+    Write-Host "  Skipping frontend build (no frontend/package.json found)" -ForegroundColor Yellow
 }
-
-# 拷贝 static 目录到 standalone（Next.js standalone 模式需要手动处理）
-# Ref: https://nextjs.org/docs/pages/api-reference/config/next-config-js/output
-$staticDir = ".next\static"
-$standaloneStaticDir = "$standaloneDir\.next\static"
-if (Test-Path $staticDir) {
-    Write-Host "  Copying static assets to standalone..." -ForegroundColor Yellow
-    New-Item -ItemType Directory -Force -Path (Split-Path $standaloneStaticDir) | Out-Null
-    Copy-Item -Recurse -Force $staticDir $standaloneStaticDir
-}
-
-# 拷贝 public/ 到 standalone
-$publicStandaloneDir = "$standaloneDir\public"
-if (Test-Path "public") {
-    Write-Host "  Copying public/ to standalone..." -ForegroundColor Yellow
-    New-Item -ItemType Directory -Force -Path $publicStandaloneDir | Out-Null
-    Copy-Item -Recurse -Force "public\*" $publicStandaloneDir
-}
-
-Pop-Location
 
 # ═══════════════════════════════════════════════════════
 # Step 5: 注册 Windows Service
