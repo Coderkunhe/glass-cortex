@@ -102,6 +102,20 @@ if ($isPackageMode) {
 }
 
 # =======================================================
+# AppRoot auto-detection (MUST run before Step 0)
+# If default AppRoot doesn't contain project files (api/),
+# use the script's own parent directory instead.
+# =======================================================
+
+$detectedRoot = Split-Path $PSScriptRoot -Parent
+if (!(Test-Path "$AppRoot\api")) {
+    if ($AppRoot -ne $detectedRoot) {
+        Write-Host "[*] Default AppRoot ($AppRoot) has no project files, using script location: $detectedRoot" -ForegroundColor Yellow
+    }
+    $AppRoot = $detectedRoot
+}
+
+# =======================================================
 # Step 0: Pre-flight package integrity check
 # =======================================================
 
@@ -175,17 +189,6 @@ if (Test-Path $checkScript) {
 # =======================================================
 
 if ($SkipClone) {
-    # Auto-detect AppRoot when SkipClone:
-    # Check if default AppRoot actually contains project files (api/ dir),
-    # not just whether the directory exists. An empty directory from a
-    # previous attempt should NOT block auto-detection.
-    $detectedRoot = Split-Path $PSScriptRoot -Parent
-    if (!(Test-Path "$AppRoot\api")) {
-        if ($AppRoot -ne $detectedRoot) {
-            Write-Host "[*] Default AppRoot ($AppRoot) has no project files, using script location: $detectedRoot" -ForegroundColor Yellow
-        }
-        $AppRoot = $detectedRoot
-    }
     Write-Host "[1/6] Skipping clone (--SkipClone)" -ForegroundColor Yellow
 } else {
     Write-Host "`n[1/6] Cloning repository..." -ForegroundColor Cyan
