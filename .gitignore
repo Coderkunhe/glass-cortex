@@ -21,5 +21,4 @@ node_modules/
 out/
 deploy-package/
 
-# Private docs (not for public repo)
-docs/ONBOARDING.md
+# Private docs (mirror-to-github.sh filters these from public repo)
