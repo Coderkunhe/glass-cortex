@@ -6,8 +6,8 @@
  * 可折叠分组 + 二级菜单项。点击菜单项切换内容区面板。
  * 桌面端固定显示，移动端隐藏（后续 Batch 补 hamburger）。
  *
- * 样式继承 DocViewer TOC 侧栏的 active 指示器模式：
- *   border-l-2 border-primary text-primary bg-primary/8 font-medium
+ * 样式使用 brand token active 指示器模式（Phase 68 B24 升级）：
+ *   border-l-[3px] border-brand text-brand bg-gradient-to-r from-brand-50/60 to-transparent font-semibold
  *
  * @module components/admin/AdminSidebar
  */
