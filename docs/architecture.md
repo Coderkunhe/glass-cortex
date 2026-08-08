@@ -500,6 +500,8 @@
 | 前端 — DocsPanel 摘要卡片 | ✅ 完成 | 2026-08-07 | `SUMMARY_CARD_CONFIGS` + `renderSummaryCard` — 日报/需求日志摘要卡片（图标+标题+概要+统计行+跳转按钮）替代目录树 — Phase 68 B17 |
 | 前端 — Admin 图标统一 | ✅ 完成 | 2026-08-08 | `DocsPanel.tsx` GROUP_ICON 5 组 + SUMMARY_CARD_CONFIGS 2 卡 + `RequirementsLogPanel.tsx` 当前日志卡片 — emoji 全量切换为 `@remixicon/react` 组件，与 AdminSidebar/主站图标体系一致 — Phase 68 B18 |
 | 前端 — Admin 文档检索 | ✅ 完成 | 2026-08-08 | `docSearch.ts` Fuse 索引工具 + `SearchModal.tsx` Cmd+K 全局搜索模态窗 + `DocsPanel.tsx` 内联搜索框 — 名称/摘要模糊搜索，键盘导航(↑↓EnterEsc)，浏览模式 top 20 — Phase 68 B19 |
+| 前端 — 仪表盘重命名+美化 | ✅ 完成 | 2026-08-08 | AdminSidebar「健康仪表盘」→「仪表盘」+ `RiDashboardLine` · HealthPanel 页面标题+卡片图标+`text-gm-xl` 字体 — Phase 69 B1 |
+| 前端 — 日报热力图 | ✅ 完成 | 2026-08-08 | `DailyHeatmap.tsx` ⭐ — GitHub 贡献图式 7×N 热力格子 · 12 月回溯 · 周一对齐 · 仪表盘集成 — Phase 69 B2 |
 
 ## 架构决策记录
 
