@@ -30,14 +30,14 @@ $nssm = $NssmPath
 Write-Host "=== GlassCortex Windows Service 注册 ===" -ForegroundColor Cyan
 
 # ── 环境预检 ──
-if (-not (Test-Path $nssm)) {
+if (!(Test-Path $nssm)) {
     Write-Error "NSSM not found at $nssm --- download from https://nssm.cc/download"
 }
-if (-not (Test-Path $PythonPath)) {
+if (!(Test-Path $PythonPath)) {
     Write-Error "Python venv not found at $PythonPath --- run deploy.ps1 first"
 }
 $standaloneServer = "$AppRoot\frontend\.next\standalone\server.js"
-if (-not (Test-Path $standaloneServer)) {
+if (!(Test-Path $standaloneServer)) {
     Write-Error "Next.js standalone build not found at $standaloneServer --- run: cd $AppRoot\frontend && npm run build"
 }
 

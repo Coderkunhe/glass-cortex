@@ -39,13 +39,13 @@ $ErrorActionPreference = "Stop"
 $startTime = Get-Date
 
 # ── 路径解析 ──
-if (-not $AppRoot) {
+if (!$AppRoot) {
     $AppRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 }
-if (-not $OutputDir) {
+if (!$OutputDir) {
     $OutputDir = Join-Path $AppRoot "deploy-package"
 }
-if (-not $Version) {
+if (!$Version) {
     $Version = Get-Date -Format "yyyyMMdd"
 }
 
@@ -156,7 +156,7 @@ Write-Host "  Source copy complete" -ForegroundColor Green
 # Step 3: 下载 Python wheels（离线安装包）
 # ═══════════════════════════════════════════════════════
 
-if (-not $SkipWheels) {
+if (!$SkipWheels) {
     Write-Host "`n[3/7] Downloading Python wheels..." -ForegroundColor Cyan
 
     Push-Location $AppRoot
@@ -229,7 +229,7 @@ if (-not $SkipWheels) {
 # Step 4: 下载嵌入模型（离线模型缓存）
 # ═══════════════════════════════════════════════════════
 
-if (-not $SkipModel) {
+if (!$SkipModel) {
     Write-Host "`n[4/7] Downloading embedding model..." -ForegroundColor Cyan
 
     Push-Location $AppRoot
@@ -271,20 +271,20 @@ print(f'Cache dir: {os.environ["HF_HOME"]}')
 # Step 5: 前端构建（Next.js standalone）
 # ═══════════════════════════════════════════════════════
 
-if (-not $SkipBuild) {
+if (!$SkipBuild) {
     Write-Host "`n[5/7] Building frontend (Next.js standalone)..." -ForegroundColor Cyan
 
     Push-Location (Join-Path $AppRoot "frontend")
 
     # 检查 Node.js
     $nodeVersion = & node --version 2>$null
-    if (-not $nodeVersion) {
+    if (!$nodeVersion) {
         Write-Error "Node.js not found --- install from https://nodejs.org/"
     }
     Write-Host "  Node.js $nodeVersion" -ForegroundColor Green
 
     # npm install
-    if (-not (Test-Path "node_modules")) {
+    if (!(Test-Path "node_modules")) {
         Write-Host "  Installing npm dependencies..." -ForegroundColor Yellow
         npm ci
         if ($LASTEXITCODE -ne 0) {
@@ -304,7 +304,7 @@ if (-not $SkipBuild) {
 
     # ── 拷贝 standalone 产物到 staging ──
     $standaloneDir = ".next\standalone"
-    if (-not (Test-Path $standaloneDir)) {
+    if (!(Test-Path $standaloneDir)) {
         Write-Error "Standalone output not found at $standaloneDir --- check next.config.ts output setting"
     }
 
@@ -356,7 +356,7 @@ if (Test-Path $zipPath) {
 Write-Host "  Compressing $packageName -> $packageName.zip ..." -ForegroundColor Yellow
 Compress-Archive -Path ".\$packageName\*" -DestinationPath $zipPath -CompressionLevel Optimal
 
-if (-not (Test-Path $zipPath)) {
+if (!(Test-Path $zipPath)) {
     Write-Error "Zip creation failed --- $zipPath not found"
 }
 
