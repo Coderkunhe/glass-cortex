@@ -238,7 +238,7 @@ export default function SearchModal({
         {/* 搜索框 */}
         <div className="flex items-center gap-gm-3 px-gm-4 py-gm-3 border-b border-border">
           {showSpinner ? (
-            <RiLoader4Line className="text-gm-icon text-primary animate-spin shrink-0" />
+            <RiLoader4Line className="text-gm-icon text-brand animate-spin shrink-0" />
           ) : (
             <RiSearchLine className="text-gm-icon text-text-muted shrink-0" />
           )}
@@ -293,8 +293,8 @@ export default function SearchModal({
                   className={`w-full flex items-start gap-gm-3 px-gm-4 py-gm-3 text-left
                               transition-colors hover:bg-surface-alt/30
                               ${idx === selectedIndex
-                                ? "bg-primary/8 border-l-2 border-primary"
-                                : "border-l-2 border-transparent"
+                                ? "bg-brand/8 border-l-[3px] border-brand"
+                                : "border-l-[3px] border-transparent"
                               }`}
                   data-testid={`search-result-${idx}`}
                 >
@@ -334,8 +334,8 @@ export default function SearchModal({
                   className={`w-full flex items-start gap-gm-3 px-gm-4 py-gm-3 text-left
                               transition-colors hover:bg-surface-alt/30
                               ${idx === selectedIndex
-                                ? "bg-primary/8 border-l-2 border-primary"
-                                : "border-l-2 border-transparent"
+                                ? "bg-brand/8 border-l-[3px] border-brand"
+                                : "border-l-[3px] border-transparent"
                               }`}
                   data-testid={`search-result-${idx}`}
                 >

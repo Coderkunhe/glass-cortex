@@ -252,7 +252,7 @@ describe("keyboard navigation", () => {
     fireEvent.keyDown(card, { key: "ArrowDown" });
     // Second result should be selected
     const r1 = screen.getByTestId("search-result-1");
-    expect(r1.className).toContain("bg-primary/8");
+    expect(r1.className).toContain("bg-brand/8");
   });
 
   it("moves selection with ArrowUp", () => {
@@ -263,7 +263,7 @@ describe("keyboard navigation", () => {
     fireEvent.keyDown(card, { key: "ArrowUp" });
     // Should be back at index 1
     const r1 = screen.getByTestId("search-result-1");
-    expect(r1.className).toContain("bg-primary/8");
+    expect(r1.className).toContain("bg-brand/8");
   });
 
   it("ArrowDown clamps at bottom", () => {
@@ -277,7 +277,7 @@ describe("keyboard navigation", () => {
     const results = screen.getByTestId("search-modal-results");
     const lastIdx = results.children.length - 1;
     const last = screen.getByTestId(`search-result-${lastIdx}`);
-    expect(last.className).toContain("bg-primary/8");
+    expect(last.className).toContain("bg-brand/8");
   });
 
   it("Enter triggers onSelectDoc and onClose", () => {
