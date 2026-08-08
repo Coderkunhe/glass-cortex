@@ -1443,6 +1443,8 @@ pre:focus-within .gm-code-copy-btn {
   border-radius: 0 var(--gm-radius-sm) var(--gm-radius-sm) 0;
   font-size: var(--gm-text-sm);
   line-height: 1.55;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 :is(.chat-prose, .prose) blockquote p {
   margin: 0;
@@ -1503,9 +1505,13 @@ pre:focus-within .gm-code-copy-btn {
 /* ── 表格 ── */
 :is(.chat-prose, .prose) table {
   border-collapse: collapse;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   margin: 0.5em 0;
   font-size: var(--gm-text-sm);
+  overflow-x: auto;
+  display: block;
+  -webkit-overflow-scrolling: touch;
 }
 
 :is(.chat-prose, .prose) th {

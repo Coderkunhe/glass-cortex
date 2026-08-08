@@ -550,7 +550,7 @@ export default function DocViewer({
         )}
 
         {/* 文档正文 — 独立纵向滚动 */}
-        <div className="flex-1 min-w-0 p-gm-5 overflow-y-auto">
+        <div className="flex-1 min-w-0 p-gm-5 overflow-y-auto overflow-x-clip">
           {loading && (
             <div className="max-w-3xl mx-auto space-y-gm-3">
               {Array.from({ length: 8 }).map((_, i) => (

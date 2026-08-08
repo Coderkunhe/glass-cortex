@@ -7,17 +7,20 @@ import AdminSidebar, { type AdminTab } from "@/components/admin/AdminSidebar";
 function renderSidebar(overrides: {
   activeTab?: AdminTab;
   mobile?: boolean;
+  onOpenSearch?: () => void;
 } = {}) {
   const onTab = vi.fn();
+  const onOpenSearch = overrides.onOpenSearch ?? vi.fn();
   const activeTab = overrides.activeTab ?? "health";
   const result = render(
     <AdminSidebar
       activeTab={activeTab}
       onTab={onTab}
       mobile={overrides.mobile}
+      onOpenSearch={onOpenSearch}
     />,
   );
-  return { onTab, activeTab, ...result };
+  return { onTab, onOpenSearch, activeTab, ...result };
 }
 
 // ── Tests ────────────────────────────────────────────────────────────
@@ -98,19 +101,17 @@ describe("AdminSidebar", () => {
   });
 
   describe("mobile prop", () => {
-    it("uses 'hidden lg:block' class when mobile is false (default)", () => {
+    it("uses 'hidden lg:flex' class when mobile is false (default)", () => {
       renderSidebar();
       const aside = document.querySelector("aside")!;
-      expect(aside.className).toMatch(/hidden\s+lg:block/);
-      // "lg:block" is a Tailwind breakpoint modifier, not a standalone "block" class
-      expect(aside.className).not.toMatch(/(?:^|\s)block(?:\s|$)/);
+      expect(aside.className).toMatch(/hidden\s+lg:flex/);
     });
 
-    it("uses 'block' class when mobile is true", () => {
+    it("uses 'flex' class when mobile is true", () => {
       renderSidebar({ mobile: true });
       const aside = document.querySelector("aside")!;
-      // mobile=true → "block" replaces "hidden lg:block"
-      expect(aside.className).toMatch(/\bblock\b/);
+      // mobile=true → "flex" replaces "hidden lg:flex"
+      expect(aside.className).toMatch(/(?:^|\s)flex(?:\s|$)/);
       expect(aside.className).not.toMatch(/hidden/);
     });
   });
@@ -140,6 +141,19 @@ describe("AdminSidebar", () => {
       const hint = screen.getByTestId("sidebar-search-hint");
       const svg = hint.querySelector("svg");
       expect(svg).not.toBeNull();
+    });
+
+    it("calls onOpenSearch when clicking the search hint button", () => {
+      const onOpenSearch = vi.fn();
+      renderSidebar({ onOpenSearch });
+      fireEvent.click(screen.getByTestId("sidebar-search-hint"));
+      expect(onOpenSearch).toHaveBeenCalledOnce();
+    });
+
+    it("renders hint as a button element", () => {
+      renderSidebar();
+      const hint = screen.getByTestId("sidebar-search-hint");
+      expect(hint.tagName).toBe("BUTTON");
     });
   });
 });

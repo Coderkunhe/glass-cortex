@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { RiLockLine, RiMenuLine, RiCloseLine, RiSearchLine } from "@remixicon/react";
+import { RiLockLine, RiMenuLine, RiCloseLine } from "@remixicon/react";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { ScrollLockProvider } from "@/components/ui/ScrollLockContext";
@@ -152,12 +152,15 @@ export default function AdminShell() {
         <TopBar
           onLogout={handleLogout}
           onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
-          onOpenSearch={() => setSearchOpen(true)}
         />
 
         {/* 主体：侧栏 + 内容 — min-h-0 允许 flex 子项缩至内容以下，是独立滚动的关键 */}
         <div className="flex flex-1 min-h-0">
-          <AdminSidebar activeTab={activeTab} onTab={handleTabChange} />
+          <AdminSidebar
+            activeTab={activeTab}
+            onTab={handleTabChange}
+            onOpenSearch={() => setSearchOpen(true)}
+          />
 
           {/* 内容区 — ErrorBoundary 包裹确保子面板崩溃时保留 TopBar + Sidebar */}
           <main className="flex-1 min-w-0 min-h-0 p-gm-5 overflow-y-auto flex flex-col">
@@ -236,6 +239,10 @@ export default function AdminShell() {
               handleTabChange(tab);
               setMobileSidebarOpen(false);
             }}
+            onOpenSearch={() => {
+              setSearchOpen(true);
+              setMobileSidebarOpen(false);
+            }}
           />
         </div>
       </Drawer>
@@ -262,11 +269,9 @@ export default function AdminShell() {
 function TopBar({
   onLogout,
   onOpenMobileSidebar,
-  onOpenSearch,
 }: {
   onLogout: () => void;
   onOpenMobileSidebar: () => void;
-  onOpenSearch: () => void;
 }) {
   return (
     <header className="sticky top-0 z-40 bg-surface-elevated/80 backdrop-blur border-b border-border shadow-gm-xs shrink-0">
@@ -289,23 +294,8 @@ function TopBar({
           </span>
         </div>
 
-        {/* 操作区：搜索 + 主题切换 + 退出 */}
+        {/* 操作区：主题切换 + 退出 */}
         <div className="flex items-center gap-gm-2">
-          <button
-            onClick={onOpenSearch}
-            className="rounded-gm-sm px-gm-3 py-gm-1 text-gm-xs text-text-muted
-                       hover:text-text hover:bg-surface-alt/30 transition-all
-                       flex items-center gap-gm-1.5"
-            title="搜索文档 (Cmd+K)"
-            aria-label="搜索文档"
-          >
-            <RiSearchLine size={14} />
-            <span className="hidden sm:inline">搜索</span>
-            <kbd className="hidden sm:inline text-gm-2xs text-text-muted/40
-                            bg-surface-lowered rounded-gm-xs px-gm-1 py-0.5 font-mono">
-              ⌘K
-            </kbd>
-          </button>
           <ThemeToggle />
           <button
             onClick={onLogout}

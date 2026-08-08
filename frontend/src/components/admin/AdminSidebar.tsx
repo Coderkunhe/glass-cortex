@@ -67,15 +67,17 @@ interface AdminSidebarProps {
   onTab: (tab: AdminTab) => void;
   /** 移动端渲染模式 — `block` 替代 `hidden lg:block`，供 Drawer 内嵌使用 */
   mobile?: boolean;
+  /** 打开全局文档搜索 (Cmd+K) — 点击侧栏底部搜索提示时触发 */
+  onOpenSearch?: () => void;
 }
 
 // ═══════════════════════════════════════════════════════════════════════
 // AdminSidebar
 // ═══════════════════════════════════════════════════════════════════════
 
-export default function AdminSidebar({ activeTab, onTab, mobile = false }: AdminSidebarProps) {
+export default function AdminSidebar({ activeTab, onTab, mobile = false, onOpenSearch }: AdminSidebarProps) {
   return (
-    <aside className={`${mobile ? "block" : "hidden lg:block"} w-[var(--spacing-sidebar-w)] shrink-0 border-r border-border bg-surface-lowered h-full flex flex-col`}>
+    <aside className={`${mobile ? "flex" : "hidden lg:flex"} flex-col w-[var(--spacing-sidebar-w)] shrink-0 border-r border-border bg-surface-lowered h-full`}>
       {/* 菜单区 — flex-1 占据剩余空间，独立滚动 */}
       <div className="flex-1 overflow-y-auto py-gm-3">
         <nav>
@@ -90,20 +92,26 @@ export default function AdminSidebar({ activeTab, onTab, mobile = false }: Admin
         </nav>
       </div>
 
-      {/* Cmd+K 快捷键提示 — 固定在侧栏底部，斜体提示风格 */}
-      <div
-        className="shrink-0 border-t border-border px-gm-3 py-gm-3 bg-surface-alt/20"
+      {/* Cmd+K 快捷键提示 — 固定在侧栏底部，点击打开全局搜索 */}
+      <button
+        type="button"
+        onClick={onOpenSearch}
+        className="shrink-0 border-t border-border px-gm-3 py-gm-3 bg-surface-alt/20
+                   w-full text-left hover:bg-surface-alt/40 transition-colors
+                   focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
         data-testid="sidebar-search-hint"
+        title="搜索文档 (Cmd+K)"
+        aria-label="搜索文档"
       >
-        <p className="text-gm-base text-text-muted italic flex items-center gap-gm-2">
+        <span className="text-gm-base text-text-muted italic flex items-center gap-gm-2">
           <RiSearchLine size={16} className="shrink-0" />
           <span>按</span>
           <kbd className="bg-surface-elevated rounded-gm-xs px-gm-1.5 py-0.5 font-mono text-gm-sm border border-border text-text">
             ⌘K
           </kbd>
           <span>搜索全部文档</span>
-        </p>
-      </div>
+        </span>
+      </button>
     </aside>
   );
 }
