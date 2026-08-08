@@ -111,13 +111,11 @@ Write-Host "  data\ + logs\ ensured" -ForegroundColor Green
 $envPath = "$AppRoot\.env"
 if (Test-Path $envPath) {
     Write-Host "  .env exists" -ForegroundColor Green
+} elseif (Test-Path "$AppRoot\.env.example") {
+    Copy-Item "$AppRoot\.env.example" "$AppRoot\.env"
+    Write-Warning "  .env not found - copied from .env.example. EDIT $AppRoot\.env to fill API keys before starting services!"
 } else {
-    if (Test-Path "$AppRoot\.env.example") {
-        Copy-Item "$AppRoot\.env.example" "$AppRoot\.env"
-        Write-Warning "  .env not found - copied from .env.example. EDIT $AppRoot\.env to fill API keys before starting services!"
-    } else {
-        Write-Warning "  Neither .env nor .env.example found - services will fail without API keys."
-    }
+    Write-Warning "  Neither .env nor .env.example found - services will fail without API keys."
 }
 
 # ═══════════════════════════════════════════════════════
