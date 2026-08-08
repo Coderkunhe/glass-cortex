@@ -522,7 +522,7 @@ function DocFileCard({
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
     >
-      {/* 标题行：图标 + 文档名 + 下载按钮 + 分组徽章 */}
+      {/* 标题行：图标 + 文档名 + 分组徽章 */}
       <div className="flex items-start gap-gm-3 min-w-0">
         <span className="text-gm-2xl shrink-0 leading-none mt-0.5" aria-hidden>
           {icon}
@@ -532,22 +532,6 @@ function DocFileCard({
             {displayName}
           </span>
         </div>
-        {/* PDF 下载按钮（卡片内） */}
-        <button
-          onClick={handleDownload}
-          disabled={cardDownloading}
-          className="shrink-0 rounded-gm-sm p-gm-1 text-text-muted/40 hover:text-primary hover:bg-primary/8
-                     transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-          aria-label={cardDownloading ? "正在生成 PDF..." : `下载 ${item.name} PDF`}
-          title={cardDownloading ? "正在生成 PDF..." : "下载 PDF"}
-          data-testid={`card-download-${item.name.replace(/\.md$/, "")}`}
-        >
-          {cardDownloading ? (
-            <RiLoader4Line size={16} className="animate-spin" />
-          ) : (
-            <RiFileDownloadLine size={16} />
-          )}
-        </button>
         <span className="text-gm-sm text-text-muted/60 bg-surface-lowered/60 rounded-gm-sm px-gm-2 py-0.5 shrink-0">
           {item.group}
         </span>
@@ -562,13 +546,37 @@ function DocFileCard({
         <p className="text-gm-base text-text-muted/40 italic pl-gm-10">暂无说明</p>
       )}
 
-      {/* 元信息行 */}
-      <div className="flex items-center gap-gm-3 text-gm-sm text-text-muted/60 pl-gm-10 mt-auto">
-        <span className="tabular-nums">{item.lines} 行</span>
-        <span aria-hidden>·</span>
-        <span className="tabular-nums text-success">{fmtBytes(item.size_bytes)}</span>
-        <span aria-hidden>·</span>
-        <span>{fmtDate(item.mtime)}</span>
+      {/* 元信息行 + 下载按钮 */}
+      <div className="flex items-center gap-gm-3 pl-gm-10 mt-auto">
+        <span className="text-gm-sm text-text-muted/60 tabular-nums">{item.lines} 行</span>
+        <span className="text-gm-sm text-text-muted/40" aria-hidden>·</span>
+        <span className="text-gm-sm text-success tabular-nums">{fmtBytes(item.size_bytes)}</span>
+        <span className="text-gm-sm text-text-muted/40" aria-hidden>·</span>
+        <span className="text-gm-sm text-text-muted/60">{fmtDate(item.mtime)}</span>
+        {/* 下载 PDF — 右对齐文字按钮，对标 SummaryCard 的 "查看日历" 样式 */}
+        <span className="flex-1" />
+        <button
+          onClick={handleDownload}
+          disabled={cardDownloading}
+          className="shrink-0 flex items-center gap-gm-1.5 text-gm-sm font-medium
+                     text-primary bg-primary/8 rounded-gm-md px-gm-3 py-gm-1.5
+                     hover:bg-primary hover:text-white
+                     transition-all disabled:opacity-40 disabled:cursor-not-allowed
+                     active:scale-[0.97]"
+          data-testid={`card-download-${item.name.replace(/\.md$/, "")}`}
+        >
+          {cardDownloading ? (
+            <>
+              <RiLoader4Line size={14} className="animate-spin" />
+              <span>生成中...</span>
+            </>
+          ) : (
+            <>
+              <RiFileDownloadLine size={14} />
+              <span>下载</span>
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
