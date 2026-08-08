@@ -174,13 +174,13 @@ if (-not $SkipWheels) {
     } elseif (Get-Command python3 -ErrorAction SilentlyContinue) {
         $pythonCmd = (Get-Command python3).Source
     } else {
-        Write-Error "Python not found — set up venv first (make setup) or ensure python is in PATH"
+        Write-Error "Python not found --- set up venv first (make setup) or ensure python is in PATH"
     }
     Write-Host "  Python: $pythonCmd" -ForegroundColor DarkGray
 
     if ($TargetPlatform -eq "auto") {
         # 同平台打包：直接下载当前平台 wheel
-        Write-Host "  Platform: auto (current platform) — downloading native wheels" -ForegroundColor Yellow
+        Write-Host "  Platform: auto (current platform) --- downloading native wheels" -ForegroundColor Yellow
 
         & $pythonCmd -m pip download -r requirements-lock.txt --dest "$wheelsDir" 2>&1 | ForEach-Object {
             if ($_ -match "Successfully downloaded|Collecting|Saved") {
@@ -189,11 +189,11 @@ if (-not $SkipWheels) {
         }
 
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "pip download failed — check network and requirements-lock.txt"
+            Write-Error "pip download failed --- check network and requirements-lock.txt"
         }
     } else {
         # 交叉平台打包：指定目标平台
-        Write-Host "  Platform: $TargetPlatform — cross-platform wheel download" -ForegroundColor Yellow
+        Write-Host "  Platform: $TargetPlatform --- cross-platform wheel download" -ForegroundColor Yellow
         Write-Host "    (native packages without pre-built wheels will need VC++ Build Tools on server)" -ForegroundColor Yellow
 
         # 先尝试 only-binary，失败则下载源码包作为兜底
@@ -206,7 +206,7 @@ if (-not $SkipWheels) {
         }
 
         if ($LASTEXITCODE -ne 0) {
-            Write-Warning "  Some packages lack pre-built wheels for $TargetPlatform — downloading source packages as fallback"
+            Write-Warning "  Some packages lack pre-built wheels for $TargetPlatform --- downloading source packages as fallback"
             & $pythonCmd -m pip download -r requirements-lock.txt --dest "$wheelsDir" `
                 --platform $TargetPlatform --python-version 3.14 2>&1 | ForEach-Object {
                 if ($_ -match "Successfully downloaded|Collecting|Saved") {
@@ -218,7 +218,7 @@ if (-not $SkipWheels) {
 
     $wheelCount = (Get-ChildItem -Path $wheelsDir -Filter "*.whl" -File).Count
     $tarCount = (Get-ChildItem -Path $wheelsDir -Filter "*.tar.gz" -File).Count
-    Write-Host "  Downloaded: $wheelCount wheels, $tarCount source packages → $(Join-Path $stagingDir 'wheels')" -ForegroundColor Green
+    Write-Host "  Downloaded: $wheelCount wheels, $tarCount source packages -> $(Join-Path $stagingDir 'wheels')" -ForegroundColor Green
 
     Pop-Location
 } else {
@@ -256,7 +256,7 @@ print(f'Cache dir: {os.environ["HF_HOME"]}')
     }
 
     if ($LASTEXITCODE -ne 0) {
-        Write-Warning "  Model download had issues — server may need to download on first run."
+        Write-Warning "  Model download had issues --- server may need to download on first run."
         Write-Warning "  If server is offline, re-run with network and without --SkipModel."
     } else {
         Write-Host "  Model cached at: $hfCacheDir" -ForegroundColor Green
@@ -279,7 +279,7 @@ if (-not $SkipBuild) {
     # 检查 Node.js
     $nodeVersion = & node --version 2>$null
     if (-not $nodeVersion) {
-        Write-Error "Node.js not found — install from https://nodejs.org/"
+        Write-Error "Node.js not found --- install from https://nodejs.org/"
     }
     Write-Host "  Node.js $nodeVersion" -ForegroundColor Green
 
@@ -288,7 +288,7 @@ if (-not $SkipBuild) {
         Write-Host "  Installing npm dependencies..." -ForegroundColor Yellow
         npm ci
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "npm ci failed — check network and package-lock.json"
+            Write-Error "npm ci failed --- check network and package-lock.json"
         }
     } else {
         Write-Host "  node_modules exists, skipping npm ci" -ForegroundColor DarkGray
@@ -299,13 +299,13 @@ if (-not $SkipBuild) {
     $env:NODE_ENV = "production"
     npm run build
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Frontend build failed — check output above"
+        Write-Error "Frontend build failed --- check output above"
     }
 
     # ── 拷贝 standalone 产物到 staging ──
     $standaloneDir = ".next\standalone"
     if (-not (Test-Path $standaloneDir)) {
-        Write-Error "Standalone output not found at $standaloneDir — check next.config.ts output setting"
+        Write-Error "Standalone output not found at $standaloneDir --- check next.config.ts output setting"
     }
 
     $stagingStandaloneDir = Join-Path $stagingDir "frontend\.next\standalone"
@@ -353,11 +353,11 @@ if (Test-Path $zipPath) {
 
 # 使用 Compress-Archive（PowerShell 5+ 内置）
 # 注意：Compress-Archive 需要在父目录下运行以保证 zip 内路径从 packageName/ 开始
-Write-Host "  Compressing $packageName → $packageName.zip ..." -ForegroundColor Yellow
+Write-Host "  Compressing $packageName -> $packageName.zip ..." -ForegroundColor Yellow
 Compress-Archive -Path ".\$packageName\*" -DestinationPath $zipPath -CompressionLevel Optimal
 
 if (-not (Test-Path $zipPath)) {
-    Write-Error "Zip creation failed — $zipPath not found"
+    Write-Error "Zip creation failed --- $zipPath not found"
 }
 
 $zipSize = [math]::Round((Get-Item $zipPath).Length / 1MB, 1)
@@ -392,6 +392,6 @@ Next Steps:
      Expand-Archive -Path C:\temp\$packageName.zip -DestinationPath C:\apps\
      Rename-Item C:\apps\$packageName C:\apps\glasscortex
      C:\apps\glasscortex\deploy\deploy.ps1 -SkipClone -SkipBuild
-  3. Configure Nginx per deploy\README.md §2.2
+  3. Configure Nginx per deploy\README.md S2.2
 
 "@ -ForegroundColor Cyan

@@ -31,14 +31,14 @@ Write-Host "=== GlassCortex Windows Service 注册 ===" -ForegroundColor Cyan
 
 # ── 环境预检 ──
 if (-not (Test-Path $nssm)) {
-    Write-Error "NSSM not found at $nssm — download from https://nssm.cc/download"
+    Write-Error "NSSM not found at $nssm --- download from https://nssm.cc/download"
 }
 if (-not (Test-Path $PythonPath)) {
-    Write-Error "Python venv not found at $PythonPath — run deploy.ps1 first"
+    Write-Error "Python venv not found at $PythonPath --- run deploy.ps1 first"
 }
 $standaloneServer = "$AppRoot\frontend\.next\standalone\server.js"
 if (-not (Test-Path $standaloneServer)) {
-    Write-Error "Next.js standalone build not found at $standaloneServer — run: cd $AppRoot\frontend && npm run build"
+    Write-Error "Next.js standalone build not found at $standaloneServer --- run: cd $AppRoot\frontend && npm run build"
 }
 
 # ── 辅助函数 ──
@@ -92,7 +92,7 @@ $apiEnvVars = @{
 }
 $pkgModelDir = "$AppRoot\models\huggingface"
 if (Test-Path $pkgModelDir) {
-    Write-Host "  Pre-cached model detected — configuring HF_HOME + offline mode" -ForegroundColor Green
+    Write-Host "  Pre-cached model detected --- configuring HF_HOME + offline mode" -ForegroundColor Green
     $apiEnvVars["HF_HOME"] = $pkgModelDir
     $apiEnvVars["TRANSFORMERS_CACHE"] = $pkgModelDir
     $apiEnvVars["TRANSFORMERS_OFFLINE"] = "1"
@@ -142,9 +142,9 @@ foreach ($svc in @("GlassCortexAPI", "GlassCortexWeb")) {
 
 Write-Host "`n=== Next Steps ===" -ForegroundColor Cyan
 Write-Host "  1. Install Nginx: download https://nginx.org/en/download.html, unzip to C:\apps\nginx\"
-Write-Host "  2. Copy deploy\nginx.conf → C:\apps\nginx\conf\nginx.conf"
+Write-Host "  2. Copy deploy\nginx.conf -> C:\apps\nginx\conf\nginx.conf"
 Write-Host "  3. Start Nginx: cd C:\apps\nginx; .\nginx.exe   (first-time launch)"
-Write-Host "     (optional: register as NSSM service — see deploy\README.md §2.2)"
+Write-Host "     (optional: register as NSSM service --- see deploy\README.md S2.2)"
 Write-Host "  4. Visit: http://localhost"
 Write-Host "`n  Service management:" -ForegroundColor Yellow
 Write-Host "    Stop:    nssm stop GlassCortexAPI"

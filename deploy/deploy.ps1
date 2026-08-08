@@ -59,16 +59,16 @@ Write-Host @"
 "@ -ForegroundColor Cyan
 
 if ($isPackageMode) {
-    Write-Host "  [Package Mode] No .git detected — auto-enabling SkipClone + SkipBuild" -ForegroundColor Green
+    Write-Host "  [Package Mode] No .git detected --- auto-enabling SkipClone + SkipBuild" -ForegroundColor Green
     if (Test-Path "$AppRoot\wheels") {
-        Write-Host "                  wheels/ detected — will use offline pip install" -ForegroundColor Green
+        Write-Host "                  wheels/ detected --- will use offline pip install" -ForegroundColor Green
     } else {
-        Write-Warning "                  wheels/ NOT found — pip install requires internet"
+        Write-Warning "                  wheels/ NOT found --- pip install requires internet"
     }
     if (Test-Path "$AppRoot\models\huggingface") {
-        Write-Host "                  models/huggingface/ detected — will use pre-cached model" -ForegroundColor Green
+        Write-Host "                  models/huggingface/ detected --- will use pre-cached model" -ForegroundColor Green
     } else {
-        Write-Warning "                  models/huggingface/ NOT found — model download on first run"
+        Write-Warning "                  models/huggingface/ NOT found --- model download on first run"
     }
 }
 
@@ -76,7 +76,9 @@ if ($isPackageMode) {
 # Step 1: 获取源码
 # ═══════════════════════════════════════════════════════
 
-if (-not $SkipClone) {
+if ($SkipClone) {
+    Write-Host "[1/6] Skipping clone (--SkipClone)" -ForegroundColor Yellow
+} else {
     Write-Host "`n[1/6] Cloning repository..." -ForegroundColor Cyan
     if ($GitUrl) {
         if (Test-Path $AppRoot) {
@@ -91,8 +93,6 @@ if (-not $SkipClone) {
     } else {
         Write-Warning "No -GitUrl provided, assuming code is already at $AppRoot"
     }
-} else {
-    Write-Host "[1/6] Skipping clone (--SkipClone)" -ForegroundColor Yellow
 }
 
 if (-not (Test-Path $AppRoot)) {
@@ -152,7 +152,7 @@ if (Test-Path $wheelsDir) {
     Write-Host "  [Offline Package Mode] Installing from wheels/ (no PyPI access needed)..." -ForegroundColor Yellow
     & $pip install --no-index --find-links="$wheelsDir" -r $reqFile
     if ($LASTEXITCODE -ne 0) {
-        Write-Warning "  Offline install from wheels/ failed — falling back to online pip install"
+        Write-Warning "  Offline install from wheels/ failed --- falling back to online pip install"
         & $pip install -r $reqFile
     }
 } else {
@@ -199,7 +199,7 @@ Push-Location "$AppRoot\frontend"
 # 检查 Node.js
 $nodeVersion = & node --version 2>$null
 if (-not $nodeVersion) {
-    Write-Error "Node.js not found — install from https://nodejs.org/"
+    Write-Error "Node.js not found --- install from https://nodejs.org/"
 }
 Write-Host "  Node.js $nodeVersion" -ForegroundColor Green
 
@@ -214,7 +214,7 @@ Write-Host "  Running next build (standalone)..." -ForegroundColor Yellow
 $env:NODE_ENV = "production"
 npm run build
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "Frontend build failed — check output above"
+    Write-Error "Frontend build failed --- check output above"
 }
 
 # 验证 standalone 产物
@@ -222,7 +222,7 @@ $standaloneDir = ".next\standalone"
 if (Test-Path $standaloneDir) {
     Write-Host "  Standalone output: $(Resolve-Path $standaloneDir)" -ForegroundColor Green
 } else {
-    Write-Error "Standalone output not found — check next.config.ts output setting"
+    Write-Error "Standalone output not found --- check next.config.ts output setting"
 }
 
 # 拷贝 static 目录到 standalone（Next.js standalone 模式需要手动处理）
@@ -254,14 +254,14 @@ $installScript = "$AppRoot\deploy\install-services.ps1"
 if (Test-Path $installScript) {
     & $installScript -AppRoot $AppRoot
 } else {
-    Write-Warning "install-services.ps1 not found — please register services manually"
+    Write-Warning "install-services.ps1 not found --- please register services manually"
 }
 
 # ═══════════════════════════════════════════════════════
 # Step 6: 健康检查（冒烟验证）
 # ═══════════════════════════════════════════════════════
 
-Write-Host "`n[6/6] Smoke test — waiting for services to be healthy..." -ForegroundColor Cyan
+Write-Host "`n[6/6] Smoke test --- waiting for services to be healthy..." -ForegroundColor Cyan
 Start-Sleep -Seconds 5
 
 $apiHealthy = $false
@@ -281,14 +281,14 @@ for ($i = 1; $i -le 12; $i++) {
 }
 
 if ($apiHealthy) {
-    Write-Host "  API   /health  → 200 OK" -ForegroundColor Green
+    Write-Host "  API   /health  -> 200 OK" -ForegroundColor Green
 } else {
-    Write-Warning "  API   /health  → not responding after 60s — check C:\apps\glasscortex\logs\GlassCortexAPI-stderr.log"
+    Write-Warning "  API   /health  -> not responding after 60s --- check C:\apps\glasscortex\logs\GlassCortexAPI-stderr.log"
 }
 if ($webHealthy) {
-    Write-Host "  Web   /        → 200 OK" -ForegroundColor Green
+    Write-Host "  Web   /        -> 200 OK" -ForegroundColor Green
 } else {
-    Write-Warning "  Web   /        → not responding after 60s — check C:\apps\glasscortex\logs\GlassCortexWeb-stderr.log"
+    Write-Warning "  Web   /        -> not responding after 60s --- check C:\apps\glasscortex\logs\GlassCortexWeb-stderr.log"
 }
 
 # ═══════════════════════════════════════════════════════
@@ -310,10 +310,10 @@ Write-Host @"
 
 Next Steps:
   1. Install Nginx: download from https://nginx.org/en/download.html
-                    unzip to C:\apps\nginx\ (see deploy\README.md §1.3)
+                    unzip to C:\apps\nginx\ (see deploy\README.md S1.3)
   2. Copy config:   copy deploy\nginx.conf C:\apps\nginx\conf\nginx.conf
   3. Start Nginx:   cd C:\apps\nginx; .\nginx.exe      (first-time launch)
-                    (optional: register as NSSM service — see README §2.2)
+                    (optional: register as NSSM service --- see README S2.2)
   4. Verify:        Invoke-WebRequest http://localhost -UseBasicParsing
 
 Service Management:
