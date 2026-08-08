@@ -159,9 +159,9 @@ RSYNC_EXCLUDES+=(--exclude=".next")
 
 # 源码目录
 if [[ "$PATCH_MODE" == true ]]; then
-	    SOURCE_DIRS=("src" "api" "deploy")  # 增量模式：跳过 tests/ docs/
+	    SOURCE_DIRS=("src" "api" "tools" "deploy")  # 增量模式：tools/ 含 check_docs.py 供 admin/health 调用
 	else
-	    SOURCE_DIRS=("src" "api" "tests" "docs" "deploy")
+	    SOURCE_DIRS=("src" "api" "tests" "docs" "tools" "deploy")
 	fi
 for dir in "${SOURCE_DIRS[@]}"; do
     if [[ -d "$dir" ]]; then
