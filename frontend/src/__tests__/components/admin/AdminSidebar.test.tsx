@@ -41,18 +41,18 @@ describe("AdminSidebar", () => {
       expect(screen.getByText("需求日志")).toBeInTheDocument();
     });
 
-    it("highlights active tab with primary color styles", () => {
+    it("highlights active tab with brand color styles", () => {
       renderSidebar({ activeTab: "docs" });
       const docsBtn = screen.getByText("文档清单").closest("button")!;
-      expect(docsBtn.className).toMatch(/border-primary/);
-      expect(docsBtn.className).toMatch(/text-primary/);
+      expect(docsBtn.className).toMatch(/border-brand/);
+      expect(docsBtn.className).toMatch(/text-brand/);
     });
 
     it("renders non-active tabs as muted", () => {
       renderSidebar({ activeTab: "health" });
       const docsBtn = screen.getByText("文档清单").closest("button")!;
       expect(docsBtn.className).toMatch(/border-transparent/);
-      expect(docsBtn.className).not.toMatch(/border-primary/);
+      expect(docsBtn.className).not.toMatch(/border-brand/);
     });
   });
 

@@ -21,6 +21,7 @@ import {
   RiArrowDownSLine,
   RiArrowRightSLine,
   RiSearchLine,
+  RiShieldCheckLine,
 } from "@remixicon/react";
 
 // ── 类型 ──────────────────────────────────────────────────────────────
@@ -78,6 +79,19 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ activeTab, onTab, mobile = false, onOpenSearch }: AdminSidebarProps) {
   return (
     <aside className={`${mobile ? "flex" : "hidden lg:flex"} flex-col w-[var(--spacing-sidebar-w)] shrink-0 border-r border-border bg-surface-lowered h-full`}>
+      {/* 品牌标识区 — 侧栏顶部 */}
+      <div className="shrink-0 px-gm-3 py-gm-3 border-b border-border/50">
+        <div className="flex items-center gap-gm-2_5">
+          <div className="w-8 h-8 rounded-gm-md bg-brand-gradient flex items-center justify-center shadow-gm-glow shrink-0">
+            <RiShieldCheckLine size={16} className="text-white" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-gm-sm font-bold text-text tracking-tight leading-tight">GlassCortex</p>
+            <p className="text-gm-2xs text-text-muted leading-tight">工程管理面板</p>
+          </div>
+        </div>
+      </div>
+
       {/* 菜单区 — flex-1 占据剩余空间，独立滚动 */}
       <div className="flex-1 overflow-y-auto py-gm-3">
         <nav>
@@ -96,20 +110,25 @@ export default function AdminSidebar({ activeTab, onTab, mobile = false, onOpenS
       <button
         type="button"
         onClick={onOpenSearch}
-        className="shrink-0 border-t border-border px-gm-3 py-gm-3 bg-surface-alt/20
-                   w-full text-left hover:bg-surface-alt/40 transition-colors
-                   focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
+        className="shrink-0 border-t border-border/70 px-gm-3 py-gm-3
+                   w-full text-left
+                   hover:bg-surface-alt/30 transition-colors
+                   focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none
+                   group"
         data-testid="sidebar-search-hint"
         title="搜索文档 (Cmd+K)"
         aria-label="搜索文档"
       >
-        <span className="text-gm-base text-text-muted italic flex items-center gap-gm-2">
-          <RiSearchLine size={16} className="shrink-0" />
-          <span>按</span>
-          <kbd className="bg-surface-elevated rounded-gm-xs px-gm-1.5 py-0.5 font-mono text-gm-sm border border-border text-text">
+        <span className="flex items-center gap-gm-2_5 text-gm-sm text-text-muted
+                         group-hover:text-text-secondary transition-colors">
+          <RiSearchLine size={14} className="shrink-0" />
+          <span className="flex-1">搜索全部文档</span>
+          <kbd className="shrink-0 bg-surface-elevated rounded-gm-xs px-gm-1.5 py-0.5
+                          font-mono text-gm-2xs border border-border text-text-muted
+                          group-hover:border-border-strong group-hover:text-text-secondary
+                          transition-colors">
             ⌘K
           </kbd>
-          <span>搜索全部文档</span>
         </span>
       </button>
     </aside>
@@ -159,13 +178,13 @@ function SidebarGroup({
                 <li key={item.key}>
                   <button
                     onClick={() => onTab(item.key)}
-                    className={`w-full flex items-center gap-gm-2.5 px-gm-3 py-gm-2 text-left text-gm-sm transition-colors border-l-2 ${
+                    className={`w-full flex items-center gap-gm-2.5 px-gm-3 py-gm-2 text-left text-gm-sm transition-all border-l-[3px] ${
                       isActive
-                        ? "border-primary text-primary bg-primary/8 font-medium rounded-r-gm-sm"
-                        : "border-transparent text-text-secondary hover:text-text hover:bg-surface-alt/50 rounded-r-gm-sm"
+                        ? "border-brand text-brand bg-gradient-to-r from-brand-50/60 to-transparent font-semibold rounded-r-gm-sm"
+                        : "border-transparent text-text-secondary hover:text-text hover:bg-surface-alt/50 hover:border-l-[3px] hover:border-border-strong rounded-r-gm-sm"
                     }`}
                   >
-                    <span className={isActive ? "text-primary" : "text-text-muted"}>
+                    <span className={isActive ? "text-brand" : "text-text-muted"}>
                       {item.icon}
                     </span>
                     <span>{item.label}</span>

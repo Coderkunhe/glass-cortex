@@ -264,7 +264,7 @@ describe("AdminShell", () => {
     it("renders logout button", async () => {
       renderShell(true);
       await waitFor(() => {
-        expect(screen.getByText("退出")).toBeInTheDocument();
+        expect(screen.getByText("退出登录")).toBeInTheDocument();
       });
     });
   });
@@ -434,10 +434,10 @@ describe("AdminShell", () => {
     it("clears sessionStorage and shows PasswordGate on logout", async () => {
       renderShell(true);
       await waitFor(() => {
-        expect(screen.getByText("退出")).toBeInTheDocument();
+        expect(screen.getByText("退出登录")).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText("退出"));
+      fireEvent.click(screen.getByText("退出登录"));
 
       await waitFor(() => {
         expect(screen.getByTestId("password-gate")).toBeInTheDocument();

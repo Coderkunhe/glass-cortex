@@ -275,7 +275,9 @@ function TopBar({
 }) {
   return (
     <header className="sticky top-0 z-40 bg-surface-elevated/80 backdrop-blur border-b border-border shadow-gm-xs shrink-0">
-      <div className="mx-auto px-gm-5 py-gm-3 flex items-center justify-between">
+      {/* 品牌 accent bar — 2px 渐变条贯穿 header 顶部 */}
+      <div className="h-[2px] w-full bg-brand-gradient" />
+      <div className="mx-auto px-gm-5 py-gm-2_5 flex items-center justify-between">
         {/* 品牌 */}
         <div className="flex items-center gap-gm-2 select-none">
           {/* 移动端汉堡菜单 — lg:hidden，对标 Header.tsx L66-77 */}
@@ -286,10 +288,10 @@ function TopBar({
           >
             <RiMenuLine className="text-gm-icon" />
           </button>
-          <div className="w-7 h-7 rounded-gm-md bg-brand-50 flex items-center justify-center">
-            <RiLockLine className="text-gm-sm text-brand" />
+          <div className="w-8 h-8 rounded-gm-md bg-brand-gradient flex items-center justify-center shadow-gm-glow">
+            <RiLockLine className="text-gm-sm text-white" />
           </div>
-          <span className="text-gm-sm font-semibold text-text tracking-tight">
+          <span className="text-gm-base font-bold text-text tracking-tight">
             GlassCortex Admin
           </span>
         </div>
@@ -299,9 +301,12 @@ function TopBar({
           <ThemeToggle />
           <button
             onClick={onLogout}
-            className="rounded-gm-sm px-gm-3 py-gm-1 text-gm-xs text-text-muted hover:text-red-500 hover:bg-red-50/30 transition-all"
+            className="rounded-gm-md px-gm-3 py-gm-1_5 text-gm-xs font-medium text-text-muted
+                       border border-transparent
+                       hover:text-red-500 hover:border-red-200 hover:bg-red-50/20
+                       transition-all active:scale-[0.97]"
           >
-            退出
+            退出登录
           </button>
         </div>
       </div>
