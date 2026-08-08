@@ -34,12 +34,12 @@ $startTime = Get-Date
 # 条件：无 .git 目录（非 clone 产物）→ 自动启用 SkipClone + SkipBuild
 #       有 wheels/ → 后续 step 自动走离线 pip；有 models/huggingface/ → 预缓存模型
 $isPackageMode = $false
-if (-not (Test-Path "$AppRoot\.git")) {
+if (!(Test-Path "$AppRoot\.git")) {
     $isPackageMode = $true
-    if (-not $SkipClone) {
+    if (!$SkipClone) {
         $SkipClone = $true
     }
-    if (-not $SkipBuild) {
+    if (!$SkipBuild) {
         $SkipBuild = $true
     }
 }
@@ -95,7 +95,7 @@ if ($SkipClone) {
     }
 }
 
-if (-not (Test-Path $AppRoot)) {
+if (!(Test-Path $AppRoot)) {
     Write-Error "App root not found: $AppRoot"
 }
 
@@ -129,7 +129,7 @@ Write-Host "`n[2/6] Setting up Python environment..." -ForegroundColor Cyan
 Push-Location $AppRoot
 
 # 创建 venv（如果不存在）
-if (-not (Test-Path "$AppRoot\venv\Scripts\python.exe")) {
+if (!(Test-Path "$AppRoot\venv\Scripts\python.exe")) {
     Write-Host "  Creating virtual environment..." -ForegroundColor Yellow
     python -m venv venv
 }
@@ -141,7 +141,7 @@ $pip = "$AppRoot\venv\Scripts\pip.exe"
 
 # 检测是否为打包部署模式（含预下载 wheels/ 目录）
 $reqFile = "$AppRoot\requirements-win.txt"
-if (-not (Test-Path $reqFile)) {
+if (!(Test-Path $reqFile)) {
     Write-Host "  Generating requirements-win.txt (filtering Linux-only uvloop)..." -ForegroundColor Yellow
     Get-Content "$AppRoot\requirements-lock.txt" | Where-Object { $_ -notmatch "uvloop" } | Set-Content $reqFile
 }
@@ -198,13 +198,13 @@ Push-Location "$AppRoot\frontend"
 
 # 检查 Node.js
 $nodeVersion = & node --version 2>$null
-if (-not $nodeVersion) {
+if (!$nodeVersion) {
     Write-Error "Node.js not found --- install from https://nodejs.org/"
 }
 Write-Host "  Node.js $nodeVersion" -ForegroundColor Green
 
 # npm install (standalone 构建需要完整 devDeps；构建完成后 node_modules 可选清理)
-if (-not (Test-Path "node_modules")) {
+if (!(Test-Path "node_modules")) {
     Write-Host "  Installing npm dependencies (including devDeps for build)..." -ForegroundColor Yellow
     npm ci
 }
