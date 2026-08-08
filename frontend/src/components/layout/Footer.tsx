@@ -1,8 +1,9 @@
-import { RiBrainLine, RiGithubFill } from "@remixicon/react";
+import { RiBrainLine, RiDashboardLine, RiGithubFill } from "@remixicon/react";
+import Link from "next/link";
 
 /**
  * 全局底栏——全宽背景条，内容区对齐主内容列。
- * 品牌收拢：GlassCortex + 版本号 + 标语 + 源码链接。
+ * 品牌收拢：GlassCortex + 版本号 + 标语 + 工程入口 + 源码链接。
  */
 export default function Footer() {
   return (
@@ -23,15 +24,24 @@ export default function Footer() {
           <span className="text-border-strong">·</span>
           <span>逐层解剖 AI Robot 工作原理</span>
         </div>
-        <a
-          href="https://github.com/Coderkunhe/glass-cortex"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-gm-1 hover:text-text transition-colors"
-        >
-          <RiGithubFill size={14} />
-          <span>GitHub</span>
-        </a>
+        <div className="flex items-center gap-gm-3">
+          <a
+            href="https://github.com/Coderkunhe/glass-cortex"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-gm-1 hover:text-text transition-colors"
+          >
+            <RiGithubFill size={14} />
+            <span>GitHub</span>
+          </a>
+          <Link
+            href="/admin"
+            className="flex items-center gap-gm-1 hover:text-text transition-colors"
+          >
+            <RiDashboardLine size={14} />
+            <span>AI 工程</span>
+          </Link>
+        </div>
       </div>
     </footer>
   );

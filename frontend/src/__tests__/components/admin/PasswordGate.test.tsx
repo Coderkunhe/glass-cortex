@@ -11,7 +11,7 @@ function renderGate() {
   const onSuccess = vi.fn();
   const result = render(<PasswordGate onSuccess={onSuccess} />);
   const getInput = () => screen.getByPlaceholderText("输入密码") as HTMLInputElement;
-  const getSubmitBtn = () => screen.getByText("进入面板") as HTMLButtonElement;
+  const getSubmitBtn = () => screen.getByText("进入工程") as HTMLButtonElement;
   const getToggleBtn = () => screen.getByRole("button", { name: /显示密码|隐藏密码/ });
   return { onSuccess, getInput, getSubmitBtn, getToggleBtn, ...result };
 }
@@ -30,7 +30,7 @@ describe("PasswordGate", () => {
   describe("rendering", () => {
     it("renders the title and description", () => {
       renderGate();
-      expect(screen.getByText("工程管理面板")).toBeInTheDocument();
+      expect(screen.getByText("AI 工程协作管理面板")).toBeInTheDocument();
       expect(screen.getByText("请输入管理密码以继续")).toBeInTheDocument();
     });
 

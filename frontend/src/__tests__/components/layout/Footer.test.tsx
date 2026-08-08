@@ -23,11 +23,18 @@ describe("Footer", () => {
     expect(link.getAttribute("rel")).toBe("noopener noreferrer");
   });
 
-  it("renders both brand and source code icons", () => {
+  it("renders brand, admin, and source code icons", () => {
     render(<Footer />);
     const footer = screen.getByRole("contentinfo");
     const svgs = footer.querySelectorAll("svg");
-    expect(svgs.length).toBeGreaterThanOrEqual(2);
+    expect(svgs.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("renders admin link to /admin with AI 工程 label", () => {
+    render(<Footer />);
+    const link = screen.getByRole("link", { name: /AI 工程/ });
+    expect(link).toBeInTheDocument();
+    expect(link.getAttribute("href")).toBe("/admin");
   });
 
   // ── 样式与布局 ──

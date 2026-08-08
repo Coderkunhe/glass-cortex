@@ -87,7 +87,7 @@ export default function AdminSidebar({ activeTab, onTab, mobile = false, onOpenS
           </div>
           <div className="min-w-0">
             <p className="text-gm-sm font-bold text-text tracking-tight leading-tight">GlassCortex</p>
-            <p className="text-gm-2xs text-text-muted leading-tight">工程管理面板</p>
+            <p className="text-gm-2xs text-text-muted leading-tight">AI 工程协作</p>
           </div>
         </div>
       </div>

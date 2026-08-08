@@ -292,7 +292,7 @@ function TopBar({
             <RiLockLine className="text-gm-sm text-white" />
           </div>
           <span className="text-gm-base font-bold text-text tracking-tight">
-            GlassCortex Admin
+            AI 工程协作
           </span>
         </div>
 

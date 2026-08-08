@@ -14,7 +14,7 @@ import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 /** Admin 页面元数据 — 不索引管理页 */
 export const metadata: Metadata = {
-  title: "工程管理面板 — GlassCortex",
+  title: "AI 工程协作管理面板 — GlassCortex",
   robots: "noindex, nofollow",
 };
 

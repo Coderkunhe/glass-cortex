@@ -48,7 +48,7 @@ export default function PasswordGate({ onSuccess }: { onSuccess: () => void }) {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-gm-xl bg-brand-50 mb-gm-3">
             <RiLockLine className="text-gm-xl text-brand" />
           </div>
-          <h1 className="text-gm-lg font-semibold text-text">工程管理面板</h1>
+          <h1 className="text-gm-lg font-semibold text-text">AI 工程协作管理面板</h1>
           <p className="text-gm-xs text-text-muted mt-gm-1">请输入管理密码以继续</p>
         </div>
 
@@ -82,7 +82,7 @@ export default function PasswordGate({ onSuccess }: { onSuccess: () => void }) {
             disabled={!input.trim()}
             className="w-full rounded-gm-md bg-brand text-white text-gm-sm font-medium py-gm-2 transition-all hover:bg-brand-600 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            进入面板
+            进入工程
           </button>
         </form>
       </div>

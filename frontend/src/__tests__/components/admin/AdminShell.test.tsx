@@ -238,7 +238,7 @@ describe("AdminShell", () => {
 
       await waitFor(() => {
         // Dashboard should render with TopBar (品牌文字) + Sidebar
-        expect(screen.getByText("GlassCortex Admin")).toBeInTheDocument();
+        expect(screen.getByText("AI 工程协作")).toBeInTheDocument();
       });
     });
 
@@ -247,7 +247,7 @@ describe("AdminShell", () => {
 
       await waitFor(() => {
         // useEffect reads sessionStorage — state update is async
-        expect(screen.getByText("GlassCortex Admin")).toBeInTheDocument();
+        expect(screen.getByText("AI 工程协作")).toBeInTheDocument();
       });
     });
   });
@@ -256,7 +256,7 @@ describe("AdminShell", () => {
     it("renders brand name and theme toggle", async () => {
       renderShell(true);
       await waitFor(() => {
-        expect(screen.getByText("GlassCortex Admin")).toBeInTheDocument();
+        expect(screen.getByText("AI 工程协作")).toBeInTheDocument();
       });
       expect(screen.getByTestId("theme-toggle")).toBeInTheDocument();
     });
