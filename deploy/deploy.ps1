@@ -1,5 +1,5 @@
 # GlassCortex 一键部署脚本 — Windows Server
-# Phase 67 Batch 1 · Batch 3 (offline package support)
+# Phase 67 Batch 1 - Batch 3 (offline package support)
 #
 # 三种部署模式（脚本自动检测）：
 #   模式 1 — Git Clone：    deploy.ps1 -GitUrl "https://..."           （有 git + 网络）
@@ -49,7 +49,7 @@ $modeLabel = if ($isPackageMode) { "Package (offline)" } else { "Git (online)" }
 Write-Host @"
 ========================================
  GlassCortex Production Deployment
- Phase 67 Batch 1 · Batch 3
+ Phase 67 Batch 1 - Batch 3
 ========================================
   Target:    $AppRoot
   Branch:    $Branch
