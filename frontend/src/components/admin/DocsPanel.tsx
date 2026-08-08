@@ -22,10 +22,14 @@ import {
   RiFileLine,
   RiSearchLine,
   RiCloseLine,
+  RiFileDownloadLine,
+  RiLoader4Line,
 } from "@remixicon/react";
 import { api } from "@/lib/api/client";
 import { fmtBytes, fmtDate } from "./utils";
 import { createDocSearchIndex, flattenDocs } from "@/lib/content/docSearch";
+import { downloadPdf } from "@/lib/printPdf";
+import { renderMarkdown } from "@/lib/renderMarkdown";
 import type { DocListItem } from "@/lib/api/types";
 import type { AdminTab } from "./AdminSidebar";
 
@@ -489,15 +493,36 @@ function DocFileCard({
 }) {
   const icon = GROUP_ICON[item.group] ?? <RiFileLine size={18} />;
   const displayName = item.name.replace(/\.md$/, "");
+  const [cardDownloading, setCardDownloading] = useState(false);
+
+  /** 卡片上直接下载 PDF — fetch content → renderMarkdown → downloadPdf */
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // 不触发卡片点击（打开 DocViewer）
+    if (cardDownloading) return;
+    setCardDownloading(true);
+    try {
+      const { content: mdContent } = await api.getDocContent(
+        item.path.replace(/^docs\//, ""),
+      );
+      await downloadPdf(renderMarkdown(mdContent), item.name);
+    } catch {
+      // 静默失败
+    } finally {
+      setCardDownloading(false);
+    }
+  };
 
   return (
-    <button
+    <div
       onClick={onClick}
       className="flex flex-col gap-gm-4 p-gm-6 rounded-gm-lg bg-surface-elevated border border-border
                  hover:border-primary/30 hover:shadow-gm-md hover:bg-surface-alt/20
-                 transition-all text-left group"
+                 transition-all text-left group cursor-pointer"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
     >
-      {/* 标题行：图标 + 文档名 + 分组徽章 */}
+      {/* 标题行：图标 + 文档名 + 下载按钮 + 分组徽章 */}
       <div className="flex items-start gap-gm-3 min-w-0">
         <span className="text-gm-2xl shrink-0 leading-none mt-0.5" aria-hidden>
           {icon}
@@ -507,6 +532,22 @@ function DocFileCard({
             {displayName}
           </span>
         </div>
+        {/* PDF 下载按钮（卡片内） */}
+        <button
+          onClick={handleDownload}
+          disabled={cardDownloading}
+          className="shrink-0 rounded-gm-sm p-gm-1 text-text-muted/40 hover:text-primary hover:bg-primary/8
+                     transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label={cardDownloading ? "正在生成 PDF..." : `下载 ${item.name} PDF`}
+          title={cardDownloading ? "正在生成 PDF..." : "下载 PDF"}
+          data-testid={`card-download-${item.name.replace(/\.md$/, "")}`}
+        >
+          {cardDownloading ? (
+            <RiLoader4Line size={16} className="animate-spin" />
+          ) : (
+            <RiFileDownloadLine size={16} />
+          )}
+        </button>
         <span className="text-gm-sm text-text-muted/60 bg-surface-lowered/60 rounded-gm-sm px-gm-2 py-0.5 shrink-0">
           {item.group}
         </span>
@@ -529,6 +570,6 @@ function DocFileCard({
         <span aria-hidden>·</span>
         <span>{fmtDate(item.mtime)}</span>
       </div>
-    </button>
+    </div>
   );
 }

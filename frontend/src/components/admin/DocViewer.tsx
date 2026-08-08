@@ -15,7 +15,7 @@
 
 import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { createRoot } from "react-dom/client";
-import { RiArrowLeftLine, RiFontSize, RiSearchLine, RiArrowUpSLine, RiArrowDownSLine, RiCloseLine, RiFileDownloadLine } from "@remixicon/react";
+import { RiArrowLeftLine, RiFontSize, RiSearchLine, RiArrowUpSLine, RiArrowDownSLine, RiCloseLine, RiFileDownloadLine, RiLoader4Line } from "@remixicon/react";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
@@ -199,6 +199,9 @@ export default function DocViewer({
     DOC_FONT_SIZE_KEY,
     "md",
   );
+
+  // ── PDF 下载 state ──
+  const [downloading, setDownloading] = useState(false);
 
   // ── TOC state ──
   const [headings, setHeadings] = useState<TocHeading[]>([]);
@@ -484,17 +487,29 @@ export default function DocViewer({
         >
           <RiFontSize className="text-gm-icon" />
         </button>
-        {/* PDF 下载 — 仅在有内容时可用 */}
+        {/* PDF 下载 — 点击后显示 loading 态 */}
         <button
-          onClick={() => { if (content) void downloadPdf(renderMarkdown(content.content), item.name); }}
-          disabled={!content}
+          onClick={async () => {
+            if (!content || downloading) return;
+            setDownloading(true);
+            try {
+              await downloadPdf(renderMarkdown(content.content), item.name);
+            } finally {
+              setDownloading(false);
+            }
+          }}
+          disabled={!content || downloading}
           className="rounded-gm-sm p-gm-1 text-text-muted hover:text-text hover:bg-surface-alt transition-colors shrink-0
                      disabled:opacity-30 disabled:cursor-not-allowed"
-          aria-label="下载 PDF"
-          title="下载 PDF"
+          aria-label={downloading ? "正在生成 PDF..." : "下载 PDF"}
+          title={downloading ? "正在生成 PDF..." : "下载 PDF"}
           data-testid="doc-pdf-download"
         >
-          <RiFileDownloadLine className="text-gm-icon" />
+          {downloading ? (
+            <RiLoader4Line className="text-gm-icon animate-spin" />
+          ) : (
+            <RiFileDownloadLine className="text-gm-icon" />
+          )}
         </button>
       </div>
 

@@ -208,6 +208,30 @@ describe("DocViewer", () => {
         MOCK_ITEM.name,
       );
     });
+
+    it("shows spinner and disables button while downloading", async () => {
+      // Deferred promise — downloadPdf won't resolve until we say so
+      let resolveDl: () => void;
+      downloadPdfMock.mockImplementation(
+        () => new Promise<void>((r) => { resolveDl = r; }),
+      );
+
+      renderViewer({ content: MOCK_CONTENT });
+      const btn = screen.getByTestId("doc-pdf-download");
+      fireEvent.click(btn);
+
+      // Button should now show spinner (RiLoader4Line) and be disabled
+      expect(btn).toBeDisabled();
+      // aria-label updates to "正在生成 PDF..."
+      expect(btn.getAttribute("aria-label")).toBe("正在生成 PDF...");
+
+      // Resolve the download → button returns to normal
+      resolveDl!();
+      await waitFor(() => {
+        expect(btn).not.toBeDisabled();
+      });
+      expect(btn.getAttribute("aria-label")).toBe("下载 PDF");
+    });
   });
 
   describe("TOC (table of contents)", () => {

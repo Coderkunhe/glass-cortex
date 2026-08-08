@@ -6,6 +6,8 @@ import type { AdminTab } from "@/components/admin/AdminSidebar";
 // ── Mock API (partial — keep other exports intact) ────────────────
 
 const mockGetDocs = vi.fn();
+const mockGetDocContent = vi.fn();
+const mockDownloadPdf = vi.fn();
 
 vi.mock("@/lib/api/client", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api/client")>();
@@ -14,9 +16,14 @@ vi.mock("@/lib/api/client", async (importOriginal) => {
     api: {
       ...actual.api,
       getDocs: (...args: unknown[]) => mockGetDocs(...args),
+      getDocContent: (...args: unknown[]) => mockGetDocContent(...args),
     },
   };
 });
+
+vi.mock("@/lib/printPdf", () => ({
+  downloadPdf: (...args: unknown[]) => mockDownloadPdf(...args),
+}));
 
 import DocsPanel from "@/components/admin/DocsPanel";
 
@@ -100,6 +107,9 @@ const MOCK_DOCS: DocListItem[] = [
 
 beforeEach(() => {
   mockGetDocs.mockReset();
+  mockGetDocContent.mockReset();
+  mockDownloadPdf.mockReset();
+  mockDownloadPdf.mockResolvedValue(undefined);
 });
 
 function renderPanel(props: {
@@ -267,11 +277,67 @@ describe("DocsPanel", () => {
         expect(screen.getByText("architecture")).toBeInTheDocument();
       });
 
-      fireEvent.click(screen.getByText("architecture").closest("button")!);
+      fireEvent.click(screen.getByText("architecture").closest('[role="button"]')!);
       expect(onSelectDoc).toHaveBeenCalledTimes(1);
       expect(onSelectDoc).toHaveBeenCalledWith(
         expect.objectContaining({ path: "docs/architecture.md" }),
       );
+    });
+  });
+
+  describe("card PDF download", () => {
+    it("renders download button on each file card", async () => {
+      mockGetDocs.mockResolvedValue(MOCK_DOCS);
+      renderPanel();
+
+      await waitFor(() => {
+        expect(screen.getByText("architecture")).toBeInTheDocument();
+      });
+
+      // Each card should have a download button
+      const archBtn = screen.getByTestId("card-download-architecture");
+      expect(archBtn).toBeInTheDocument();
+      expect(archBtn).not.toBeDisabled();
+
+      const methBtn = screen.getByTestId("card-download-methodology");
+      expect(methBtn).toBeInTheDocument();
+    });
+
+    it("fetches content and downloads PDF when clicking card download button", async () => {
+      mockGetDocs.mockResolvedValue(MOCK_DOCS);
+      mockGetDocContent.mockResolvedValue({ content: "# 架构文档\n\n内容" });
+      renderPanel();
+
+      await waitFor(() => {
+        expect(screen.getByText("architecture")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByTestId("card-download-architecture"));
+
+      // Should fetch content (path with docs/ prefix stripped)
+      await waitFor(() => {
+        expect(mockGetDocContent).toHaveBeenCalledWith("architecture.md");
+      });
+      // Should then call downloadPdf with rendered markdown
+      await waitFor(() => {
+        expect(mockDownloadPdf).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it("does not trigger onSelectDoc when clicking card download button", async () => {
+      const onSelectDoc = vi.fn();
+      mockGetDocs.mockResolvedValue(MOCK_DOCS);
+      mockGetDocContent.mockResolvedValue({ content: "# 架构文档\n\n内容" });
+      renderPanel({ onSelectDoc });
+
+      await waitFor(() => {
+        expect(screen.getByText("architecture")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByTestId("card-download-architecture"));
+
+      // onSelectDoc should NOT have been called (stopPropagation)
+      expect(onSelectDoc).not.toHaveBeenCalled();
     });
   });
 
