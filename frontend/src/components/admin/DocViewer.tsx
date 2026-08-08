@@ -188,8 +188,10 @@ export default function DocViewer({
   onBack,
 }: DocViewerProps) {
   const docBodyRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const mermaidRootsRef = useRef<Map<HTMLElement, ReturnType<typeof createRoot>>>(new Map());
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const [readProgress, setReadProgress] = useState(0);
   useCodeHighlight(docBodyRef, [content]);
 
   // ── 字号偏好 — 持久化到 localStorage，直接控制 prose 容器 font-size ──
@@ -218,6 +220,31 @@ export default function DocViewer({
   const currentMatchRef = useRef(0); // 1-indexed display
   const searchMarksRef = useRef<HTMLElement[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // ── 阅读进度条 — scroll 事件驱动，requestAnimationFrame 节流 ──
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    let rafId = 0;
+    const handleScroll = () => {
+      if (rafId) return; // 上一帧未消费，跳过
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        const max = scrollHeight - clientHeight;
+        setReadProgress(max > 0 ? Math.min(scrollTop / max, 1) : 0);
+      });
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    // 初始值：内容可能已加载但未滚动
+    handleScroll();
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [content]);
 
   // ── Hydrate mermaid blocks injected by renderMarkdown ──
   useEffect(() => {
@@ -413,7 +440,7 @@ export default function DocViewer({
         <div
           className="flex items-center gap-gm-1.5 rounded-gm-md border border-border/60
                       bg-surface-lowered/50 px-gm-2.5 py-gm-1
-                      focus-within:border-primary/30 focus-within:bg-surface-elevated
+                      focus-within:border-brand/30 focus-within:bg-surface-elevated
                       transition-colors"
         >
           <RiSearchLine size={14} className="text-text-muted shrink-0" />
@@ -513,6 +540,17 @@ export default function DocViewer({
         </button>
       </div>
 
+      {/* 阅读进度条 — 3px brand-gradient accent bar，对标 B24 TopBar */}
+      <div
+        className="h-gm-accent-bar bg-brand-gradient transition-[width] duration-100 ease-linear shrink-0"
+        style={{ width: `${readProgress * 100}%`, maxWidth: "100%" }}
+        role="progressbar"
+        aria-valuenow={Math.round(readProgress * 100)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="阅读进度"
+      />
+
       {/* 文档内容区（TOC 侧栏 + 正文）— 各自独立滚动 */}
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* TOC 侧栏 */}
@@ -531,9 +569,9 @@ export default function DocViewer({
                       <li key={h.id}>
                         <button
                           onClick={() => scrollToHeading(h.id)}
-                          className={`w-full text-left text-gm-sm py-gm-1 pr-gm-1 rounded-gm-xs transition-colors border-l-2 ${indent} ${
+                          className={`w-full text-left text-gm-sm py-gm-1 pr-gm-1 rounded-r-gm-xs transition-colors border-l-[3px] ${indent} ${
                             isActive
-                              ? "border-primary text-primary bg-primary/8 font-medium"
+                              ? "border-brand text-brand bg-gradient-to-r from-brand-50/60 to-transparent font-semibold"
                               : "border-transparent text-text-muted hover:text-text hover:bg-surface-alt/50"
                           }`}
                           title={h.text}
@@ -550,7 +588,7 @@ export default function DocViewer({
         )}
 
         {/* 文档正文 — 独立纵向滚动 */}
-        <div className="flex-1 min-w-0 p-gm-5 overflow-y-auto overflow-x-clip">
+        <div ref={scrollContainerRef} className="flex-1 min-w-0 p-gm-5 overflow-y-auto overflow-x-clip">
           {loading && (
             <div className="max-w-3xl mx-auto space-y-gm-3">
               {Array.from({ length: 8 }).map((_, i) => (

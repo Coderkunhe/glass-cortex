@@ -242,7 +242,7 @@ export default function DocsPanel({
     <div
       className="flex items-center gap-gm-2 rounded-gm-md border border-border/60
                   bg-surface-lowered/50 px-gm-2.5 py-gm-1
-                  focus-within:border-primary/30 focus-within:bg-surface-elevated
+                  focus-within:border-brand/30 focus-within:bg-surface-elevated
                   transition-colors"
     >
       <RiSearchLine size={14} className="text-text-muted shrink-0" />
@@ -454,7 +454,7 @@ function SummaryCard({
 
       {/* 内容 */}
       <div className="flex-1 min-w-0">
-        <h4 className="text-gm-base font-semibold text-text group-hover:text-primary transition-colors">
+        <h4 className="text-gm-base font-semibold text-text group-hover:text-brand transition-colors">
           {config.title}
         </h4>
         <p className="text-gm-sm text-text-muted mt-gm-0.5">
@@ -463,7 +463,7 @@ function SummaryCard({
       </div>
 
       {/* 跳转按钮 */}
-      <span className="shrink-0 flex items-center gap-gm-1.5 text-gm-sm font-medium text-primary bg-primary/8 rounded-gm-md px-gm-3 py-gm-1.5 group-hover:bg-primary group-hover:text-white transition-all">
+      <span className="shrink-0 flex items-center gap-gm-1.5 text-gm-sm font-medium text-brand bg-brand/8 rounded-gm-md px-gm-3 py-gm-1.5 group-hover:bg-brand group-hover:text-white transition-all">
         <span>{config.buttonLabel}</span>
         <RiArrowRightLine size={14} />
       </span>
@@ -516,7 +516,7 @@ function DocFileCard({
     <div
       onClick={onClick}
       className="flex flex-col gap-gm-4 p-gm-6 rounded-gm-lg bg-surface-elevated border border-border
-                 hover:border-primary/30 hover:shadow-gm-md hover:bg-surface-alt/20
+                 hover:border-brand/30 hover:shadow-gm-md hover:bg-surface-alt/20
                  transition-all text-left group cursor-pointer"
       role="button"
       tabIndex={0}
@@ -528,7 +528,7 @@ function DocFileCard({
           {icon}
         </span>
         <div className="flex-1 min-w-0">
-          <span className="text-gm-lg font-semibold text-text leading-snug group-hover:text-primary transition-colors">
+          <span className="text-gm-lg font-semibold text-text leading-snug group-hover:text-brand transition-colors">
             {displayName}
           </span>
         </div>
@@ -559,8 +559,8 @@ function DocFileCard({
           onClick={handleDownload}
           disabled={cardDownloading}
           className="shrink-0 flex items-center gap-gm-1.5 text-gm-sm font-medium
-                     text-primary bg-primary/8 rounded-gm-md px-gm-3 py-gm-1.5
-                     hover:bg-primary/12
+                     text-brand bg-brand/8 rounded-gm-md px-gm-3 py-gm-1.5
+                     hover:bg-brand/12
                      transition-all disabled:opacity-40 disabled:cursor-not-allowed
                      active:scale-[0.97]"
           data-testid={`card-download-${item.name.replace(/\.md$/, "")}`}

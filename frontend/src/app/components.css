@@ -1578,4 +1578,62 @@ pre:focus-within .gm-code-copy-btn {
   margin: 0.25em 0;
 }
 
+/* 标题在 serif 阅读模式下的完整层级覆盖 */
+.prose.font-serif h1 {
+  margin-top: 1.8em;
+  margin-bottom: 0.7em;
+}
+
+.prose.font-serif h4 {
+  margin-top: 1em;
+  margin-bottom: 0.4em;
+  color: var(--gm-text);
+}
+
+.prose.font-serif h5 {
+  margin-top: 0.9em;
+  margin-bottom: 0.35em;
+}
+
+.prose.font-serif h6 {
+  margin-top: 0.8em;
+  margin-bottom: 0.3em;
+}
+
+/* serif 模式引用块 — 品牌色左边线增强 */
+.prose.font-serif blockquote {
+  border-left-color: var(--gm-brand);
+  background: var(--gm-brand-50);
+  font-style: italic;
+  margin: 1em 0;
+  padding: var(--gm-space-3) var(--gm-space-4);
+}
+
+[data-theme="dark"] .prose.font-serif blockquote {
+  background: rgba(129, 140, 248, 0.06);
+}
+
+/* serif 模式表格 — 斑马条纹增强可读性 */
+.prose.font-serif table {
+  border-collapse: collapse;
+  display: table;
+}
+
+.prose.font-serif thead th {
+  background: var(--gm-surface-alt);
+  border-bottom: 2px solid var(--gm-border-strong);
+}
+
+.prose.font-serif tbody tr:nth-child(even) {
+  background: var(--gm-bg-subtle);
+}
+
+.prose.font-serif tbody tr:hover {
+  background: var(--gm-brand-50);
+}
+
+[data-theme="dark"] .prose.font-serif tbody tr:hover {
+  background: rgba(129, 140, 248, 0.06);
+}
+
 /* 代码块/表格/引用块保留紧凑样式（功能性内容不适用宽松阅读排版） */

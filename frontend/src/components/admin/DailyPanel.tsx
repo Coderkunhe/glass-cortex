@@ -290,6 +290,8 @@ function MonthCalendar({
 
   return (
     <div className="rounded-gm-lg bg-surface-elevated border border-border shadow-gm-sm overflow-hidden">
+      {/* 品牌 accent bar — 对齐 B24 TopBar 模式 */}
+      <div className="h-gm-accent-bar bg-brand-gradient" />
       {/* 月份标题 */}
       <div className="px-gm-5 py-gm-3 border-b border-border bg-surface-alt/30">
         <h3 className="text-gm-sm font-semibold text-text">{monthLabel}</h3>
