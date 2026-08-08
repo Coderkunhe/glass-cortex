@@ -34,7 +34,7 @@ if (!(Test-Path $nssm)) {
     Write-Warning "NSSM not found at $nssm --- skipping Windows Service registration"
     Write-Warning "  To enable: download NSSM from https://nssm.cc/download"
     Write-Warning "  Or run with: -NssmPath 'C:\path\to\nssm.exe'"
-    exit 0
+    exit 2
 }
 if (!(Test-Path $PythonPath)) {
     throw "Python venv not found at $PythonPath --- run deploy.ps1 first"

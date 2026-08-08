@@ -263,12 +263,20 @@ if ($SkipBuild) {
 # Step 5: 注册 Windows Service
 # ═══════════════════════════════════════════════════════
 
+$servicesRegistered = $false
 Write-Host "`n[5/6] Registering Windows Services..." -ForegroundColor Cyan
 $installScript = "$AppRoot\deploy\install-services.ps1"
 if (Test-Path $installScript) {
     & $installScript -AppRoot $AppRoot
-    if ($LASTEXITCODE -ne 0) {
-        Write-Warning "install-services.ps1 reported errors --- check output above"
+    $svcExitCode = $LASTEXITCODE
+    if ($svcExitCode -eq 2) {
+        # NSSM not found - not an error, just skip smoke test
+        $servicesRegistered = $false
+    } elseif ($svcExitCode -ne 0) {
+        Write-Warning "install-services.ps1 reported errors (exit code: $svcExitCode)"
+        $servicesRegistered = $false
+    } else {
+        $servicesRegistered = $true
     }
 } else {
     Write-Warning "install-services.ps1 not found --- please register services manually"
@@ -278,34 +286,41 @@ if (Test-Path $installScript) {
 # Step 6: 健康检查（冒烟验证）
 # ═══════════════════════════════════════════════════════
 
-Write-Host "`n[6/6] Smoke test --- waiting for services to be healthy..." -ForegroundColor Cyan
-Start-Sleep -Seconds 5
-
-$apiHealthy = $false
-$webHealthy = $false
-for ($i = 1; $i -le 12; $i++) {
-    try {
-        $api = Invoke-WebRequest -Uri "http://127.0.0.1:8000/health" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
-        if ($api.StatusCode -eq 200) { $apiHealthy = $true }
-    } catch { }
-    try {
-        $web = Invoke-WebRequest -Uri "http://127.0.0.1:3000/" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
-        if ($web.StatusCode -eq 200) { $webHealthy = $true }
-    } catch { }
-    if ($apiHealthy -and $webHealthy) { break }
-    Write-Host "  Retry $i/12 (API=$apiHealthy Web=$webHealthy)..." -ForegroundColor DarkGray
+if ($servicesRegistered) {
+    Write-Host "`n[6/6] Smoke test --- waiting for services to be healthy..." -ForegroundColor Cyan
     Start-Sleep -Seconds 5
-}
 
-if ($apiHealthy) {
-    Write-Host "  API   /health  -> 200 OK" -ForegroundColor Green
+    $apiHealthy = $false
+    $webHealthy = $false
+    for ($i = 1; $i -le 12; $i++) {
+        try {
+            $api = Invoke-WebRequest -Uri "http://127.0.0.1:8000/health" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+            if ($api.StatusCode -eq 200) { $apiHealthy = $true }
+        } catch { }
+        try {
+            $web = Invoke-WebRequest -Uri "http://127.0.0.1:3000/" -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+            if ($web.StatusCode -eq 200) { $webHealthy = $true }
+        } catch { }
+        if ($apiHealthy -and $webHealthy) { break }
+        Write-Host "  Retry $i/12 (API=$apiHealthy Web=$webHealthy)..." -ForegroundColor DarkGray
+        Start-Sleep -Seconds 5
+    }
+
+    if ($apiHealthy) {
+        Write-Host "  API   /health  -> 200 OK" -ForegroundColor Green
+    } else {
+        Write-Warning "  API   /health  -> not responding after 60s --- check $AppRoot\logs\GlassCortexAPI-stderr.log"
+    }
+    if ($webHealthy) {
+        Write-Host "  Web   /        -> 200 OK" -ForegroundColor Green
+    } else {
+        Write-Warning "  Web   /        -> not responding after 60s --- check $AppRoot\logs\GlassCortexWeb-stderr.log"
+    }
 } else {
-    Write-Warning "  API   /health  -> not responding after 60s --- check $AppRoot\logs\GlassCortexAPI-stderr.log"
-}
-if ($webHealthy) {
-    Write-Host "  Web   /        -> 200 OK" -ForegroundColor Green
-} else {
-    Write-Warning "  Web   /        -> not responding after 60s --- check $AppRoot\logs\GlassCortexWeb-stderr.log"
+    Write-Host "`n[6/6] Smoke test skipped (no services registered)" -ForegroundColor Yellow
+    Write-Host "  Start API manually:" -ForegroundColor Yellow
+    Write-Host "    $AppRoot\venv\Scripts\python.exe -m uvicorn api.main:app --host 127.0.0.1 --port 8000" -ForegroundColor Yellow
+    Write-Host "  Or install NSSM and re-run: .\deploy\install-services.ps1 -AppRoot $AppRoot" -ForegroundColor Yellow
 }
 
 # ═══════════════════════════════════════════════════════
