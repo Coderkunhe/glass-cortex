@@ -152,9 +152,9 @@ export default function DailyHeatmap({ docs }: DailyHeatmapProps) {
   return (
     <div className="rounded-gm-lg bg-surface-elevated border border-border overflow-hidden">
       {/* 标题栏 */}
-      <div className="px-gm-5 py-gm-3 border-b border-border flex items-center justify-between">
-        <h2 className="text-gm-sm font-semibold text-text">日报热力图</h2>
-        <span className="text-gm-xs text-text-muted">{totalDays} 篇日报</span>
+      <div className="px-gm-5 py-gm-4 border-b border-border flex items-center justify-between">
+        <h2 className="text-gm-base font-semibold text-text">日报热力图</h2>
+        <span className="text-gm-sm text-text-muted">{totalDays} 篇日报</span>
       </div>
 
       <div className="p-gm-5">

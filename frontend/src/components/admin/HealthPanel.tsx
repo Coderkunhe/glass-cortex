@@ -105,35 +105,35 @@ export default function HealthPanel({ docs }: { docs?: DocListItem[] }) {
       value: data.current_phase ? `Phase ${data.current_phase}` : "—",
       sub: data.current_batch ? `Batch ${data.current_batch}` : "",
       ok: true,
-      icon: <RiGitBranchLine size={16} />,
+      icon: <RiGitBranchLine size={18} />,
     },
     {
       label: "L5 拉通间隔",
       value: `${data.l5.batches_since_last} 批`,
       sub: data.l5.blocked ? "⚠️ 已阻断" : data.l5.last_l5_batch || "",
       ok: !data.l5.blocked,
-      icon: <RiCheckDoubleLine size={16} />,
+      icon: <RiCheckDoubleLine size={18} />,
     },
     {
       label: "违纪状态",
       value: data.violations.is_blocked ? "已阻断" : "正常",
       sub: data.violations.summary.replace(/^📊 违纪统计: /, ""),
       ok: !data.violations.is_blocked,
-      icon: <RiErrorWarningLine size={16} />,
+      icon: <RiErrorWarningLine size={18} />,
     },
     {
       label: "硬阻断",
       value: data.hard_failures === 0 ? "零阻断" : `${data.hard_failures} 项阻断`,
       sub: data.hard_failures === 0 ? "所有门禁通过" : "需要修复",
       ok: data.hard_failures === 0,
-      icon: <RiShieldCheckLine size={16} />,
+      icon: <RiShieldCheckLine size={18} />,
     },
     {
       label: "日报状态",
       value: data.daily.today_exists ? "今日已写" : data.daily.yesterday_exists ? "今日未写" : "缺失",
       sub: data.daily.yesterday_date ? `昨日: ${fmtDate(data.daily.yesterday_date)}` : "",
       ok: data.daily.today_exists,
-      icon: <RiCalendarCheckLine size={16} />,
+      icon: <RiCalendarCheckLine size={18} />,
     },
     {
       label: "需求日志",
@@ -142,7 +142,7 @@ export default function HealthPanel({ docs }: { docs?: DocListItem[] }) {
         : "—",
       sub: "",
       ok: true,
-      icon: <RiArticleLine size={16} />,
+      icon: <RiArticleLine size={18} />,
     },
   ];
 
@@ -150,23 +150,23 @@ export default function HealthPanel({ docs }: { docs?: DocListItem[] }) {
   const checkEntries = Object.entries(data.checks);
 
   return (
-    <div className="space-y-gm-5">
+    <div className="space-y-gm-6">
       {/* 页面标题 */}
       <PageHeader lastUpdated={lastUpdated} onRefresh={refresh} />
 
       {/* 摘要卡片网格 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-gm-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-gm-4">
         {summaryCards.map((card) => (
           <div
             key={card.label}
-            className={`rounded-gm-lg border p-gm-5 ${
+            className={`rounded-gm-lg border p-gm-6 ${
               card.ok
                 ? "bg-surface-elevated border-border"
                 : "bg-surface-elevated border-red-200"
             }`}
           >
             {/* 图标 + 标签 */}
-            <div className="flex items-center gap-gm-2 mb-gm-2_5">
+            <div className="flex items-center gap-gm-2_5 mb-gm-3">
               <span className={card.ok ? "text-text-muted" : "text-red-400"}>
                 {card.icon}
               </span>
@@ -176,7 +176,7 @@ export default function HealthPanel({ docs }: { docs?: DocListItem[] }) {
             </div>
 
             {/* 数值 */}
-            <p className={`text-gm-xl font-bold leading-tight mb-gm-1 ${
+            <p className={`text-gm-xl font-bold leading-tight mb-gm-1.5 ${
               card.ok ? "text-text" : "text-red-500"
             }`}>
               {card.value}
@@ -199,51 +199,51 @@ export default function HealthPanel({ docs }: { docs?: DocListItem[] }) {
 
       {/* 门禁明细 */}
       <section className="rounded-gm-lg bg-surface-elevated border border-border overflow-hidden">
-        <div className="px-gm-5 py-gm-3 border-b border-border">
-          <h2 className="text-gm-sm font-semibold text-text">门禁检查明细</h2>
+        <div className="px-gm-5 py-gm-4 border-b border-border">
+          <h2 className="text-gm-base font-semibold text-text">门禁检查明细</h2>
         </div>
         <div className="divide-y divide-border">
           {checkEntries.map(([name, check]) => (
-            <div key={name} className="px-gm-5 py-gm-3 hover:bg-surface-alt/30 transition-colors">
+            <div key={name} className="px-gm-5 py-gm-4 hover:bg-surface-alt/30 transition-colors">
               <div className="flex items-start gap-gm-3">
-                <span className={`mt-0.5 shrink-0 text-gm-sm ${check.exit_code === 0 ? "text-green-500" : "text-red-500"}`}>
+                <span className={`mt-0.5 shrink-0 text-gm-base ${check.exit_code === 0 ? "text-green-500" : "text-red-500"}`}>
                   {check.exit_code === 0 ? "✅" : "❌"}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-gm-1.5 flex-wrap">
-                    <p className={`text-gm-sm font-medium ${check.exit_code === 0 ? "text-text" : "text-red-500"}`}>
+                    <p className={`text-gm-base font-medium ${check.exit_code === 0 ? "text-text" : "text-red-500"}`}>
                       {name}
                     </p>
                     {check.is_critical && (
-                      <span className="text-gm-2xs text-red-500 font-medium">[阻断]</span>
+                      <span className="text-gm-xs text-red-500 font-medium">[阻断]</span>
                     )}
                   </div>
                   {check.lines.length > 0 && check.lines[0] && (
-                    <p className="text-gm-xs text-text-muted mt-gm-0.5 line-clamp-2">{check.lines[0]}</p>
+                    <p className="text-gm-sm text-text-muted mt-gm-1 line-clamp-2">{check.lines[0]}</p>
                   )}
                 </div>
               </div>
             </div>
           ))}
           {checkEntries.length === 0 && (
-            <div className="px-gm-5 py-gm-4 text-center text-gm-xs text-text-muted">无检查项</div>
+            <div className="px-gm-5 py-gm-4 text-center text-gm-sm text-text-muted">无检查项</div>
           )}
         </div>
       </section>
 
       {/* 最近提交 */}
       <section className="rounded-gm-lg bg-surface-elevated border border-border overflow-hidden">
-        <div className="px-gm-5 py-gm-3 border-b border-border">
-          <h2 className="text-gm-sm font-semibold text-text">最近提交</h2>
+        <div className="px-gm-5 py-gm-3_5 border-b border-border">
+          <h2 className="text-gm-base font-semibold text-text">最近提交</h2>
         </div>
         <div className="divide-y divide-border">
           {data.recent_commits.slice(0, 5).map((commit, i) => (
-            <div key={i} className="px-gm-5 py-gm-2_5 hover:bg-surface-alt/30 transition-colors">
-              <p className="text-gm-xs text-text font-mono leading-relaxed break-all">{commit}</p>
+            <div key={i} className="px-gm-5 py-gm-4 hover:bg-surface-alt/30 transition-colors">
+              <p className="text-gm-sm text-text font-mono leading-relaxed break-all">{commit}</p>
             </div>
           ))}
           {data.recent_commits.length === 0 && (
-            <div className="px-gm-5 py-gm-4 text-center text-gm-xs text-text-muted">无提交记录</div>
+            <div className="px-gm-5 py-gm-4 text-center text-gm-sm text-text-muted">无提交记录</div>
           )}
         </div>
       </section>
@@ -267,8 +267,8 @@ function PageHeader({
   return (
     <div className="flex items-center justify-between">
       <div>
-        <h1 className="text-gm-lg font-bold text-text">仪表盘</h1>
-        <p className="text-gm-xs text-text-muted mt-gm-0.5">工程健康概览</p>
+        <h1 className="text-gm-2xl font-bold text-text tracking-tight">仪表盘</h1>
+        <p className="text-gm-sm text-text-muted mt-gm-1">工程健康概览</p>
       </div>
 
       <div className="flex items-center gap-gm-3">
