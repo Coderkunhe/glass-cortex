@@ -35,7 +35,7 @@ describe("AdminSidebar", () => {
 
     it("renders all menu items", () => {
       renderSidebar();
-      expect(screen.getByText("健康仪表盘")).toBeInTheDocument();
+      expect(screen.getByText("仪表盘")).toBeInTheDocument();
       expect(screen.getByText("文档清单")).toBeInTheDocument();
       expect(screen.getByText("工作日报")).toBeInTheDocument();
       expect(screen.getByText("需求日志")).toBeInTheDocument();
@@ -75,7 +75,7 @@ describe("AdminSidebar", () => {
       renderSidebar();
       const headerBtn = screen.getByText("系统概览").closest("button")!;
       // Initially expanded — menu items visible
-      expect(screen.getByText("健康仪表盘")).toBeInTheDocument();
+      expect(screen.getByText("仪表盘")).toBeInTheDocument();
 
       fireEvent.click(headerBtn);
       // After collapse, the ul inside grid with gridTemplateRows "0fr" hides content

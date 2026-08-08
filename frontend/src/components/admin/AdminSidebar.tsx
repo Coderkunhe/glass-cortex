@@ -14,7 +14,7 @@
 
 import { useState } from "react";
 import {
-  RiHeartPulseLine,
+  RiDashboardLine,
   RiFileListLine,
   RiCalendarLine,
   RiArticleLine,
@@ -48,7 +48,7 @@ const MENU_GROUPS: MenuGroup[] = [
   {
     group: "系统概览",
     items: [
-      { key: "health", label: "健康仪表盘", icon: <RiHeartPulseLine size={16} /> },
+      { key: "health", label: "仪表盘", icon: <RiDashboardLine size={16} /> },
     ],
   },
   {

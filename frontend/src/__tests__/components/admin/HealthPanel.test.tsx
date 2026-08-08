@@ -115,7 +115,7 @@ describe("HealthPanel", () => {
       renderPanel();
 
       await waitFor(() => {
-        expect(screen.getByText("健康数据加载失败")).toBeInTheDocument();
+        expect(screen.getByText("仪表盘数据加载失败")).toBeInTheDocument();
       });
       expect(screen.getByText("网络错误")).toBeInTheDocument();
     });
@@ -130,9 +130,9 @@ describe("HealthPanel", () => {
         expect(screen.getByText("当前 Phase")).toBeInTheDocument();
       });
       expect(screen.getByText("Phase 1000")).toBeInTheDocument();
-      expect(screen.getByText("✅ 零阻断")).toBeInTheDocument();
-      expect(screen.getByText("✅ 今日已写")).toBeInTheDocument();
-      expect(screen.getByText("✅ 正常")).toBeInTheDocument();
+      expect(screen.getByText("零阻断")).toBeInTheDocument();
+      expect(screen.getByText("今日已写")).toBeInTheDocument();
+      expect(screen.getByText("正常")).toBeInTheDocument();
     });
 
     it("shows warning state when L5 is blocked", async () => {
@@ -149,7 +149,7 @@ describe("HealthPanel", () => {
       renderPanel();
 
       await waitFor(() => {
-        expect(screen.getByText("🔴 已阻断")).toBeInTheDocument();
+        expect(screen.getByText("已阻断")).toBeInTheDocument();
       });
     });
 
@@ -158,7 +158,7 @@ describe("HealthPanel", () => {
       renderPanel();
 
       await waitFor(() => {
-        expect(screen.getByText("❌ 2 项")).toBeInTheDocument();
+        expect(screen.getByText("2 项阻断")).toBeInTheDocument();
       });
     });
 
@@ -167,7 +167,7 @@ describe("HealthPanel", () => {
       renderPanel();
 
       await waitFor(() => {
-        expect(screen.getByText("❌ 缺失")).toBeInTheDocument();
+        expect(screen.getByText("缺失")).toBeInTheDocument();
       });
     });
   });
