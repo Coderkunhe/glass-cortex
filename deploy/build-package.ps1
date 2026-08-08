@@ -1,29 +1,29 @@
-# GlassCortex 构建打包脚本 — 构建机侧
+﻿# GlassCortex Build-Package Script --- Build Machine Side
 # Phase 67 Batch 3
 #
-# 适用场景：构建机（有 git + npm + 网络）打包，服务器（免 git/免 npm/免编译）直接解压部署
+# Use case: build machine (has git + npm + network) packages; server (no git/npm/build) extracts and deploys directly
 #
-# 用法：
-#   # 从项目根目录运行
+# Usage:
+#   # Run from project root:
 #   .\deploy\build-package.ps1
 #
-#   # 指定输出目录和版本标签
+#   # Specify output dir and version label:
 #   .\deploy\build-package.ps1 -OutputDir C:\temp -Version "20260713"
 #
-#   # 仅重新打包（不重新构建）
+#   # Re-pack only (skip rebuild):
 #   .\deploy\build-package.ps1 -SkipBuild -SkipModel
 #
-# 产物：glasscortex-deploy-<version>.zip
-#   解压后目录结构即 C:\apps\glasscortex\ 的目标布局
+# Output: glasscortex-deploy-<version>.zip
+#   Extracted structure becomes the C:\apps\glasscortex\ target layout
 #
-# 产物内容：
-#   ├── src/ api/ tests/ docs/ deploy/   # 源码（不含 .git）
-#   ├── frontend/.next/standalone/        # Next.js 已构建产物
-#   ├── wheels/                           # Python wheel 离线包
-#   ├── models/huggingface/               # 嵌入模型离线缓存
-#   ├── requirements-lock.txt             # Python 依赖锁文件
-#   ├── .env.example / pyproject.toml     # 配置文件
-#   └── CLAUDE.md / README.md / Makefile  # 项目文档
+# Package contents:
+#   +-- src/ api/ tests/ docs/ deploy/   # source (no .git)
+#   +-- frontend/.next/standalone/        # Next.js pre-built output
+#   +-- wheels/                           # Python wheel offline packages
+#   +-- models/huggingface/               # Embedding model offline cache
+#   +-- requirements-lock.txt             # Python dependency lock file
+#   +-- .env.example / pyproject.toml     # Config files
+#   +-- CLAUDE.md / README.md / Makefile  # Project docs
 
 param(
     [string]$AppRoot = "",
@@ -38,7 +38,7 @@ param(
 $ErrorActionPreference = "Stop"
 $startTime = Get-Date
 
-# ── 路径解析 ──
+# --- Path resolution ---
 if (!$AppRoot) {
     $AppRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 }
@@ -67,9 +67,9 @@ Write-Host @"
 ========================================
 "@ -ForegroundColor Cyan
 
-# ═══════════════════════════════════════════════════════
-# Step 1: 准备 staging 目录
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Step 1: Prepare staging directory
+# =======================================================
 
 Write-Host "`n[1/7] Preparing staging directory..." -ForegroundColor Cyan
 
@@ -79,15 +79,15 @@ if (Test-Path $stagingDir) {
 }
 New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
 
-# ═══════════════════════════════════════════════════════
-# Step 2: 拷贝源码（忽略构建产物 + VCS）
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Step 2: Copy source (ignore build artifacts + VCS)
+# =======================================================
 
 Write-Host "`n[2/7] Copying source files..." -ForegroundColor Cyan
 
 Push-Location $AppRoot
 
-# 排除模式：git 仓库、虚拟环境、node_modules、构建产物、运行时数据、Python 缓存
+# Exclusion pattern: git repo, venv, node_modules, build artifacts, runtime data, Python cache
 $excludeDirs = @(
     ".git",
     "venv",
@@ -101,10 +101,10 @@ $excludeDirs = @(
     "logs",
     "backups",
     "deploy-package",
-    ".next"           # 前端构建产物单独处理（见 Step 5），此处跳过源码复制
+    ".next"           # Frontend build output handled separately (see Step 5), skip here during source copy
 )
 
-# 拷贝源码目录
+# Copy source directories
 $sourceDirs = @("src", "api", "tests", "docs", "deploy")
 foreach ($dir in $sourceDirs) {
     if (Test-Path $dir) {
@@ -114,7 +114,7 @@ foreach ($dir in $sourceDirs) {
     }
 }
 
-# 拷贝前端目录（但排除 node_modules + .next，构建产物单独处理）
+# Copy frontend dir (exclude node_modules + .next; build output handled separately)
 if (Test-Path "frontend") {
     Write-Host "  Copying frontend/ (excluding node_modules, .next)..." -ForegroundColor DarkGray
     $frontendDest = Join-Path $stagingDir "frontend"
@@ -127,7 +127,7 @@ if (Test-Path "frontend") {
     }
 }
 
-# 拷贝根目录文件
+# Copy root-level files
 $rootFiles = @(
     ".env.example",
     ".gitignore",
@@ -145,16 +145,16 @@ foreach ($file in $rootFiles) {
     }
 }
 
-# 创建空目录（运行时需要）
+# Create empty dirs (needed at runtime)
 New-Item -ItemType Directory -Force -Path (Join-Path $stagingDir "data") | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $stagingDir "logs") | Out-Null
 
 Pop-Location
 Write-Host "  Source copy complete" -ForegroundColor Green
 
-# ═══════════════════════════════════════════════════════
-# Step 3: 下载 Python wheels（离线安装包）
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Step 3: Download Python wheels (offline packages)
+# =======================================================
 
 if (!$SkipWheels) {
     Write-Host "`n[3/7] Downloading Python wheels..." -ForegroundColor Cyan
@@ -163,7 +163,7 @@ if (!$SkipWheels) {
     $wheelsDir = Join-Path $stagingDir "wheels"
     New-Item -ItemType Directory -Force -Path $wheelsDir | Out-Null
 
-    # 检查 Python 可用性
+    # Check Python availability
     $pythonCmd = $null
     if (Test-Path (Join-Path $AppRoot "venv\Scripts\python.exe")) {
         $pythonCmd = Join-Path $AppRoot "venv\Scripts\python.exe"
@@ -179,7 +179,7 @@ if (!$SkipWheels) {
     Write-Host "  Python: $pythonCmd" -ForegroundColor DarkGray
 
     if ($TargetPlatform -eq "auto") {
-        # 同平台打包：直接下载当前平台 wheel
+        # Same-platform: download current platform wheels directly
         Write-Host "  Platform: auto (current platform) --- downloading native wheels" -ForegroundColor Yellow
 
         & $pythonCmd -m pip download -r requirements-lock.txt --dest "$wheelsDir" 2>&1 | ForEach-Object {
@@ -192,11 +192,11 @@ if (!$SkipWheels) {
             Write-Error "pip download failed --- check network and requirements-lock.txt"
         }
     } else {
-        # 交叉平台打包：指定目标平台
+        # Cross-platform: specify target platform
         Write-Host "  Platform: $TargetPlatform --- cross-platform wheel download" -ForegroundColor Yellow
         Write-Host "    (native packages without pre-built wheels will need VC++ Build Tools on server)" -ForegroundColor Yellow
 
-        # 先尝试 only-binary，失败则下载源码包作为兜底
+        # Try only-binary first; fall back to source packages
         & $pythonCmd -m pip download -r requirements-lock.txt --dest "$wheelsDir" `
             --platform $TargetPlatform --python-version 3.14 `
             --only-binary=:all: 2>&1 | ForEach-Object {
@@ -225,9 +225,9 @@ if (!$SkipWheels) {
     Write-Host "`n[3/7] Skipping wheels download (--SkipWheels)" -ForegroundColor Yellow
 }
 
-# ═══════════════════════════════════════════════════════
-# Step 4: 下载嵌入模型（离线模型缓存）
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Step 4: Download embedding model (offline model cache)
+# =======================================================
 
 if (!$SkipModel) {
     Write-Host "`n[4/7] Downloading embedding model..." -ForegroundColor Cyan
@@ -239,7 +239,7 @@ if (!$SkipModel) {
 
     Write-Host "  Triggering model download (all-MiniLM-L6-v2, ~90MB)..." -ForegroundColor Yellow
 
-    # 使用项目 venv 中的 Python 触发下载
+    # Use project venv Python to trigger download
     $downloadScript = @"
 import os, shutil
 os.environ["HF_HOME"] = r"$hfCacheDir"
@@ -267,16 +267,16 @@ print(f'Cache dir: {os.environ["HF_HOME"]}')
     Write-Host "`n[4/7] Skipping model download (--SkipModel)" -ForegroundColor Yellow
 }
 
-# ═══════════════════════════════════════════════════════
-# Step 5: 前端构建（Next.js standalone）
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Step 5: Frontend build (Next.js standalone)
+# =======================================================
 
 if (!$SkipBuild) {
     Write-Host "`n[5/7] Building frontend (Next.js standalone)..." -ForegroundColor Cyan
 
     Push-Location (Join-Path $AppRoot "frontend")
 
-    # 检查 Node.js
+    # Check Node.js
     $nodeVersion = & node --version 2>$null
     if (!$nodeVersion) {
         Write-Error "Node.js not found --- install from https://nodejs.org/"
@@ -302,7 +302,7 @@ if (!$SkipBuild) {
         Write-Error "Frontend build failed --- check output above"
     }
 
-    # ── 拷贝 standalone 产物到 staging ──
+    # --- Copy standalone output to staging ---
     $standaloneDir = ".next\standalone"
     if (!(Test-Path $standaloneDir)) {
         Write-Error "Standalone output not found at $standaloneDir --- check next.config.ts output setting"
@@ -311,11 +311,11 @@ if (!$SkipBuild) {
     $stagingStandaloneDir = Join-Path $stagingDir "frontend\.next\standalone"
     New-Item -ItemType Directory -Force -Path $stagingStandaloneDir | Out-Null
 
-    # 拷贝 standalone 目录
+    # Copy standalone directory
     Write-Host "  Copying standalone output to staging..." -ForegroundColor Yellow
     Copy-Item -Recurse -Force "$standaloneDir\*" $stagingStandaloneDir
 
-    # 拷贝 static/ 到 standalone/.next/static/（Next.js 16 standalone 从 ./.next/static 读取）
+    # Copy static/ to standalone/.next/static/ (Next.js 16 standalone reads from ./.next/static)
     if (Test-Path ".next\static") {
         Write-Host "  Copying .next/static/ to standalone/.next/static/..." -ForegroundColor DarkGray
         $stagingStandaloneNextStatic = Join-Path $stagingStandaloneDir ".next\static"
@@ -323,7 +323,7 @@ if (!$SkipBuild) {
         Copy-Item -Recurse -Force ".next\static\*" $stagingStandaloneNextStatic
     }
 
-    # 拷贝 public/ 到 standalone/public/（Next.js 16 standalone 从 ./public 读取）
+    # Copy public/ to standalone/public/ (Next.js 16 standalone reads from ./public)
     if (Test-Path "public") {
         Write-Host "  Copying public/ to standalone/public/..." -ForegroundColor DarkGray
         $stagingPublic = Join-Path $stagingStandaloneDir "public"
@@ -337,22 +337,22 @@ if (!$SkipBuild) {
     Write-Host "`n[5/7] Skipping build (--SkipBuild)" -ForegroundColor Yellow
 }
 
-# ═══════════════════════════════════════════════════════
-# Step 6: 创建 zip
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Step 6: Create zip
+# =======================================================
 
 Write-Host "`n[6/7] Creating deployment zip..." -ForegroundColor Cyan
 
 Push-Location $OutputDir
 
-# 删除旧 zip（如果存在）
+# Remove old zip (if exists)
 if (Test-Path $zipPath) {
     Write-Host "  Removing old zip..." -ForegroundColor DarkGray
     Remove-Item -Force $zipPath
 }
 
-# 使用 Compress-Archive（PowerShell 5+ 内置）
-# 注意：Compress-Archive 需要在父目录下运行以保证 zip 内路径从 packageName/ 开始
+# Use Compress-Archive (PowerShell 5+ built-in)
+# Note: Compress-Archive must run from parent dir so zip paths start from packageName/
 Write-Host "  Compressing $packageName -> $packageName.zip ..." -ForegroundColor Yellow
 Compress-Archive -Path ".\$packageName\*" -DestinationPath $zipPath -CompressionLevel Optimal
 
@@ -365,15 +365,15 @@ Write-Host "  Zip created: $zipPath ($zipSize MB)" -ForegroundColor Green
 
 Pop-Location
 
-# ═══════════════════════════════════════════════════════
-# Step 7: 清理 staging + 输出摘要
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Step 7: Clean staging + output summary
+# =======================================================
 
 Write-Host "`n[7/7] Cleaning up staging directory..." -ForegroundColor Cyan
 Remove-Item -Recurse -Force $stagingDir
 Write-Host "  Staging removed" -ForegroundColor Green
 
-# ── 完成 ──
+# --- Done ---
 $elapsed = (Get-Date) - $startTime
 
 Write-Host @"

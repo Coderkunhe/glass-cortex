@@ -1,23 +1,23 @@
-# GlassCortex 一键部署脚本 — Windows Server
+﻿# GlassCortex One-Click Deployment Script --- Windows Server
 # Phase 67 Batch 1 - Batch 3 (offline package support)
 #
-# 三种部署模式（脚本自动检测）：
-#   模式 1 — Git Clone：    deploy.ps1 -GitUrl "https://..."           （有 git + 网络）
-#   模式 2 — 已有源码：      deploy.ps1 -SkipClone                      （手动拷贝了源码）
-#   模式 3 — 打包部署：      deploy.ps1                                  （从 build-package.ps1 产物解压）
-#                             自动检测：无 .git 目录 + 有 wheels/ → 启用离线 pip + 预缓存模型
+# Three deployment modes (auto-detected by script):
+#   Mode 1 --- Git Clone:     deploy.ps1 -GitUrl "https://..."           (has git + network)
+#   Mode 2 --- Existing code:  deploy.ps1 -SkipClone                      (manually copied source)
+#   Mode 3 --- Packaged:       deploy.ps1                                  (extract from build-package.ps1 output)
+#                              Auto-detect: no .git dir + has wheels/ -> enable offline pip + pre-cached model
 #
-# 用法（管理员 PowerShell）：
+# Usage (Admin PowerShell):
 #   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 #   .\deploy\deploy.ps1 -GitUrl "https://github.com/your-org/glasscortex.git"
 #
-# 此脚本：
-#   1. Clone / 确认源码（打包模式跳过）
-#   2. 创建 Python venv + 安装依赖（打包模式：离线 wheels/）
-#   3. 模型缓存检测（打包模式：预缓存 models/huggingface/）
-#   4. npm install + next build (standalone)（打包模式跳过）
-#   5. 调用 install-services.ps1 注册 Windows Service
-#   6. 引导 Nginx 安装
+# This script:
+#   1. Clone / verify source (skipped in package mode)
+#   2. Create Python venv + install deps (package mode: offline wheels/)
+#   3. Model cache detection (package mode: pre-cached models/huggingface/)
+#   4. npm install + next build (standalone) (skipped in package mode)
+#   5. Invoke install-services.ps1 to register Windows Services
+#   6. Nginx setup guide
 
 param(
     [string]$GitUrl = "",
@@ -30,9 +30,9 @@ param(
 $ErrorActionPreference = "Stop"
 $startTime = Get-Date
 
-# ── 打包部署模式自动检测 ──
-# 条件：无 .git 目录（非 clone 产物）→ 自动启用 SkipClone + SkipBuild
-#       有 wheels/ → 后续 step 自动走离线 pip；有 models/huggingface/ → 预缓存模型
+# --- Package mode auto-detection ---
+# Condition: no .git dir (not a clone) -> auto-enable SkipClone + SkipBuild
+#       has wheels/ -> subsequent steps use offline pip; has models/huggingface/ -> pre-cached model
 $isPackageMode = $false
 if (!(Test-Path "$AppRoot\.git")) {
     $isPackageMode = $true
@@ -72,9 +72,9 @@ if ($isPackageMode) {
     }
 }
 
-# ═══════════════════════════════════════════════════════
-# Step 1: 获取源码
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Step 1: Get source code
+# =======================================================
 
 if ($SkipClone) {
     # Auto-detect AppRoot when SkipClone: use script parent dir if default path missing
@@ -105,9 +105,9 @@ if (!(Test-Path $AppRoot)) {
     throw "App root not found: $AppRoot"
 }
 
-# ═══════════════════════════════════════════════════════
-# Step 1.5: 目录/配置兜底（数据 + 日志 + .env）
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Step 1.5: Directory/config bootstrap (data + logs + .env)
+# =======================================================
 
 Write-Host "`n[1.5/6] Bootstrapping directories + config..." -ForegroundColor Cyan
 New-Item -ItemType Directory -Force -Path "$AppRoot\data" | Out-Null
@@ -124,26 +124,26 @@ if (Test-Path $envPath) {
     Write-Warning "  Neither .env nor .env.example found - services will fail without API keys."
 }
 
-# ═══════════════════════════════════════════════════════
-# Step 2: Python 环境
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Step 2: Python environment
+# =======================================================
 
 Write-Host "`n[2/6] Setting up Python environment..." -ForegroundColor Cyan
 
 Push-Location $AppRoot
 
-# 创建 venv（如果不存在）
+# Create venv (if missing)
 if (!(Test-Path "$AppRoot\venv\Scripts\python.exe")) {
     Write-Host "  Creating virtual environment..." -ForegroundColor Yellow
     python -m venv venv
 }
 
-# 激活 venv + 安装依赖
+# Activate venv + install deps
 $env:PYTHONPATH = $AppRoot
 $pip = "$AppRoot\venv\Scripts\pip.exe"
 & $pip install --upgrade pip -q
 
-# 检测是否为打包部署模式（含预下载 wheels/ 目录）
+# Detect package mode (has pre-downloaded wheels/ dir)
 $reqFile = "$AppRoot\requirements-win.txt"
 if (!(Test-Path $reqFile)) {
     Write-Host "  Generating requirements-win.txt (filtering Linux-only uvloop)..." -ForegroundColor Yellow
@@ -164,25 +164,25 @@ if (Test-Path $wheelsDir) {
     & $pip install -r $reqFile
 }
 
-# 验证关键依赖
+# Verify critical dependency
 Write-Host "  Verifying usearch..." -NoNewline
 & "$AppRoot\venv\Scripts\python.exe" -c "from usearch.compiled import Index; print('OK')"
 
 Pop-Location
 
-# ═══════════════════════════════════════════════════════
-# Step 3: 模型下载（可选——首次运行自动下载）
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Step 3: Model download (optional --- auto-download on first run)
+# =======================================================
 
 Write-Host "`n[3/6] Checking embedding model..." -ForegroundColor Cyan
 
-# 优先检测打包部署模式下的预缓存模型（models/huggingface/）
+# Check for pre-cached model from package mode (models/huggingface/)
 $pkgModelDir = "$AppRoot\models\huggingface"
 if (Test-Path $pkgModelDir) {
     Write-Host "  [Offline Package Mode] Pre-cached model found: $pkgModelDir" -ForegroundColor Green
     Write-Host "  HF_HOME will be set to this path at service runtime (see install-services.ps1)"
 } else {
-    # 否则检查默认 HF cache
+    # Otherwise check default HF cache
     $hfCache = "$env:USERPROFILE\.cache\huggingface"
     if (Test-Path $hfCache) {
         Write-Host "  HF cache exists: $hfCache" -ForegroundColor Green
@@ -193,9 +193,9 @@ if (Test-Path $pkgModelDir) {
     }
 }
 
-# ═══════════════════════════════════════════════════════
-# Step 4: 前端构建
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Step 4: Frontend build
+# =======================================================
 
 Write-Host "`n[4/6] Building frontend..." -ForegroundColor Cyan
 
@@ -204,7 +204,7 @@ if ($SkipBuild) {
 } elseif (Test-Path "$AppRoot\frontend\package.json") {
     Push-Location "$AppRoot\frontend"
 
-    # 检查 Node.js
+    # Check Node.js
     $nodeVersion = & node --version 2>$null
     if (!$nodeVersion) {
         Pop-Location
@@ -212,7 +212,7 @@ if ($SkipBuild) {
     }
     Write-Host "  Node.js $nodeVersion" -ForegroundColor Green
 
-    # npm install (standalone 构建需要完整 devDeps；构建完成后 node_modules 可选清理)
+    # npm install (standalone build needs full devDeps; node_modules can be cleaned post-build)
     if (!(Test-Path "node_modules")) {
         Write-Host "  Installing npm dependencies (including devDeps for build)..." -ForegroundColor Yellow
         npm ci
@@ -227,7 +227,7 @@ if ($SkipBuild) {
         throw "Frontend build failed --- check output above"
     }
 
-    # 验证 standalone 产物
+    # Verify standalone output
     $standaloneDir = ".next\standalone"
     if (Test-Path $standaloneDir) {
         Write-Host "  Standalone output: $(Resolve-Path $standaloneDir)" -ForegroundColor Green
@@ -236,7 +236,7 @@ if ($SkipBuild) {
         throw "Standalone output not found --- check next.config.ts output setting"
     }
 
-    # 拷贝 static 目录到 standalone（Next.js standalone 模式需要手动处理）
+    # Copy static dir to standalone (Next.js standalone mode requires manual handling)
     # Ref: https://nextjs.org/docs/pages/api-reference/config/next-config-js/output
     $staticDir = ".next\static"
     $standaloneStaticDir = "$standaloneDir\.next\static"
@@ -246,7 +246,7 @@ if ($SkipBuild) {
         Copy-Item -Recurse -Force $staticDir $standaloneStaticDir
     }
 
-    # 拷贝 public/ 到 standalone
+    # Copy public/ to standalone
     $publicStandaloneDir = "$standaloneDir\public"
     if (Test-Path "public") {
         Write-Host "  Copying public/ to standalone..." -ForegroundColor Yellow
@@ -259,9 +259,9 @@ if ($SkipBuild) {
     Write-Host "  Skipping frontend build (no frontend/package.json found)" -ForegroundColor Yellow
 }
 
-# ═══════════════════════════════════════════════════════
-# Step 5: 注册 Windows Service
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Step 5: Register Windows Services
+# =======================================================
 
 $servicesRegistered = $false
 Write-Host "`n[5/6] Registering Windows Services..." -ForegroundColor Cyan
@@ -282,9 +282,9 @@ if (Test-Path $installScript) {
     Write-Warning "install-services.ps1 not found --- please register services manually"
 }
 
-# ═══════════════════════════════════════════════════════
-# Step 6: 健康检查（冒烟验证）
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Step 6: Health check (smoke test)
+# =======================================================
 
 if ($servicesRegistered) {
     Write-Host "`n[6/6] Smoke test --- waiting for services to be healthy..." -ForegroundColor Cyan
@@ -323,9 +323,9 @@ if ($servicesRegistered) {
     Write-Host "  Or install NSSM and re-run: .\deploy\install-services.ps1 -AppRoot $AppRoot" -ForegroundColor Yellow
 }
 
-# ═══════════════════════════════════════════════════════
-# 完成
-# ═══════════════════════════════════════════════════════
+# =======================================================
+# Done
+# =======================================================
 
 $elapsed = (Get-Date) - $startTime
 Write-Host @"

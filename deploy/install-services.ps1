@@ -1,19 +1,19 @@
-# GlassCortex Windows Service 注册脚本 — NSSM
-# Phase 67 Batch 1 · Batch 3 (model pre-cache support)
+﻿# GlassCortex Windows Service Registration Script --- NSSM
+# Phase 67 Batch 1 - Batch 3 (model pre-cache support)
 #
-# 前置条件：
-#   1. NSSM 已下载到 C:\apps\nssm\nssm.exe
+# Prerequisites:
+#   1. NSSM downloaded to C:\apps\nssm\nssm.exe
 #      https://nssm.cc/download
-#   2. 项目已部署到 C:\apps\glasscortex
-#   3. Python venv 已创建（C:\apps\glasscortex\venv）
-#   4. Next.js standalone build 已构建（npm run build）
+#   2. Project deployed to C:\apps\glasscortex
+#   3. Python venv created (C:\apps\glasscortex\venv)
+#   4. Next.js standalone build is ready (npm run build)
 #
-# 打包部署模式：
-#   若 C:\apps\glasscortex\models\huggingface\ 存在（build-package.ps1 产物），
-#   自动配置 HF_HOME + TRANSFORMERS_CACHE + 离线模式环境变量，
-#   服务启动时直接从本地加载嵌入模型，无需联网。
+# Package mode:
+#   If C:\apps\glasscortex\models\huggingface\ exists (from build-package.ps1),
+#   auto-configure HF_HOME + TRANSFORMERS_CACHE + offline mode env vars,
+#   service loads embedding model locally on startup, no network needed.
 #
-# 用法（管理员 PowerShell）：
+# Usage (Admin PowerShell):
 #   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 #   .\deploy\install-services.ps1
 
@@ -29,7 +29,7 @@ $nssm = $NssmPath
 
 Write-Host "=== GlassCortex Windows Service Registration ===" -ForegroundColor Cyan
 
-# ── 环境预检 ──
+# --- Environment pre-check ---
 if (!(Test-Path $nssm)) {
     Write-Warning "NSSM not found at $nssm --- skipping Windows Service registration"
     Write-Warning "  To enable: download NSSM from https://nssm.cc/download"
@@ -46,7 +46,7 @@ if (!$hasFrontend) {
     Write-Warning "  To build frontend: cd $AppRoot\frontend && npm run build (requires Node.js)"
 }
 
-# ── 辅助函数 ──
+# --- Helper function ---
 function Install-Service {
     param(
         [string]$Name,
@@ -75,10 +75,10 @@ function Install-Service {
     Write-Host " OK" -ForegroundColor Green
 }
 
-# ── 日志目录 ──
+# --- Log directory ---
 New-Item -ItemType Directory -Force -Path "$AppRoot\logs" | Out-Null
 
-# ── 先停旧服务（如果存在） ──
+# --- Stop old services (if running) ---
 foreach ($svc in @("GlassCortexAPI", "GlassCortexWeb")) {
     $status = (Get-Service -Name $svc -ErrorAction SilentlyContinue).Status
     if ($status -eq "Running") {
@@ -89,8 +89,8 @@ foreach ($svc in @("GlassCortexAPI", "GlassCortexWeb")) {
     }
 }
 
-# ── 1. GlassCortex API (FastAPI + uvicorn) ──
-# 检测预缓存模型路径（build-package.ps1 产物）
+# --- 1. GlassCortex API (FastAPI + uvicorn) ---
+# Detect pre-cached model path (from build-package.ps1)
 $apiEnvVars = @{
     "PYTHONPATH" = $AppRoot
     "PYTHONUNBUFFERED" = "1"
@@ -112,8 +112,8 @@ Install-Service `
     -Dir $AppRoot `
     -EnvVars $apiEnvVars
 
-# ── 2. GlassCortex Web (Next.js standalone) ──
-# 使用 Next.js standalone 产物直接运行 server.js，不依赖 node_modules 或 next 二进制
+# --- 2. GlassCortex Web (Next.js standalone) ---
+# Use Next.js standalone build to run server.js directly, no node_modules or next binary required
 # Ref: https://nextjs.org/docs/pages/api-reference/config/next-config-js/output#automatically-copying-traced-files
 if ($hasFrontend) {
     Install-Service `
@@ -129,7 +129,7 @@ if ($hasFrontend) {
         }
 }
 
-# ── 启动服务 ──
+# --- Start services ---
 Write-Host "`nStarting services..." -ForegroundColor Cyan
 & $nssm start GlassCortexAPI 2>&1 | Out-Null
 if ($hasFrontend) {
@@ -137,7 +137,7 @@ if ($hasFrontend) {
 }
 Start-Sleep -Seconds 3
 
-# ── 验证 ──
+# --- Verify ---
 Write-Host "`n=== Service Status ===" -ForegroundColor Cyan
 $servicesToCheck = @("GlassCortexAPI")
 if ($hasFrontend) { $servicesToCheck += "GlassCortexWeb" }

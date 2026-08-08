@@ -1,6 +1,6 @@
-# GlassCortex PS 5.1 兼容性自检脚本
-# Phase 67 Batch 21 — 每次改 PS 脚本后运行此检查
-# 用法: pwsh -NoProfile -File deploy/check-ps-syntax.ps1
+﻿# GlassCortex PS 5.1 Compatibility Self-Check Script
+# Phase 67 Batch 21 --- Run this after each PS script modification
+# Usage: pwsh -NoProfile -File deploy/check-ps-syntax.ps1
 
 $ErrorActionPreference = "Continue"
 $scripts = @("deploy/deploy.ps1", "deploy/install-services.ps1", "deploy/build-package.ps1")
@@ -75,9 +75,9 @@ foreach ($f in $scripts) {
         for ($j = 0; $j -lt $line.Length; $j++) {
             $ch = $line[$j]
             if ($ch -eq '"' -and ($j -eq 0 -or $line[$j-1] -ne '`')) {
-                $inString = -not $inString
+                $inString = !$inString
             }
-            if ($commentIdx -ge 0 -and $j -ge $commentIdx -and -not $inString) { break }
+            if ($commentIdx -ge 0 -and $j -ge $commentIdx -and !$inString) { break }
             if ($inString) { continue }
             if ([int]$ch -gt 127) {
                 $hex = '{0:X4}' -f [int]$ch
