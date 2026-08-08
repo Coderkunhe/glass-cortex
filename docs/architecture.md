@@ -388,7 +388,7 @@
 | 迁移遗漏审计 | ✅ 完成 | 2026-06-23 | Streamlit 29 组件 × Next.js 22 组件全量 diff，发现 39 项遗漏，4 项 P0 立即补，35 项分 M3.5/Phase 29 两期消化。详见 roadmap Phase 28 M3.5 登记表 |
 | Layout — AppShell | ✅ 完成 | 2026-06-25 | `frontend/src/components/layout/AppShell.tsx` — CSS Grid 根布局（header+sidebar+main+footer），DrawerProvider + ChatParamsProvider 注入，ProcessDrawer + ProjectMapDrawer 全局抽屉 |
 | Layout — Header | ✅ 完成 | 2026-06-25 | `frontend/src/components/layout/Header.tsx` — 固定顶栏：Logo + 5 导航链接（聊天/文档/可观测/实验室/画像）+ ThemeToggle + 项目地图按钮，scroll 收折效果 |
-| Layout — Footer | ✅ 完成 | 2026-06-25 | `frontend/src/components/layout/Footer.tsx` — 全局底栏：品牌声明 + GitHub 链接 |
+| Layout — Footer | ✅ 完成 | 2026-06-25 | `frontend/src/components/layout/Footer.tsx` — 全局底栏：品牌声明 + GitHub 链接 + AI 工程入口（B4） |
 | Layout — Sidebar | ✅ 完成 | 2026-06-25 | `frontend/src/components/layout/Sidebar.tsx` — 侧边栏：会话统计 + 记忆衰减触发 + 重置流程 + ParamSliders（L2/L3/L5/L6） + ProfileCard |
 | Layout — ProjectMapDrawer | ✅ 完成 | 2026-06-25 | `frontend/src/components/layout/ProjectMapDrawer.tsx` — 右滑入项目地图抽屉（5 段：项目介绍/消息旅程/流程图/页面导航/概念速查） |
 | UI — Logo | ✅ 完成 | 2026-06-25 | `frontend/src/components/ui/Logo.tsx` — GlassCortex 品牌图标 + 文字 |
@@ -502,6 +502,8 @@
 | 前端 — Admin 文档检索 | ✅ 完成 | 2026-08-08 | `docSearch.ts` Fuse 索引工具 + `SearchModal.tsx` Cmd+K 全局搜索模态窗 + `DocsPanel.tsx` 内联搜索框 — 名称/摘要模糊搜索，键盘导航(↑↓EnterEsc)，浏览模式 top 20 — Phase 68 B19 |
 | 前端 — 仪表盘重命名+美化 | ✅ 完成 | 2026-08-08 | AdminSidebar「健康仪表盘」→「仪表盘」+ `RiDashboardLine` · HealthPanel 页面标题+卡片图标+`text-gm-xl` 字体 — Phase 69 B1 |
 | 前端 — 日报热力图 | ✅ 完成 | 2026-08-08 | `DailyHeatmap.tsx` ⭐ — GitHub 贡献图式 7×N 热力格子 · 12 月回溯 · 周一对齐 · 仪表盘集成 — Phase 69 B2 |
+| 前端 — 仪表盘字体放大 | ✅ 完成 | 2026-08-08 | PageHeader `text-gm-2xl` · 摘要卡片数值 `text-gm-xl` · 门禁/提交 `text-gm-base` · 全板块间距加大 — Phase 69 B3 |
+| 前端 — Footer 工程入口 + Admin 命名统一 | ✅ 完成 | 2026-08-08 | Footer 新增「AI 工程」→ `/admin` 链接 · Admin 全链路命名升级「工程管理面板」→「AI 工程协作管理面板」· AdminSidebar 品牌副标题同步 — Phase 69 B4 |
 
 ## 架构决策记录
 
