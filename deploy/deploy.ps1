@@ -108,15 +108,16 @@ New-Item -ItemType Directory -Force -Path "$AppRoot\data" | Out-Null
 New-Item -ItemType Directory -Force -Path "$AppRoot\logs" | Out-Null
 Write-Host "  data\ + logs\ ensured" -ForegroundColor Green
 
-if (-not (Test-Path "$AppRoot\.env")) {
+$envPath = "$AppRoot\.env"
+if (Test-Path $envPath) {
+    Write-Host "  .env exists" -ForegroundColor Green
+} else {
     if (Test-Path "$AppRoot\.env.example") {
         Copy-Item "$AppRoot\.env.example" "$AppRoot\.env"
-        Write-Warning "  .env not found — copied from .env.example. EDIT $AppRoot\.env to fill API keys before starting services!"
+        Write-Warning "  .env not found - copied from .env.example. EDIT $AppRoot\.env to fill API keys before starting services!"
     } else {
-        Write-Warning "  Neither .env nor .env.example found — services will fail without API keys."
+        Write-Warning "  Neither .env nor .env.example found - services will fail without API keys."
     }
-} else {
-    Write-Host "  .env exists" -ForegroundColor Green
 }
 
 # ═══════════════════════════════════════════════════════
