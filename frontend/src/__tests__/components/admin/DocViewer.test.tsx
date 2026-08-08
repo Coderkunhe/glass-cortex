@@ -46,6 +46,15 @@ vi.mock("@/lib/renderMarkdown", () => ({
   }),
 }));
 
+const printPdfMock = vi.fn();
+
+vi.mock("@/lib/printPdf", () => ({
+  printPdf: (html: string, title: string) => {
+    printPdfMock(html, title);
+    return Promise.resolve();
+  },
+}));
+
 vi.mock("@/lib/constants", () => ({
   DOC_FONT_SIZE_KEY: "gm-doc-font-size",
 }));
@@ -57,6 +66,7 @@ afterEach(() => {
   mockFontSize = "md";
   markdownOverride = null;
   setFontSizeMock.mockClear();
+  printPdfMock.mockClear();
 });
 
 // ── Test data ───────────────────────────────────────────────────────
@@ -170,6 +180,33 @@ describe("DocViewer", () => {
       renderViewer();
       const btn = screen.getByLabelText(/字号/);
       expect(btn).toBeInTheDocument();
+    });
+  });
+
+  describe("PDF download", () => {
+    it("renders PDF download button when content is present", () => {
+      renderViewer({ content: MOCK_CONTENT });
+      const btn = screen.getByTestId("doc-pdf-download");
+      expect(btn).toBeInTheDocument();
+      expect(btn).not.toBeDisabled();
+    });
+
+    it("disables PDF download button when content is null", () => {
+      renderViewer({ content: null });
+      const btn = screen.getByTestId("doc-pdf-download");
+      expect(btn).toBeDisabled();
+    });
+
+    it("calls printPdf with rendered HTML and document name on click", () => {
+      printPdfMock.mockClear();
+      renderViewer({ content: MOCK_CONTENT });
+      fireEvent.click(screen.getByTestId("doc-pdf-download"));
+      expect(printPdfMock).toHaveBeenCalledTimes(1);
+      // First arg should be rendered markdown HTML
+      expect(printPdfMock).toHaveBeenCalledWith(
+        expect.stringContaining("第一节"),
+        MOCK_ITEM.name,
+      );
     });
   });
 

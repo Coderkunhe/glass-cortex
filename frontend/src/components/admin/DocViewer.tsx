@@ -15,11 +15,12 @@
 
 import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { createRoot } from "react-dom/client";
-import { RiArrowLeftLine, RiFontSize, RiSearchLine, RiArrowUpSLine, RiArrowDownSLine, RiCloseLine } from "@remixicon/react";
+import { RiArrowLeftLine, RiFontSize, RiSearchLine, RiArrowUpSLine, RiArrowDownSLine, RiCloseLine, RiFileDownloadLine } from "@remixicon/react";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { renderMarkdown } from "@/lib/renderMarkdown";
+import { printPdf } from "@/lib/printPdf";
 import { DOC_FONT_SIZE_KEY } from "@/lib/constants";
 import { fmtBytes } from "./utils";
 import type { DocListItem, DocContentResponse } from "@/lib/api/types";
@@ -482,6 +483,18 @@ export default function DocViewer({
           title={`字号：${fontSize === "sm" ? "小" : fontSize === "lg" ? "大" : fontSize === "xl" ? "特大" : "中"}`}
         >
           <RiFontSize className="text-gm-icon" />
+        </button>
+        {/* PDF 下载 — 仅在有内容时可用 */}
+        <button
+          onClick={() => content && printPdf(renderMarkdown(content.content), item.name)}
+          disabled={!content}
+          className="rounded-gm-sm p-gm-1 text-text-muted hover:text-text hover:bg-surface-alt transition-colors shrink-0
+                     disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="下载 PDF"
+          title="下载 PDF（通过浏览器打印 → 存储为 PDF）"
+          data-testid="doc-pdf-download"
+        >
+          <RiFileDownloadLine className="text-gm-icon" />
         </button>
       </div>
 
