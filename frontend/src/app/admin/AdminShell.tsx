@@ -165,7 +165,7 @@ export default function AdminShell() {
           {/* 内容区 — ErrorBoundary 包裹确保子面板崩溃时保留 TopBar + Sidebar */}
           <main className="flex-1 min-w-0 min-h-0 p-gm-5 overflow-y-auto flex flex-col">
             <ErrorBoundary fallbackVariant="card">
-              {activeTab === "health" && <HealthPanel />}
+              {activeTab === "health" && <HealthPanel docs={allDocs.length > 0 ? allDocs : undefined} />}
               {activeTab === "docs" && (
                 selectedDoc ? (
                   <DocViewer

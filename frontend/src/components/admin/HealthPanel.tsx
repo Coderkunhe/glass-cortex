@@ -21,9 +21,10 @@ import {
 } from "@remixicon/react";
 import { api } from "@/lib/api/client";
 import { fmtDate } from "./utils";
-import type { AdminHealthResponse } from "@/lib/api/types";
+import DailyHeatmap from "./DailyHeatmap";
+import type { AdminHealthResponse, DocListItem } from "@/lib/api/types";
 
-export default function HealthPanel() {
+export default function HealthPanel({ docs }: { docs?: DocListItem[] }) {
   const [data, setData] = useState<AdminHealthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -192,6 +193,9 @@ export default function HealthPanel() {
           </div>
         ))}
       </div>
+
+      {/* 日报热力图 */}
+      {docs && docs.length > 0 && <DailyHeatmap docs={docs} />}
 
       {/* 门禁明细 */}
       <section className="rounded-gm-lg bg-surface-elevated border border-border overflow-hidden">
