@@ -18,10 +18,13 @@ import {
   RiShieldCheckLine,
   RiCalendarCheckLine,
   RiArticleLine,
+  RiArrowDownSLine,
+  RiArrowUpSLine,
 } from "@remixicon/react";
 import { api } from "@/lib/api/client";
 import { fmtDate } from "./utils";
 import DailyHeatmap from "./DailyHeatmap";
+import L5TimelineDetail from "./L5TimelineDetail";
 import type { AdminHealthResponse, DocListItem } from "@/lib/api/types";
 
 export default function HealthPanel({ docs }: { docs?: DocListItem[] }) {
@@ -29,6 +32,10 @@ export default function HealthPanel({ docs }: { docs?: DocListItem[] }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  /** 当前展开的钻取面板 — 手风琴模式：同时只展开一个 */
+  const [expandedCard, setExpandedCard] = useState<
+    "l5" | "violations" | "requirements" | null
+  >(null);
   const cancelledRef = useRef(false);
 
   const refresh = useCallback(async () => {
@@ -97,6 +104,8 @@ export default function HealthPanel({ docs }: { docs?: DocListItem[] }) {
     sub: string;
     ok: boolean;
     icon: React.ReactNode;
+    /** 展开钻取面板的 key — 有此字段的卡片可点击展开 */
+    expandKey?: "l5" | "violations" | "requirements";
   }
 
   const summaryCards: SummaryCard[] = [
@@ -113,6 +122,7 @@ export default function HealthPanel({ docs }: { docs?: DocListItem[] }) {
       sub: data.l5.blocked ? "⚠️ 已阻断" : data.l5.last_l5_batch || "",
       ok: !data.l5.blocked,
       icon: <RiCheckDoubleLine size={18} />,
+      expandKey: "l5",
     },
     {
       label: "违纪状态",
@@ -156,23 +166,41 @@ export default function HealthPanel({ docs }: { docs?: DocListItem[] }) {
 
       {/* 摘要卡片网格 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-gm-4">
-        {summaryCards.map((card) => (
+        {summaryCards.map((card) => {
+          const isExpanded = card.expandKey && expandedCard === card.expandKey;
+          return (
           <div
             key={card.label}
-            className={`rounded-gm-lg border p-gm-6 ${
+            className={`rounded-gm-lg border p-gm-6 relative ${
               card.ok
                 ? "bg-surface-elevated border-border"
                 : "bg-surface-elevated border-red-200"
-            }`}
+            } ${isExpanded ? "ring-2 ring-brand/30" : ""}`}
           >
-            {/* 图标 + 标签 */}
+            {/* 图标 + 标签 + 展开按钮 */}
             <div className="flex items-center gap-gm-2_5 mb-gm-3">
               <span className={card.ok ? "text-text-muted" : "text-red-400"}>
                 {card.icon}
               </span>
-              <span className="text-gm-xs text-text-muted font-medium">
+              <span className="text-gm-xs text-text-muted font-medium flex-1">
                 {card.label}
               </span>
+              {card.expandKey && (
+                <button
+                  onClick={() =>
+                    setExpandedCard(isExpanded ? null : card.expandKey!)
+                  }
+                  className="shrink-0 rounded-gm-sm p-gm-0.5 text-text-muted hover:text-brand hover:bg-brand-50/30 transition-all"
+                  aria-label={isExpanded ? "收起详情" : "展开详情"}
+                  data-testid={`expand-${card.expandKey}`}
+                >
+                  {isExpanded ? (
+                    <RiArrowUpSLine size={16} />
+                  ) : (
+                    <RiArrowDownSLine size={16} />
+                  )}
+                </button>
+              )}
             </div>
 
             {/* 数值 */}
@@ -191,8 +219,13 @@ export default function HealthPanel({ docs }: { docs?: DocListItem[] }) {
               </p>
             )}
           </div>
-        ))}
+        )})}
       </div>
+
+      {/* L5 时间线钻取面板 — 手风琴展开 */}
+      {expandedCard === "l5" && data.l5_history && (
+        <L5TimelineDetail history={data.l5_history} />
+      )}
 
       {/* 日报热力图 */}
       {docs && docs.length > 0 && <DailyHeatmap docs={docs} />}

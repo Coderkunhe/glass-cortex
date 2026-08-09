@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Pre-built deploy artifacts — generated JS, not source code
+    "deploy-package/**",
   ]),
 ]);
 

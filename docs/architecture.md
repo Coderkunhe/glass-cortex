@@ -508,6 +508,7 @@
 | 前端 — 日报热力图 | ✅ 完成 | 2026-08-08 | `DailyHeatmap.tsx` ⭐ — GitHub 贡献图式 7×N 热力格子 · 12 月回溯 · 周一对齐 · 仪表盘集成 — Phase 69 B2 |
 | 前端 — 仪表盘字体放大 | ✅ 完成 | 2026-08-08 | PageHeader `text-gm-2xl` · 摘要卡片数值 `text-gm-xl` · 门禁/提交 `text-gm-base` · 全板块间距加大 — Phase 69 B3 |
 | 前端 — Footer 工程入口 + Admin 命名统一 | ✅ 完成 | 2026-08-08 | Footer 新增「AI 工程」→ `/admin` 链接 · Admin 全链路命名升级「工程管理面板」→「AI 工程协作管理面板」· AdminSidebar 品牌副标题同步 — Phase 69 B4 |
+| 前端 — 钻取面板数据地基 + L5 时间线 | ✅ 完成 | 2026-08-09 | `check_docs.py` 结构化数据输出 3 新 key · `L5TimelineDetail.tsx` ⭐ 垂直线性时间轴 · HealthPanel 卡片展开式钻取(手风琴) — Phase 69 B5 |
 
 ## 架构决策记录
 

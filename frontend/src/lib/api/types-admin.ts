@@ -33,6 +33,55 @@ export interface ViolationsStatus {
   is_blocked: boolean;
 }
 
+// ── Phase 69 B5 — 钻取面板结构化数据 ────────────────────────────
+
+/** L5 拉通历史条目 */
+export interface L5HistoryEntry {
+  date: string;
+  label: string;
+  phase: number;
+  covered: string;
+}
+
+/** 违纪触发日志条目 */
+export interface ViolationTriggerEntry {
+  date: string;
+  batch: string;
+  description: string;
+  type: string;
+  wasted_min: number | null;
+  is_first: boolean;
+  root_fixed: string | null;
+}
+
+/** 违纪 VIO 条目 */
+export interface ViolationVioEntry {
+  id: string;
+  title?: string;
+  status?: string;
+  trigger_types?: string;
+}
+
+/** 违纪结构化数据 */
+export interface ViolationsStructured {
+  trigger_log: ViolationTriggerEntry[];
+  active_vios: ViolationVioEntry[];
+  closed: ViolationVioEntry[];
+  total_triggers: number;
+  closed_count: number;
+  summary: string;
+}
+
+/** 需求覆盖度结构化数据 */
+export interface RequirementsCoverage {
+  total_entries: number;
+  verified_count: number;
+  coverage_pct: number;
+  by_type: Record<string, number>;
+  by_phase: Array<{ phase: string; total: number; verified: number }>;
+  uncovered: Array<{ phase: string; title: string; date: string }>;
+}
+
 /** 文档新鲜度 */
 export interface DocFreshness {
   requirements_last_date: string | null;
@@ -47,8 +96,14 @@ export interface AdminHealthResponse {
   current_batch: string | null;
   recent_commits: string[];
   l5: L5Status;
+  /** Phase 69 B5 — L5 拉通历史时间线 */
+  l5_history?: L5HistoryEntry[];
   daily: DailyStatus;
   violations: ViolationsStatus;
+  /** Phase 69 B5 — 违纪结构化数据 */
+  violations_structured?: ViolationsStructured;
+  /** Phase 69 B5 — 需求覆盖度钻取数据 */
+  requirements_coverage?: RequirementsCoverage;
   doc_freshness: DocFreshness;
   checks: Record<string, CheckItem>;
   /** 非 check-docs 标准输出的错误信息（API 层异常兜底） */
