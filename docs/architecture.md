@@ -1,6 +1,6 @@
 # 架构文档
 
-> 最后更新: 2026-07-16 (三张架构图完稿: System Architecture + Runtime Pipeline + Memory Timeline)
+> 最后更新: 2026-08-09 (Phase 69 B5 钻取面板数据地基 + L5 时间线 · Phase 67 B25 Windows 兼容性)
 
 ## 系统架构图
 
