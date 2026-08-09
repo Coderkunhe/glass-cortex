@@ -64,26 +64,29 @@ async def admin_health() -> dict[str, Any]:
             [sys.executable, str(check_docs), "--json"],
             capture_output=True,
             text=True,
+            encoding="utf-8",
             cwd=PROJECT_ROOT,
             timeout=30,
             env={**os.environ, "PYTHONPATH": str(PROJECT_ROOT)},
         )
-        if result.returncode == 0 and result.stdout.strip():
-            return json.loads(result.stdout)  # type: ignore[no-any-return]
+        stdout = result.stdout or ""
+        if result.returncode == 0 and stdout.strip():
+            return json.loads(stdout)  # type: ignore[no-any-return]
         # 即使 check-docs 有硬阻断，仍返回 JSON（前端展示用）
-        if result.stdout.strip():
-            return json.loads(result.stdout)  # type: ignore[no-any-return]
+        if stdout.strip():
+            return json.loads(stdout)  # type: ignore[no-any-return]
         return {
             "error": "check_docs.py 无输出",
-            "stderr": result.stderr[:500],
+            "stderr": (result.stderr or "")[:500],
             "timestamp": date.today().isoformat(),
         }
     except subprocess.TimeoutExpired:
         return {"error": "check_docs.py 超时", "timestamp": date.today().isoformat()}
     except json.JSONDecodeError:
+        raw_output = (result.stdout or "")[:1000] if "result" in dir() else ""
         return {
             "error": "check_docs.py JSON 解析失败",
-            "raw": result.stdout[:1000] if "result" in dir() else "",
+            "raw": raw_output,
             "timestamp": date.today().isoformat(),
         }
 

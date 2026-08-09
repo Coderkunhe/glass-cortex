@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import datetime
 import functools
 import json
 import logging
@@ -93,7 +94,12 @@ class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         # 优先用 record 上的字段（通过 extra 传入），否则回退到模块级全局
         obj: dict[str, Any] = {
-            "ts": self.formatTime(record, datefmt="%Y-%m-%dT%H:%M:%S.%fZ")[:-4] + "Z",
+            "ts": (
+                datetime.datetime.fromtimestamp(record.created, tz=datetime.UTC).strftime(
+                    "%Y-%m-%dT%H:%M:%S.%f"
+                )[:-3]
+                + "Z"
+            ),
             "level": record.levelname,
             "logger": getattr(record, "name", ""),
             "msg": record.getMessage(),
