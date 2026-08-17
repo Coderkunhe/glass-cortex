@@ -57,7 +57,7 @@ $packageName = "glasscortex-deploy-$Version"
 $stagingDir = Join-Path $OutputDir $packageName
 $zipPath = Join-Path $OutputDir "$packageName.zip"
 
-Write-Host @"
+$bannerText = @"
 ========================================
  GlassCortex Build Package
  Phase 67 Batch 3
@@ -69,7 +69,8 @@ Write-Host @"
   Platform:  $TargetPlatform
   Time:      $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
 ========================================
-"@ -ForegroundColor Cyan
+"@
+Write-Host $bannerText -ForegroundColor Cyan
 
 # =======================================================
 # Step 1: Prepare staging directory
@@ -118,6 +119,12 @@ foreach ($dir in $sourceDirs) {
     }
 }
 
+# docs/tmp is private scratch (resume / job-search / blog) — exclude from deploy package
+$privateDocsTmp = Join-Path $stagingDir "docs/tmp"
+if (Test-Path $privateDocsTmp) {
+    Remove-Item -Recurse -Force -Path $privateDocsTmp
+}
+
 # Copy frontend dir (exclude node_modules + .next; build output handled separately)
 if (Test-Path "frontend") {
     Write-Host "  Copying frontend/ (excluding node_modules, .next)..." -ForegroundColor DarkGray
@@ -157,7 +164,7 @@ New-Item -ItemType Directory -Force -Path (Join-Path $stagingDir "logs") | Out-N
 # This is the FIRST file users see when unzipping.
 # It prevents the common mistake of manually running uvicorn before venv exists.
 $startHerePath = Join-Path $stagingDir "START_HERE.txt"
-@"
+$startHereText = @"
 ============================================================
   STOP! READ THIS FIRST --- GlassCortex Deployment Package
 ============================================================
@@ -191,7 +198,8 @@ $startHerePath = Join-Path $stagingDir "START_HERE.txt"
     .\deploy\check-package.ps1
 
 ============================================================
-"@ | Set-Content -Path $startHerePath -Encoding UTF8
+"@
+$startHereText | Set-Content -Path $startHerePath -Encoding UTF8
 Write-Host "  Generated START_HERE.txt (entry guard)" -ForegroundColor DarkGray
 
 Pop-Location
@@ -433,7 +441,27 @@ Write-Host "  Staging removed" -ForegroundColor Green
 # --- Done ---
 $elapsed = (Get-Date) - $startTime
 
-Write-Host @"
+if ($PATCH_MODE) {
+    $nextSteps = @"
+  [PATCH MODE] Incremental update --- flat zip, extract directly into AppRoot:
+  1. Copy $packageName.zip to target Windows Server
+  2. On Server (Admin PowerShell):
+     Expand-Archive -Force -Path C:\temp\$packageName.zip -DestinationPath C:\apps\glasscortex\
+     C:\apps\glasscortex\deploy\deploy.ps1 -SkipClone -SkipBuild
+  (No parent directory in zip --- files land directly in AppRoot, overwriting existing)
+"@
+} else {
+    $nextSteps = @"
+  1. Copy $packageName.zip to target Windows Server (USB / SMB / SFTP)
+  2. On Server (Admin PowerShell):
+     Expand-Archive -Path C:\temp\$packageName.zip -DestinationPath C:\apps\
+     Rename-Item C:\apps\$packageName C:\apps\glasscortex
+     C:\apps\glasscortex\deploy\deploy.ps1 -SkipClone -SkipBuild
+  3. Configure Nginx per deploy\README.md S2.2
+"@
+}
+
+$finalBanner = @"
 
 ========================================
  Build Package Complete
@@ -444,24 +472,6 @@ Write-Host @"
 ========================================
 
 Next Steps:
-$(
-if ($PATCH_MODE) {
-@"  [PATCH MODE] Incremental update --- flat zip, extract directly into AppRoot:
-  1. Copy $packageName.zip to target Windows Server
-  2. On Server (Admin PowerShell):
-     Expand-Archive -Force -Path C:\temp\$packageName.zip -DestinationPath C:\apps\glasscortex\
-     C:\apps\glasscortex\deploy\deploy.ps1 -SkipClone -SkipBuild
-  (No parent directory in zip --- files land directly in AppRoot, overwriting existing)
+$nextSteps
 "@
-} else {
-@"  1. Copy $packageName.zip to target Windows Server (USB / SMB / SFTP)
-  2. On Server (Admin PowerShell):
-     Expand-Archive -Path C:\temp\$packageName.zip -DestinationPath C:\apps\
-     Rename-Item C:\apps\$packageName C:\apps\glasscortex
-     C:\apps\glasscortex\deploy\deploy.ps1 -SkipClone -SkipBuild
-  3. Configure Nginx per deploy\README.md S2.2
-"@
-}
-)
-
-"@ -ForegroundColor Cyan
+Write-Host $finalBanner -ForegroundColor Cyan

@@ -172,6 +172,9 @@ for dir in "${SOURCE_DIRS[@]}"; do
     fi
 done
 
+# docs/tmp 是个人私有草稿（简历/求职策略/博客），不入部署包（路径沙箱铁律 5）
+rm -rf "$STAGING_DIR/docs/tmp"
+
 # 前端目录（排除 node_modules + .next，构建产物 Step 5 处理）
 if [[ -d "frontend" ]]; then
     info "Copying frontend/ (excluding node_modules, .next)..."
