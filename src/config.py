@@ -199,7 +199,7 @@ class PlannerConfig:
     """Planner 意图分类 + 任务规划配置——B79 从 Settings 扁平字段提取。"""
 
     planner_enabled: bool = True
-    planner_max_tokens: int = 128
+    planner_max_tokens: int = 512  # 128 会截断意图 JSON（推理模型 reasoning 占 token）
     planner_temperature: float = 0.1
     plan_generation_enabled: bool = True  # L2 任务规划生成开关
     plan_storage_enabled: bool = False  # 任务规划持久化开关

@@ -178,7 +178,7 @@ class TestSettingsIntegration:
     def test_default_planner(self) -> None:
         s = Settings()
         assert s.planner_enabled is True
-        assert s.planner_max_tokens == 128
+        assert s.planner_max_tokens == 512
         assert s.planner_temperature == 0.1
 
 
