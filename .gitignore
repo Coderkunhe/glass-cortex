@@ -1,3 +1,6 @@
+# macOS
+.DS_Store
+
 venv/
 __pycache__/
 *.pyc
@@ -16,9 +19,13 @@ tools/visual_diffs/
 # Node
 node_modules/
 
+# Playwright
+test-results/
+
 # Next.js
 .next/
 out/
 deploy-package/
 
 # Private docs (mirror-to-github.sh filters these from public repo)
+docs/tmp/

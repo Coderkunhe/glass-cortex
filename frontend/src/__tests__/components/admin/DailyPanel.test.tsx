@@ -19,7 +19,10 @@ vi.mock("@/lib/api/client", async (importOriginal) => {
 
 import DailyPanel from "@/components/admin/DailyPanel";
 
-afterEach(cleanup);
+afterEach(() => {
+  vi.useRealTimers();
+  cleanup();
+});
 
 // ── Test data ───────────────────────────────────────────────────────
 
@@ -51,6 +54,12 @@ function makeDailyDocs(dates: string[]): DocListItem[] {
 
 beforeEach(() => {
   mockGetDocs.mockReset();
+  // 冻结系统时间到固定日期，避免测试依赖真实「今天」导致跨月腐化（I-154）：
+  // 组件 buildAllMonths 渲染 firstDate→today 所有月份，真实日期跨月后
+  // weekday label（一/日）会重复，使 getByText 唯一断言失败。
+  // toFake 仅 ["Date"]，不影响 Testing Library waitFor 的 setTimeout。
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-08-15T12:00:00"));
 });
 
 function renderPanel(onSelectDoc?: (item: DocListItem) => void) {
