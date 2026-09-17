@@ -426,8 +426,10 @@ if [[ "$SKIP_BUILD" == false ]]; then
     mkdir -p "$STAGING_STANDALONE_DIR"
 
     info "Copying standalone output to staging..."
+    # Next.js 16 standalone 输出为扁平结构（server.js/node_modules/.next 直接在
+    # .next/standalone/ 下，不再嵌套 frontend/ 子目录）— 与 build-package.ps1 对齐。
     shopt -s dotglob   # * 不匹配 .next 隐藏目录，dotglob 开启后完整拷贝
-    cp -R "$STANDALONE_DIR"/frontend/* "$STAGING_STANDALONE_DIR/"
+    cp -R "$STANDALONE_DIR"/* "$STAGING_STANDALONE_DIR/"
     shopt -u dotglob
 
     # 拷贝 static/ 到 standalone/.next/static/ (Next.js 16 standalone 从 ./.next/static 读取)
