@@ -138,23 +138,21 @@ describe("AnswerCard", () => {
 
   // ── Mermaid fenced code in markdown content ──
 
-  it("renders mermaid block placeholder for ```mermaid fenced code", () => {
+  it("renders mermaid diagram for ```mermaid fenced code (B145 declarative)", async () => {
     const mermaidChart = "graph LR\nA-->B";
     const answer: Answer = {
       ...mockAnswer,
       l1: `Before diagram\n\n\`\`\`mermaid\n${mermaidChart}\n\`\`\`\n\nAfter diagram`,
     };
     const { container } = render(<AnswerCard answer={answer} />);
-    // renderMarkdown produces .gm-mermaid-block div, NOT <pre><code>
-    const block = container.querySelector(".gm-mermaid-block");
-    expect(block).toBeInTheDocument();
-    expect(block?.getAttribute("data-chart")).toBeTruthy();
-    // Decode base64 to verify original chart is preserved
-    const decoded = decodeURIComponent(
-      atob(block!.getAttribute("data-chart")!),
-    );
-    expect(decoded).toBe(mermaidChart);
-    // Regular <pre><code> should NOT appear for mermaid
+    // B145: MermaidDiagram 声明式渲染 — 不再发射 .gm-mermaid-block 占位 div
+    expect(container.querySelector(".gm-mermaid-block")).toBeNull();
+    // chart 经 base64 + decodeURIComponent 往返后无损到达 mermaid.render
+    await waitFor(() => {
+      expect(mockRender).toHaveBeenCalledWith(expect.any(String), mermaidChart);
+    });
+    // 渲染出 SVG 容器，且 mermaid 不产出 <pre><code>
+    expect(container.querySelector(".gm-mermaid-wrap")).toBeInTheDocument();
     expect(container.querySelector("pre code")).toBeNull();
   });
 
@@ -169,7 +167,7 @@ describe("AnswerCard", () => {
     expect(container.querySelector(".gm-mermaid-block")).toBeNull();
   });
 
-  it("handles mixed mermaid and regular code blocks", () => {
+  it("handles mixed mermaid and regular code blocks (B145 declarative)", async () => {
     const answer: Answer = {
       ...mockAnswer,
       l1: [
@@ -188,8 +186,11 @@ describe("AnswerCard", () => {
       ].join("\n"),
     };
     const { container } = render(<AnswerCard answer={answer} />);
-    // Both should be present
-    expect(container.querySelector(".gm-mermaid-block")).toBeInTheDocument();
+    // mermaid 图 + python 代码块并存
+    await waitFor(() => {
+      expect(mockRender).toHaveBeenCalled();
+    });
+    expect(container.querySelector(".gm-mermaid-wrap")).toBeInTheDocument();
     expect(container.querySelector("pre code.language-python")).toBeInTheDocument();
   });
 

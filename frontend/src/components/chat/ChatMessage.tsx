@@ -9,11 +9,10 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { useMemo, useRef, useState } from "react";
 import type { Message } from "@/hooks/useChat";
 import type { ApiTrace, IntentResult, RoutingInfo } from "@/lib/api/types";
-import { renderMarkdown } from "@/lib/renderMarkdown";
+import { renderMarkdownSegmented } from "@/lib/renderMarkdown";
 import { formatRelativeTime } from "@/lib/formatTime";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
@@ -58,46 +57,12 @@ function ChatMessage({
   const historyOpen = expandedPanel === "history";
   const { openDrawer } = useDrawer();
   const contentRef = useRef<HTMLSpanElement>(null);
-  const mermaidRootsRef = useRef<Map<HTMLElement, ReturnType<typeof createRoot>>>(new Map());
 
-  // ── Hydrate mermaid blocks injected by renderMarkdown ──
-  useEffect(() => {
-    if (!contentRef.current) return;
-    const containers = contentRef.current.querySelectorAll<HTMLDivElement>(
-      ".gm-mermaid-block[data-chart]",
-    );
-    if (containers.length === 0) return;
-
-    containers.forEach((container) => {
-      const base64 = container.getAttribute("data-chart");
-      const title = container.getAttribute("data-title") || "流程图";
-      if (!base64) return; // 防御：data-chart 选择器已过滤，此行为安全网
-      try {
-        const chart = decodeURIComponent(atob(base64));
-        let root = mermaidRootsRef.current.get(container);
-        if (!root) {
-          root = createRoot(container);
-          mermaidRootsRef.current.set(container, root);
-        }
-        root.render(
-          <MermaidDiagram chart={chart} title={title} maxHeight={0} />,
-        );
-        container.setAttribute("data-mermaid-hydrated", "true");
-      } catch (err) {
-        console.error("[mermaid-hydrate] ChatMessage: 水合失败", { title, error: err });
-        container.innerHTML =
-          '<p class="text-gm-sm text-error">流程图加载失败</p>';
-        mermaidRootsRef.current.delete(container);
-      }
-    });
-
-    // Strict Mode 双 effect 下不 unmount 也不清空 ref：
-    // re-run 时通过 ref 复用已有 root（调用 root.render() 更新），
-    // 避免 createRoot() 在已有 root 的容器上报错。
-    // 真正卸载时 DOM 容器随组件销毁，React root 随之 GC。
-    // ⚠️ 不在 effect body 中同步调 root.unmount()——React 18+ 不允许
-    // 在渲染阶段同步卸载另一个 root。
-  }, [message.content]);
+  // B145: 声明式分段渲染 — 废除 createRoot 命令式水合（白块根因）。
+  const segments = useMemo(
+    () => renderMarkdownSegmented(message.content || ""),
+    [message.content],
+  );
 
   // ── Prism 语法高亮 + 行号 + 复制按钮 ──
   useCodeHighlight(contentRef, [message.content]);
@@ -130,10 +95,15 @@ function ChatMessage({
             ref={contentRef}
             className={`chat-prose text-gm-base ${isUser ? "text-text-inverse" : "text-text"}`}
             suppressHydrationWarning
-            dangerouslySetInnerHTML={{
-              __html: renderMarkdown(message.content || ""),
-            }}
-          />
+          >
+            {segments.map((seg, i) =>
+              seg.type === "html" ? (
+                <span key={i} dangerouslySetInnerHTML={{ __html: seg.html }} />
+              ) : (
+                <MermaidDiagram key={i} chart={seg.chart} title={seg.title} maxHeight={0} />
+              ),
+            )}
+          </span>
         </div>
 
         {/* 时间戳 — 气泡下方小字 */}

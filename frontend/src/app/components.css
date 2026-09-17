@@ -1451,22 +1451,14 @@ pre:focus-within .gm-code-copy-btn {
 }
 
 /* ── Mermaid 块 ── */
-/* B149: 仅保留 min-height + margin 防 hydration 前塌陷。
-   background/border/padding 由 MermaidDiagram 内部 .gm-mermaid-wrap 提供，
-   外层再加会导致白块（双重嵌套 bg）。 */
-:is(.chat-prose, .prose) .gm-mermaid-block {
-  min-height: 200px;
-  margin: 0.5em 0;
-}
-/* B153: 未水合的 block 不显示红色诊断边框（生产环境），
-   但保留 data-mermaid-hydrated 属性供调试。
-   水合遗漏根因已在 Phase 66 B153 修复：去掉零宽守卫 + 节点填充色与容器背景对比。 */
-
-/* B151: 在 prose 容器内取消 .gm-mermaid-wrap 的 bg/border —
-   父容器（.answer-l1-body / .chat-prose）已提供视觉框架，
-   保留 MermaidDiagram 自身的 bg + border 会导致嵌套卡片白块。
-   用 !important 防御 MermaidDiagram 内联 <style> 的同优先级覆盖。 */
+/* B145: 声明式分段渲染。废除 .gm-mermaid-block 占位 div（createRoot
+   水合间隙 = 白块根因），renderMarkdownSegmented 直接产出 <MermaidDiagram>。
+   间距迁至 .gm-mermaid-wrap。 */
 :is(.chat-prose, .prose) .gm-mermaid-wrap {
+  margin: 0.5em 0;
+  /* B151: 取消 bg/border — 父容器（.answer-l1-body / .chat-prose）已提供
+     视觉框架，保留 MermaidDiagram 自身 bg + border 会导致嵌套卡片白块。
+     !important 防御 MermaidDiagram 内联 <style> 同优先级覆盖。 */
   background: transparent !important;
   border: none !important;
 }

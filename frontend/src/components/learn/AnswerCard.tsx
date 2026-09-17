@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createRoot } from "react-dom/client";
 import { useRouter } from "next/navigation";
 import { RiArrowLeftLine, RiStarLine, RiStarFill, RiFlaskLine, RiLinkM, RiArrowRightUpLine, RiNodeTree } from "@remixicon/react";
 import type { Answer } from "@/lib/content/types";
 import { getAnswerById } from "@/lib/content/questions";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
-import { renderMarkdown } from "@/lib/renderMarkdown";
+import { renderMarkdownSegmented, type MarkdownSegment } from "@/lib/renderMarkdown";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
 import { formatReadingTime } from "@/lib/content/estimateReadingTime";
 import { getContentTypeBadges } from "@/lib/content/detectContentTypes";
@@ -187,6 +186,21 @@ function buildHighlightFragment(
 }
 
 /**
+ * B145: 声明式分段渲染 — html 段用 div + dangerouslySetInnerHTML，
+ * mermaid 段用 <MermaidDiagram>（含 lightbox/tooltip/键盘可访问性）。
+ * 替代 createRoot + .gm-mermaid-block 占位 div 的命令式水合反模式。
+ */
+function renderSegments(segments: MarkdownSegment[]): React.ReactNode {
+  return segments.map((seg, i) =>
+    seg.type === "html" ? (
+      <div key={i} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: seg.html }} />
+    ) : (
+      <MermaidDiagram key={i} chart={seg.chart} title={seg.title} maxHeight={0} />
+    ),
+  );
+}
+
+/**
  * 答案卡片组件。
  * 按三层渐进披露渲染内容：L0 一句话结论突出展示，
  * L1 正文区，L2/L3 深度扩展默认折叠可展开。
@@ -212,71 +226,13 @@ export default function AnswerCard({
   const router = useRouter();
   const isStub = answer.l0 === "";
   const articleRef = useRef<HTMLElement>(null);
-  /** Mermaid React roots — 用于 hydration 后的清理，防止内存泄漏 */
-  const mermaidRootsRef = useRef<Map<HTMLElement, ReturnType<typeof createRoot>>>(new Map());
 
-  // B153: useMemo — 必须在条件 return 之前调用 (rules-of-hooks)
-  const l1Html = useMemo(() => renderMarkdown(answer.l1), [answer.l1]);
-  const l2Html = useMemo(() => answer.l2 ? renderMarkdown(answer.l2) : "", [answer.l2]);
-  const l3Html = useMemo(() => answer.l3 ? renderMarkdown(answer.l3) : "", [answer.l3]);
-
-  // ── Hydrate mermaid blocks injected by renderMarkdown ──
-  // B153: 无依赖数组 + data-mermaid-hydrated 守卫。
-  // dangerouslySetInnerHTML 在每次 render 时重置 innerHTML
-  // → gm-mermaid-block 内的 SVG 被销毁 → 必须在水合 effect 恢复。
-  // 守卫跳过已水合 block，避免重复渲染。
-  //
-  // B154: 使用 createRoot + MermaidDiagram 组件渲染，替代裸 innerHTML。
-  // 裸 innerHTML 丢失了 MermaidDiagram 的 onClick lightbox、tooltip、
-  // 键盘可访问性等交互能力，导致流程图无法点击放大。
-  useEffect(() => {
-    if (!articleRef.current) return;
-    const roots = mermaidRootsRef.current;
-    const containers = articleRef.current.querySelectorAll<HTMLDivElement>(
-      ".gm-mermaid-block",
-    );
-    if (containers.length === 0) return;
-
-    let cancelled = false;
-
-    async function hydrateAll() {
-      for (const container of containers) {
-        if (cancelled) return;
-        if (container.hasAttribute("data-mermaid-hydrated")) continue;
-        const base64 = container.getAttribute("data-chart");
-        const title = container.getAttribute("data-title") || "流程图";
-        if (!base64) continue;
-        try {
-          const chart = decodeURIComponent(atob(base64));
-          // 复用已有 root 或创建新 root，渲染 MermaidDiagram 组件（含 lightbox 交互）
-          let root = roots.get(container);
-          if (!root) {
-            root = createRoot(container);
-            roots.set(container, root);
-          }
-          root.render(
-            <MermaidDiagram chart={chart} title={title} maxHeight={0} />,
-          );
-          container.setAttribute("data-mermaid-hydrated", "true");
-        } catch {
-          if (!cancelled) {
-            container.innerHTML = '<p class="text-gm-sm text-error">流程图加载失败</p>';
-          }
-        }
-      }
-    }
-
-    hydrateAll();
-
-    return () => {
-      cancelled = true;
-      // 不在此处 unmount：dangerouslySetInnerHTML 替换 innerHTML 时
-      // React 正处于渲染阶段，同步 unmount 会触发 "Attempted to
-      // synchronously unmount a root while React was already rendering"。
-      // 旧 DOM 被整体替换后 React root 自动失效，GC 回收。
-      roots.clear();
-    };
-  });
+  // B145: 声明式分段渲染 — 废除 createRoot 命令式水合（白块根因）。
+  // renderMarkdownSegmented 复用 renderMarkdown 完整管线（含 DOMPurify 消毒）
+  // 再切回 {html,mermaid} 有序片段，mermaid 段由 <MermaidDiagram> 声明式渲染。
+  const l1Segments = useMemo(() => renderMarkdownSegmented(answer.l1), [answer.l1]);
+  const l2Segments = useMemo(() => answer.l2 ? renderMarkdownSegmented(answer.l2) : [], [answer.l2]);
+  const l3Segments = useMemo(() => answer.l3 ? renderMarkdownSegmented(answer.l3) : [], [answer.l3]);
 
   // ── Prism 语法高亮 + 行号 + 复制按钮 ──
   useCodeHighlight(articleRef, [answer.l1, answer.l2, answer.l3]);
@@ -498,8 +454,9 @@ export default function AnswerCard({
                      [&_table]:w-full [&_table]:text-gm-sm [&_td]:border [&_td]:border-border [&_td]:p-gm-2
                      [&_th]:border [&_th]:border-border [&_th]:p-gm-2 [&_th]:text-text-secondary"
           suppressHydrationWarning
-          dangerouslySetInnerHTML={{ __html: l1Html }}
-        />
+        >
+          {renderSegments(l1Segments)}
+        </div>
       </div>
 
       {/* L2 — 深度探索（可折叠） */}
@@ -532,7 +489,7 @@ export default function AnswerCard({
             "[&_th]:border [&_th]:border-border [&_th]:p-gm-2 [&_th]:text-text-secondary"
           }
         >
-          <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: l2Html }} />
+          <div suppressHydrationWarning>{renderSegments(l2Segments)}</div>
         </CollapsibleSection>
       )}
 
@@ -563,7 +520,7 @@ export default function AnswerCard({
             "[&_code]:text-gm-xs [&_code]:bg-bg-subtle [&_code]:px-gm-1 [&_code]:rounded-gm-xs"
           }
         >
-          <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: l3Html }} />
+          <div suppressHydrationWarning>{renderSegments(l3Segments)}</div>
         </CollapsibleSection>
       )}
 
@@ -697,4 +654,4 @@ export default function AnswerCard({
   );
 }
 
-// renderMarkdown and PURIFY_CONFIG are now in @/lib/renderMarkdown (shared with ChatMessage).
+// renderMarkdownSegmented 共享于 @/lib/renderMarkdown（ChatMessage 同源）。
