@@ -230,12 +230,13 @@ export default function AnswerCard({
   // B145: 声明式分段渲染 — 废除 createRoot 命令式水合（白块根因）。
   // renderMarkdownSegmented 复用 renderMarkdown 完整管线（含 DOMPurify 消毒）
   // 再切回 {html,mermaid} 有序片段，mermaid 段由 <MermaidDiagram> 声明式渲染。
+  const l0Segments = useMemo(() => renderMarkdownSegmented(answer.l0), [answer.l0]);
   const l1Segments = useMemo(() => renderMarkdownSegmented(answer.l1), [answer.l1]);
   const l2Segments = useMemo(() => answer.l2 ? renderMarkdownSegmented(answer.l2) : [], [answer.l2]);
   const l3Segments = useMemo(() => answer.l3 ? renderMarkdownSegmented(answer.l3) : [], [answer.l3]);
 
   // ── Prism 语法高亮 + 行号 + 复制按钮 ──
-  useCodeHighlight(articleRef, [answer.l1, answer.l2, answer.l3]);
+  useCodeHighlight(articleRef, [answer.l0, answer.l1, answer.l2, answer.l3]);
 
   // ── 搜索关键词高亮 + 自动滚动 ──
   const highlightStateRef = useRef<{
@@ -435,11 +436,16 @@ export default function AnswerCard({
         </div>
       )}
 
-      {/* L0 — 一句话结论（玻璃态突出卡片） */}
+      {/* L0 — 一句话结论 / 摘要（玻璃态突出卡片）。
+          B148 起按 markdown 渲染：早期问题 l0 为纯文本一句话结论（渲染成 <p>），
+          后段问题 l0 为含标题/表格/mermaid 的富文本摘要（渲染成结构化 HTML）。 */}
       <div className="answer-l0-card">
-        <p className="text-gm-base font-semibold text-text leading-relaxed">
-          {answer.l0}
-        </p>
+        <div
+          className="prose text-gm-base text-text leading-relaxed"
+          suppressHydrationWarning
+        >
+          {renderSegments(l0Segments)}
+        </div>
       </div>
 
       {/* L1 — 核心解释（正文区） */}

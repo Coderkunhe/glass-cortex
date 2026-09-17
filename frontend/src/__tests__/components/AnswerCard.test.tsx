@@ -83,6 +83,21 @@ describe("AnswerCard", () => {
     expect(screen.getByText(/三种经典策略/)).toBeInTheDocument();
   });
 
+  it("renders L0 markdown headings as h3/h4 (B148 md-parse fix)", () => {
+    const answer: Answer = {
+      ...mockAnswer,
+      l0: "### 记忆系统的自清洁\n\n#### 三种污染来源\n\n正文内容",
+    };
+    const { container } = render(<AnswerCard answer={answer} />);
+    const l0Card = container.querySelector(".answer-l0-card");
+    expect(l0Card).toBeInTheDocument();
+    // 标题被解析为 <h3>/<h4>，而非字面 ###/#### 文本
+    expect(l0Card!.querySelector("h3")?.textContent).toBe("记忆系统的自清洁");
+    expect(l0Card!.querySelector("h4")?.textContent).toBe("三种污染来源");
+    expect(l0Card!.textContent).not.toContain("###");
+    expect(l0Card!.textContent).not.toContain("####");
+  });
+
   it("renders L1 body content", () => {
     render(<AnswerCard answer={mockAnswer} />);
     expect(screen.getByText(/10 张便签/)).toBeInTheDocument();
