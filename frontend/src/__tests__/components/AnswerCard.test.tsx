@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
 import { useRouter } from "next/navigation";
 import AnswerCard from "@/components/learn/AnswerCard";
 import type { Answer } from "@/lib/content/types";
@@ -51,6 +51,30 @@ describe("AnswerCard", () => {
     expect(
       screen.getByText("上下文窗口溢出处理策略有哪些？")
     ).toBeInTheDocument();
+  });
+
+  it("re-hydrates mermaid blocks when switching answers (B144 regression)", async () => {
+    const withMermaid: Answer = {
+      ...mockAnswer,
+      id: "q1.7",
+      l1: "```mermaid\ngraph TD\nA-->B\n```",
+    };
+    const { rerender } = render(<AnswerCard answer={withMermaid} />);
+
+    await waitFor(() => {
+      expect(mockRender).toHaveBeenCalled();
+    });
+
+    const next: Answer = {
+      ...withMermaid,
+      id: "q1.8",
+      l1: "```mermaid\ngraph LR\nX-->Y\n```",
+    };
+    rerender(<AnswerCard answer={next} />);
+
+    await waitFor(() => {
+      expect(mockRender).toHaveBeenCalledTimes(2);
+    });
   });
 
   it("renders L0 prominently", () => {

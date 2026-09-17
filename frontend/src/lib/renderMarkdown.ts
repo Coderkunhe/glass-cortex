@@ -550,3 +550,65 @@ export function renderMarkdown(md: string): string {
   // ── DOMPurify 消毒（SSR 通过 jsdom 窗口运行，客户端用浏览器原生 DOM）──
   return getPurifyFn()(html);
 }
+
+// ── 声明式分段渲染 ──────────────────────────────────────────────────
+// B144: 废除 sentinel + createRoot 反模式。renderMarkdown 产出扁平 HTML
+// （含 mermaid 占位 <div>），本函数用与发射端（renderMarkdown 的 MMD
+// sentinel 还原）逐字符互逆的正则切回结构化片段，供消费者在 JSX 里声明式
+// 渲染 <MermaidDiagram>，消除白块间隙与 root 泄漏。renderMarkdown 契约
+// 不变（PDF 路径 printPdf / DocsPanel 继续用扁平 HTML）。
+
+/** 渲染片段类型 — html 段（已消毒）或 mermaid 段（图定义 + 标题） */
+export type MarkdownSegment =
+  | { type: "html"; html: string }
+  | { type: "mermaid"; chart: string; title: string };
+
+/**
+ * 匹配 renderMarkdown 发射的 mermaid 占位 <div>（空 div、无嵌套，
+ * data-chart 为 base64 纯字母数字，可安全正则切分）。
+ */
+const MERMAID_BLOCK_RE =
+  /<div class="gm-mermaid-block" data-chart="([A-Za-z0-9+/=]+)"(?: data-title="([^"]*)")?><\/div>/g;
+
+/**
+ * 反解 DOMPurify 归一化后的 HTML 实体。
+ * 注意 `&amp;` 必须最后解（避免 `&amp;lt;` 被误拆）。
+ */
+function decodeTitle(encoded: string): string {
+  return encoded
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+}
+
+/**
+ * 将 Markdown 渲染为有序片段列表，供声明式分段渲染。
+ *
+ * 复用 renderMarkdown 的完整管线（含 DOMPurify 消毒），再切分回
+ * {html,mermaid} 片段。空 chart 不发射占位 div（`if (!chart) return ""`），
+ * 故空 mermaid 围栏回退为纯 html（或空），不会产生白块。
+ */
+export function renderMarkdownSegmented(md: string): MarkdownSegment[] {
+  const html = renderMarkdown(md);
+  if (!html) return [];
+
+  const segments: MarkdownSegment[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  MERMAID_BLOCK_RE.lastIndex = 0;
+  while ((match = MERMAID_BLOCK_RE.exec(html)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ type: "html", html: html.slice(lastIndex, match.index) });
+    }
+    const chart = decodeURIComponent(atob(match[1]));
+    const title = decodeTitle(match[2] ?? "流程图");
+    segments.push({ type: "mermaid", chart, title });
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < html.length) {
+    segments.push({ type: "html", html: html.slice(lastIndex) });
+  }
+  return segments;
+}
