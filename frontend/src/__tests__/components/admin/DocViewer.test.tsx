@@ -39,12 +39,16 @@ vi.mock("@/hooks/useLocalStorage", () => ({
 
 let markdownOverride: string | null = null;
 
-vi.mock("@/lib/renderMarkdown", () => ({
-  renderMarkdown: vi.fn(() => {
-    if (markdownOverride !== null) return markdownOverride;
-    return `<h1 id="section-1">第一节</h1><p>内容段落</p><h2 id="section-2">第二节</h2><p>更多内容</p>`;
-  }),
-}));
+vi.mock("@/lib/renderMarkdown", () => {
+  const defaultHtml = `<h1 id="section-1">第一节</h1><p>内容段落</p><h2 id="section-2">第二节</h2><p>更多内容</p>`;
+  const html = () => (markdownOverride !== null ? markdownOverride : defaultHtml);
+  return {
+    renderMarkdown: vi.fn(() => html()),
+    // B146: ProseContent 改用 renderMarkdownSegmented 声明式渲染，
+    // mock 返回单一 html 段（等价扁平 HTML），保持 TOC/搜索/高亮测试语义不变。
+    renderMarkdownSegmented: vi.fn(() => [{ type: "html", html: html() }]),
+  };
+});
 
 const downloadPdfMock = vi.fn();
 

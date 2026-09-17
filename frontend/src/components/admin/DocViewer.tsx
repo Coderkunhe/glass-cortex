@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * DocViewer — 文档阅读器（含 TOC 侧栏导航 + Mermaid 水合）。
+ * DocViewer — 文档阅读器（含 TOC 侧栏导航 + Mermaid 声明式渲染）。
  *
  * 从 AdminShell 拆出为独立组件。
- * 功能：Markdown 渲染 → 代码高亮 → Mermaid 图表水合 → TOC 目录提取及
+ * 功能：Markdown 渲染 → 代码高亮 → Mermaid 图表声明式渲染 → TOC 目录提取及
  * IntersectionObserver 激活追踪。
  *
  * 布局：h-full flex flex-col 承接 AdminShell main 的 overflow-hidden 高度链。
@@ -13,13 +13,12 @@
  * @module components/admin/DocViewer
  */
 
-import { useState, useEffect, useCallback, useRef, memo } from "react";
-import { createRoot } from "react-dom/client";
+import { useState, useEffect, useCallback, useRef, memo, useMemo } from "react";
 import { RiArrowLeftLine, RiFontSize, RiSearchLine, RiArrowUpSLine, RiArrowDownSLine, RiCloseLine, RiFileDownloadLine, RiLoader4Line } from "@remixicon/react";
 import MermaidDiagram from "@/components/ui/MermaidDiagram";
 import { useCodeHighlight } from "@/hooks/useCodeHighlight";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { renderMarkdown } from "@/lib/renderMarkdown";
+import { renderMarkdown, renderMarkdownSegmented } from "@/lib/renderMarkdown";
 import { downloadPdf } from "@/lib/printPdf";
 import { DOC_FONT_SIZE_KEY } from "@/lib/constants";
 import { fmtBytes } from "./utils";
@@ -170,13 +169,33 @@ const ProseContent = memo(function ProseContent({
   fontSize: string;
   docBodyRef: React.RefObject<HTMLDivElement | null>;
 }) {
+  // B146: 声明式分段渲染 — 废除 createRoot 命令式水合（白块根因）。
+  // renderMarkdownSegmented 复用 renderMarkdown 完整管线（含 DOMPurify 消毒）
+  // 再切回 {html,mermaid} 有序片段，mermaid 段由 <MermaidDiagram> 声明式渲染，
+  // 消除 .gm-mermaid-block 占位 div 透出的白块间隙与 React root 泄漏。
+  const segments = useMemo(
+    () => renderMarkdownSegmented(docContent.content),
+    [docContent.content],
+  );
+
   return (
     <div
       ref={bodyRef}
       style={{ fontSize: FONT_SIZE_MAP[fs] }}
       className="prose max-w-3xl mx-auto font-serif"
-      dangerouslySetInnerHTML={{ __html: renderMarkdown(docContent.content) }}
-    />
+    >
+      {segments.map((seg, i) =>
+        seg.type === "html" ? (
+          <div
+            key={i}
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{ __html: seg.html }}
+          />
+        ) : (
+          <MermaidDiagram key={i} chart={seg.chart} title={seg.title} maxHeight={0} />
+        ),
+      )}
+    </div>
   );
 });
 
@@ -189,7 +208,6 @@ export default function DocViewer({
 }: DocViewerProps) {
   const docBodyRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const mermaidRootsRef = useRef<Map<HTMLElement, ReturnType<typeof createRoot>>>(new Map());
   const observerRef = useRef<IntersectionObserver | null>(null);
   const [readProgress, setReadProgress] = useState(0);
   useCodeHighlight(docBodyRef, [content]);
@@ -243,47 +261,6 @@ export default function DocViewer({
     return () => {
       container.removeEventListener("scroll", handleScroll);
       if (rafId) cancelAnimationFrame(rafId);
-    };
-  }, [content]);
-
-  // ── Hydrate mermaid blocks injected by renderMarkdown ──
-  useEffect(() => {
-    if (!docBodyRef.current) return;
-    const containers = docBodyRef.current.querySelectorAll<HTMLDivElement>(
-      ".gm-mermaid-block[data-chart]",
-    );
-    if (containers.length === 0) return;
-
-    containers.forEach((container) => {
-      const base64 = container.getAttribute("data-chart");
-      const title = container.getAttribute("data-title") || "流程图";
-      if (!base64) return; // 防御：data-chart 选择器已过滤，此行为安全网
-      try {
-        const chart = decodeURIComponent(atob(base64));
-        let root = mermaidRootsRef.current.get(container);
-        if (!root) {
-          root = createRoot(container);
-          mermaidRootsRef.current.set(container, root);
-        }
-        root.render(
-          <MermaidDiagram chart={chart} title={title} maxHeight={0} />,
-        );
-        container.setAttribute("data-mermaid-hydrated", "true");
-      } catch (err) {
-        console.error("[mermaid-hydrate] DocViewer: 水合失败", { title, error: err });
-        container.innerHTML =
-          '<p class="text-gm-sm text-error">流程图加载失败</p>';
-        mermaidRootsRef.current.delete(container);
-      }
-    });
-    // Strict Mode: re-run reuses existing roots via ref (root.render() update),
-    // avoids createRoot() error on already-rooted containers.
-
-    const rootsMap = mermaidRootsRef.current;
-    return () => {
-      // 清理所有 mermaid root（组件卸载时 / content 切换时）
-      rootsMap.forEach((root) => root.unmount());
-      rootsMap.clear();
     };
   }, [content]);
 
