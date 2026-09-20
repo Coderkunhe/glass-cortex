@@ -127,7 +127,7 @@ class TestGenerate:
         call_kwargs = mock_client.chat.completions.create.call_args[1]
         assert call_kwargs["model"] == "deepseek-v4-flash"
         assert call_kwargs["temperature"] == 0.7
-        assert call_kwargs["max_tokens"] == 1024
+        assert call_kwargs["max_tokens"] == 4096
 
     def test_returns_empty_str_for_none_content(self, engine: ChatEngine) -> None:
         mock_client = MagicMock()

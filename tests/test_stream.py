@@ -358,7 +358,7 @@ class TestChatStreamEndpoint:
                 engines,
                 response_cache_enabled=True,
                 llm_model="deepseek-v4-flash",
-                llm_max_tokens=1024,
+                llm_max_tokens=4096,
                 llm_temperature=0.7,
             ) as client:
                 # First request: populate cache
@@ -408,7 +408,7 @@ class TestChatStreamEndpoint:
                 "caller": "chat",
                 "model": "deepseek-v4-flash",
                 "temperature": 0.7,
-                "max_tokens": 1024,
+                "max_tokens": 4096,
                 "elapsed_ms": 100.0,
                 "prompt_tokens": 200,
                 "completion_tokens": 50,

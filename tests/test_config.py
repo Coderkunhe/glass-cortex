@@ -40,7 +40,7 @@ class TestSettingsDefaults:
         assert s.llm_model == "deepseek-v4-flash"
         assert s.llm_base_url == "https://api.deepseek.com"
         assert s.llm_api_key_env == "DEEPSEEK_API_KEY"
-        assert s.llm_max_tokens == 1024
+        assert s.llm_max_tokens == 4096
         assert s.fact_extraction_max_tokens == 512
 
     def test_default_recall(self) -> None:
@@ -75,7 +75,7 @@ class TestSettingsDefaults:
     def test_module_singleton_has_defaults(self) -> None:
         """模块级 settings 单例使用默认值。"""
         assert settings.embed_dim == 384
-        assert settings.llm_max_tokens == 1024
+        assert settings.llm_max_tokens == 4096
 
 
 class TestSettingsCustom:
@@ -172,7 +172,7 @@ class TestSettingsIntegration:
         b = Settings.from_flat(llm_temperature=1.5, llm_max_tokens=2048)
         assert a.llm_temperature == 0.7
         assert b.llm_temperature == 1.5
-        assert a.llm_max_tokens == 1024
+        assert a.llm_max_tokens == 4096
         assert b.llm_max_tokens == 2048
 
     def test_default_planner(self) -> None:

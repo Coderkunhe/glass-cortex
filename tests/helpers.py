@@ -115,7 +115,7 @@ def _mock_api_trace() -> dict[str, object]:
         "caller": "chat",
         "model": "deepseek-v4-flash",
         "temperature": 0.7,
-        "max_tokens": 1024,
+        "max_tokens": 4096,
         "elapsed_ms": 100.0,
         "prompt_tokens": 200,
         "completion_tokens": 50,

@@ -110,7 +110,7 @@ class LLMConfig:
     llm_model: str = "deepseek-v4-flash"
     llm_base_url: str = "https://api.deepseek.com"
     llm_api_key_env: str = "DEEPSEEK_API_KEY"
-    llm_max_tokens: int = 1024
+    llm_max_tokens: int = 4096  # 1024 会被推理模型 reasoning 挤占 → content 空
     llm_temperature: float = 0.7
     llm_timeout: float = 120.0  # OpenAI 客户端请求超时（秒），复杂 chat/plan 可 >60s
     fact_extraction_max_tokens: int = 512
