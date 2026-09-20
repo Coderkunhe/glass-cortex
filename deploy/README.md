@@ -226,6 +226,8 @@ chmod +x deploy/build-package.sh
 #   --skip-build         跳过 npm 构建（已有 .next/standalone 时用）
 #   --skip-model         跳过模型下载
 #   --skip-wheels        跳过 wheel 下载
+#   --patch              增量更新（仅运行时文件，跳过 wheels + 模型）
+#   --include-model      配合 --patch 时仍打包嵌入模型（服务器缺模型必加）
 ```
 
 ```powershell
@@ -257,17 +259,28 @@ chmod +x deploy/build-package.sh
 ```bash
 # 仅打包运行时文件（src/ api/ deploy/ + frontend standalone），跳过 wheels + 模型下载
 ./deploy/build-package.sh --patch -v 20260808-patch
+
+# 服务器缺模型时（首次部署/缓存被清）用 --include-model 把模型一并打包
+./deploy/build-package.sh --patch --include-model -v 20260808-patch
 ```
 
 | 对比 | 全量 (`默认`) | 增量 (`--patch`) |
 |:--|:--|:--|
 | **源码** | src/ api/ tests/ docs/ deploy/ frontend/ | src/ api/ deploy/ frontend/（仅运行时） |
 | **Python wheels** | ✅ 下载到 wheels/ | ❌ 跳过（服务器已有 venv） |
-| **嵌入模型** | ✅ 下载到 models/ | ❌ 跳过（服务器已缓存） |
+| **嵌入模型** | ✅ 下载到 models/ | ❌ 跳过（服务器须已有模型，否则 /chat 500；可用 `--include-model` 纳入） |
 | **前端构建** | ✅ npm ci + build | ✅ npm ci + build（必需） |
-| **产物大小** | ~500MB | ~25MB |
+| **产物大小** | ~500MB | ~25MB（`--include-model` 时 ~185MB） |
 | **适用场景** | 首次部署 / 新服务器 | 已有部署的版本更新 |
 | **服务器要求** | 免 git / 免 npm / 免编译 | 需已有 venv + 模型缓存 + Node.js 22.x |
+
+> **⚠️ `--patch` 模型前置条件（防 /chat 500）**：`--patch` 默认跳过嵌入模型，前提是服务器**已经**有 `models/huggingface/hub/models--sentence-transformers--all-MiniLM-L6-v2\`。否则 /chat 返回 500 `Recall failed: We couldn't connect to 'https://huggingface.co'`。部署前在服务器验证：
+>
+> ```powershell
+> Test-Path C:\apps\glasscortex\models\huggingface\hub\models--sentence-transformers--all-MiniLM-L6-v2
+> ```
+>
+> 返回 `False` → 改用 `--include-model` 重打包，或按 [offline-model.md](./offline-model.md) 单独落盘模型。
 
 > **注意**：`--patch` 包不含 `node_modules`（前端源码部分），但包含 standalone 自包含的 `node_modules`（仅生产依赖）。服务器上的 `npm install` 不受影响。
 
@@ -573,6 +586,7 @@ Copy-Item C:\apps\glasscortex\data\index.usearch "C:\backups\index-$stamp.usearc
 | GlassCortexWeb 启动即崩，stderr 有 `Cannot find module '.../server.js'` | Next.js standalone 产物路径不对 | ① 确认 `frontend\.next\standalone\server.js` 存在（不是 `standalone/frontend/server.js`）② 若嵌套在 `standalone/frontend/` 子目录——构建脚本版本过旧（<B18），升级到 `deploy/build-package.sh` B18+ 后重打包 ③ 紧急修复：`Move-Item frontend\.next\standalone\frontend\* frontend\.next\standalone\` 展平后重启 |
 | GlassCortexAPI 启动即崩，stderr 有 `KeyError: 'DEEPSEEK_API_KEY'` | `.env` 未创建或未填 | `notepad C:\apps\glasscortex\.env` 补 key，`Restart-Service GlassCortexAPI` |
 | GlassCortexAPI 启动即崩，stderr 有 `HuggingFace Hub` 相关网络错 | 无外网 + 无本地模型缓存 | 走 [离线模型 SOP](./offline-model.md) |
+| `POST /chat` 返回 500，响应体 `detail` 为 `Recall failed: We couldn't connect to 'https://huggingface.co'` | 服务器缺 embedding 模型 + 无法联网下载（`--patch` 部署常见）；`glasscortex.log` 无 ERROR 是正常现象 | 按 [离线模型 SOP](./offline-model.md) 落盘模型 + 重跑 `install-services.ps1`；诊断直接看响应体 `detail`，别只看日志 |
 | `http://localhost/api/health` 404 | Nginx location 匹配问题 | 检查 `nginx.conf` `location /api/` 段的 `proxy_pass http://fastapi/;` 末尾斜杠必须有 |
 | `http://localhost/` 502 Bad Gateway | 后端服务未启或崩溃 | `Get-Service GlassCortex*`；崩溃则查 stderr 日志 |
 | Chat 首次响应超时 | 首次触发嵌入模型下载（~90MB） | 等 30-60s；日志出现 `SentenceTransformer loaded` 即好 |

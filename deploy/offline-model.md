@@ -203,11 +203,40 @@ Invoke-WebRequest http://127.0.0.1:8000/health -UseBasicParsing
 发送一条聊天，观察 embedding 是否被触发：
 
 ```powershell
-$body = @{ message = "你好，测试离线模型" } | ConvertTo-Json
-Invoke-RestMethod -Uri http://localhost/api/chat -Method POST -ContentType "application/json" -Body $body
+$body = @{ user_input = "你好，测试离线模型"; stream = $false } | ConvertTo-Json
+Invoke-RestMethod -Uri http://127.0.0.1:8000/chat -Method POST -ContentType "application/json" -Body $body
+# 期望: HTTP 200 + 正常回复
+# 若仍报 "Recall failed: We couldn't connect to 'https://huggingface.co'..."
+# → 说明模型未正确加载，回到 Step 3 检查路径与环境变量
 ```
 
 若返回正常回复且日志无网络错误 → **离线部署闭环成功**。
+
+---
+
+## Patch 模式前置条件（防 /chat 500 复发）
+
+> **复盘 2026-09-20**：线上 `POST /chat` 500，根因是 `build-package.sh --patch` 设 `SKIP_MODEL=true`，错误假设「服务器已有模型」。实际服务器缺 `all-MiniLM-L6-v2` 且无法访问 huggingface.co。
+
+`--patch` 增量模式**默认跳过模型打包**。使用前提是目标服务器**已经**存在模型：
+
+```
+C:\apps\glasscortex\models\huggingface\hub\models--sentence-transformers--all-MiniLM-L6-v2\
+```
+
+**部署前验证（服务器侧，Admin PowerShell）**：
+
+```powershell
+Test-Path C:\apps\glasscortex\models\huggingface\hub\models--sentence-transformers--all-MiniLM-L6-v2
+# 期望: True
+```
+
+- 返回 `True` → 模型已在，`--patch` 可安全使用。
+- 返回 `False` → **不能用裸 `--patch`**。二选一：
+  1. 构建机改用 `./deploy/build-package.sh --patch --include-model`（把模型一并打进 patch 包）；
+  2. 或单独传输 `hf-cache-all-MiniLM-L6-v2.zip`（本 SOP 步骤 1-3）到服务器落盘。
+
+**部署后验证模型确实加载**：重跑 `install-services.ps1` 后，先直连 API 发一条聊天（见 Step 4），确认返回 200 而非 `Recall failed`。
 
 ---
 
@@ -215,6 +244,7 @@ Invoke-RestMethod -Uri http://localhost/api/chat -Method POST -ContentType "appl
 
 | 症状 | 根因 | 解法 |
 |:--|:--|:--|
+| `POST /chat` 返回 500，响应体 `detail` 为 `Recall failed: We couldn't connect to 'https://huggingface.co'` | 服务器缺模型 + 无法联网下载；且 `glasscortex.log` 无 ERROR（`HTTPException` 不写 JSON 日志） | 按本 SOP 落盘模型 + `install-services.ps1` 设离线 env。诊断时直接看**响应体 `detail`**，别只看日志 |
 | `OSError: We couldn't connect to 'https://huggingface.co'` | 未设置 `HF_HUB_OFFLINE=1` 或缓存路径不对 | 双重检查环境变量 + 目录 |
 | 服务作为 LocalSystem 找不到模型 | `USERPROFILE` 是系统 profile 不是当前用户 | 采用方案 C（`HF_HOME` 显式指定） |
 | `sentence-transformers` 报 `LocalEntryNotFoundError` | 缓存目录结构损坏或缺 snapshot | 重新解压 `hf-cache.zip`，验证 `hub\models--sentence-transformers--all-MiniLM-L6-v2\snapshots\` 下有内容 |

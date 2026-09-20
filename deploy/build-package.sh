@@ -36,6 +36,7 @@ SKIP_MODEL=false
 SKIP_WHEELS=false
 PY_VER="3.14"
 PATCH_MODE=false
+INCLUDE_MODEL=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -46,12 +47,16 @@ while [[ $# -gt 0 ]]; do
 	        --py-ver)        PY_VER="$2"; shift 2 ;;
         --skip-wheels)   SKIP_WHEELS=true; shift ;;
         --patch)         PATCH_MODE=true; shift ;;
+        --include-model) INCLUDE_MODEL=true; shift ;;
         -h|--help)
-            echo "Usage: $0 [-o <output-dir>] [-v <version>] [--py-ver 3.12|3.14] [--patch] [--skip-build] [--skip-model] [--skip-wheels]"
+            echo "Usage: $0 [-o <output-dir>] [-v <version>] [--py-ver 3.12|3.14] [--patch] [--include-model] [--skip-build] [--skip-model] [--skip-wheels]"
             echo ""
             echo "Cross-platform build packaging for Windows Server deployment."
             echo "  --patch  Incremental update: only src/ api/ frontend standalone + config files"
             echo "           (skips tests docs models wheels — server already has deps installed)"
+            echo "           WARNING: skips the embedding model — server MUST already have"
+            echo "           all-MiniLM-L6-v2 under models/huggingface/ or /chat returns 500."
+            echo "  --include-model  With --patch: bundle the embedding model too (override skip)."
             echo "Run from project root or pass the path as first positional argument."
             exit 0
             ;;
@@ -72,9 +77,14 @@ if [[ -z "$VERSION" ]]; then
 fi
 
 # --patch: 增量更新模式，只打包运行时文件（免依赖免模型）
+# 注意：patch 默认跳过模型 —— 前提是服务器已有 all-MiniLM-L6-v2。
+# 若服务器缺模型（首次部署/模型缓存被清），必须加 --include-model 纳入模型，
+# 否则 /chat 会 500「Recall failed: We couldn't connect to huggingface.co」。
 if [[ "$PATCH_MODE" == true ]]; then
     SKIP_WHEELS=true
-    SKIP_MODEL=true
+    if [[ "$INCLUDE_MODEL" != true ]]; then
+        SKIP_MODEL=true
+    fi
 fi
 
 PACKAGE_NAME="glasscortex-deploy-$VERSION"
@@ -120,8 +130,21 @@ banner "  Platform:  macOS/Linux → Windows Server (cross)"
 banner "  Time:      $(date '+%Y-%m-%d %H:%M:%S')"
   banner "  Python:    $PY_VER"
   banner "  Mode:      $(if [[ "$PATCH_MODE" == true ]]; then echo "Patch (incremental)"; else echo "Full"; fi)"
+  banner "  Model:     $(if [[ "$SKIP_MODEL" == true ]]; then echo "SKIPPED (server must already have it)"; else echo "included"; fi)"
 banner "========================================"
 echo ""
+
+# ── patch 模式模型契约告警（防 /chat 500 复发）──
+# 根因复盘（2026-09-20）：patch 模式 SKIP_MODEL=true 假设「服务器已有模型」，
+# 但该假设不成立时，缺模型 + 服务器无法访问 huggingface.co → /chat 500。
+if [[ "$PATCH_MODE" == true && "$SKIP_MODEL" == true ]]; then
+    warn "PATCH MODE does NOT bundle the embedding model (all-MiniLM-L6-v2)."
+    warn "The target server MUST already have it under models/huggingface/ —"
+    warn "otherwise /chat returns 500 'Recall failed: We couldn't connect to huggingface.co'."
+    warn "Verify on server (Admin PowerShell):"
+    warn "  Test-Path C:\\apps\\glasscortex\\models\\huggingface\\hub\\models--sentence-transformers--all-MiniLM-L6-v2"
+    warn "To bundle the model in this patch instead, re-run with: --include-model"
+fi
 
 # ═══════════════════════════════════════════════════════
 # Step 1: 准备 staging 目录
