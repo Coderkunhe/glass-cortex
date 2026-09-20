@@ -98,7 +98,7 @@ export interface L5InferenceParams {
 export const DEFAULT_L5_INFERENCE: L5InferenceParams = {
   model: "deepseek-v4-flash",
   temperature: 0.7,
-  max_tokens: 1024,
+  max_tokens: 4096, // 1024 会被推理模型 reasoning 挤占 → content 空（与后端 llm_max_tokens 对齐）
 };
 
 // ── L6 遗忘曲线参数 ────────────────────────────────────────────────
