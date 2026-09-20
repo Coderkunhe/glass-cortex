@@ -375,18 +375,35 @@ Start-Service GlassCortexWeb
 
 **升级流程（打包模式）**：
 
+> ⚠️ **包类型决定部署方式，用错会删掉服务器已有的 `venv\` 和 `models\`**：`--patch` 包（增量）必须**原地覆盖**，全量包（默认）才走**全量替换**。
+
+**① 增量升级（`--patch` 包 · 推荐）**——扁平 zip 原地覆盖，不删任何东西：
+
 ```powershell
-# 构建机重新打包新版本 → 传输到服务器
-# 服务器侧：
+# 构建机: ./deploy/build-package.sh --patch [-v YYYYMMDD]  → 传输到服务器 C:\temp\
+# 服务器侧（管理员 PowerShell）：
+Stop-Service GlassCortexAPI, GlassCortexWeb
+Expand-Archive -Force C:\temp\glasscortex-deploy-YYYYMMDD.zip -DestinationPath C:\apps\glasscortex\
+# 扁平 zip 直接落进 AppRoot，只覆盖 src/api/frontend，保留 venv\ models\ data\ .env
+Start-Service GlassCortexAPI, GlassCortexWeb
+```
+
+**② 全量替换（全量包）**——全量包自带 `wheels\` + `models\`，`deploy.ps1` 重建 venv + 检测模型：
+
+```powershell
+# 构建机: ./deploy/build-package.sh  → 传输到服务器 C:\temp\
+# 服务器侧（管理员 PowerShell）：
 Stop-Service GlassCortexAPI, GlassCortexWeb
 Expand-Archive -Force C:\temp\glasscortex-deploy-NEWDATE.zip C:\apps\
-# ⚠️ 注意：不要覆盖 data/ 和 .env
+# 全量包含 wheels/ 和 models/，只需额外保留 data/ 和 .env
 Copy-Item C:\apps\glasscortex\data C:\apps\glasscortex-deploy-NEWDATE\data -Recurse -Force
 Copy-Item C:\apps\glasscortex\.env C:\apps\glasscortex-deploy-NEWDATE\.env -Force
 Remove-Item C:\apps\glasscortex -Recurse -Force
 Rename-Item C:\apps\glasscortex-deploy-NEWDATE glasscortex
 .\deploy\deploy.ps1 -SkipClone -SkipBuild
 ```
+
+> ❌ **禁止**：拿 `--patch` 包做全量替换——`Remove-Item` 会删掉服务器已有的 `venv\` 和 `models\`，而 patch 包不含这两者，结果就是 /chat 500 `Recall failed`。
 
 ### 2.6 开发 vs 生产模式
 
