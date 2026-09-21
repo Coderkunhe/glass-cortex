@@ -1095,8 +1095,8 @@ graph TD
     ZH --> TOK["Tokenizer 化"]
     EN --> TOK
 
-    TOK --> ZHTOK["中文：~1.8× token"<br/>每个字符约 1.4-2.0 token"]
-    TOK --> ENTOK["英文：~1.0× token"<br/>每个单词约 0.7-0.8 token"]
+    TOK --> ZHTOK["中文：~1.8× token<br/>每个字符约 1.4-2.0 token"]
+    TOK --> ENTOK["英文：~1.0× token<br/>每个单词约 0.7-0.8 token"]
 
     ZHTOK --> BUDGET["上下文预算分配"]
     ENTOK --> BUDGET
