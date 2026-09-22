@@ -62,28 +62,3 @@ RAG（检索增强生成）和 MCP（Model Context Protocol）在路线图上标
 
 详见 [docs/architecture.md](docs/architecture.md) 项目边界定义。
 
-<!-- GITEE-ONLY-START -->
-## 文档导航
-
-| 你想了解 | 看这里 |
-|---------|--------|
-| 项目协作规范和工程铁律 | [CLAUDE.md](CLAUDE.md) |
-| 架构决策记录 (ADR) + 技术选型 | [docs/architecture.md](docs/architecture.md) |
-| 开发进度、任务明细、验证标准 | [docs/roadmap.md](docs/roadmap.md) |
-| 需求变更日志 | [docs/requirements-log.md](docs/requirements-log.md) |
-| AI 辅助开发工作流方法论 | [docs/methodology.md](docs/methodology.md) |
-| 踩坑记录 | [docs/pitfalls.md](docs/pitfalls.md) |
-| 可迁移经验沉淀 | [docs/lessons-learned.md](docs/lessons-learned.md) |
-
-## 常用命令
-
-| 命令 | 用途 |
-|------|------|
-| `make check` | lint + type + test 全量门禁 |
-| `make dev` | 启动 FastAPI + Next.js 前端 |
-| `make check-all` | Python + 前端全栈门禁 |
-| `make lint-fix` | ruff 自动修复格式问题 |
-| `make ship` | 全栈门禁 → 推送 Gitee → 自动镜像 GitHub |
-
-运行 `make help` 查看全部可用命令。
-<!-- GITEE-ONLY-END -->
